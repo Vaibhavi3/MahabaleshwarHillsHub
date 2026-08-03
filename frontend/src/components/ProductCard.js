@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import api from '../api/axiosConfig';
+import { Link } from 'react-router-dom';
+import { getImageUrl } from '../api/axiosConfig';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
 import toast from 'react-hot-toast';
@@ -12,7 +13,8 @@ const ProductCard = ({ product }) => {
     setRating(product.rating || 0);
   }, [product]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e) => {
+    e.preventDefault();
     dispatch(
       addToCart({
         id: product.id,
@@ -26,10 +28,10 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="product-card bg-white rounded-lg overflow-hidden">
+    <Link to={`/products/${product.id}`} className="product-card bg-white rounded-lg overflow-hidden block">
       <div className="aspect-square bg-gray-200 overflow-hidden">
         <img
-          src={product.image_url || 'https://via.placeholder.com/300'}
+          src={getImageUrl(product.image_url) || 'https://via.placeholder.com/300'}
           alt={product.name}
           className="w-full h-full object-cover"
         />
@@ -50,7 +52,7 @@ const ProductCard = ({ product }) => {
           Add to Cart
         </button>
       </div>
-    </div>
+    </Link>
   );
 };
 

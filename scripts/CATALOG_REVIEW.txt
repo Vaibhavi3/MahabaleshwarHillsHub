@@ -1,0 +1,54 @@
+CATALOG PREP REVIEW
+====================
+
+Seeded 273 sock variants and 21 home-slidders products (294 total product rows) into products_seed.json.
+
+** 9 'Handmade Bags' products were SKIPPED - no photo folder exists anywhere in the provided data for any of their SKUs (BB-100, 650, 651, 652, 1405, 1425, 1426, 1427, 673). Add real photos before this category can go live. **
+
+--- Home Slidders folder -> SKU mapping (best-effort, sequential order) ---
+Please spot-check that the photo actually matches the product/colour before trusting it.
+Folder     SKU      Product Name                   Colours
+0001       10001    Doctor Soft Home Slidders      Pink Strawberry, Golden Mango, Mint Blue, Ebony Black
+0002       10002    Doctor Soft Home Slidders      Red Orange, Pistachio Green
+0003       10003    Doctor Soft Home Slidders      Black & Green, Black & White
+0004       10004    Doctor Soft Home Slidders      Peach Pink
+0005       10005    Doctor Soft Home Slidders      Peach Pink, Pistachio Green, Oyster White, Royal Blue, Cocoa Brown
+0006       10006    Doctor Soft Home Slidders      Orange Mint, Cocoa Brown, Cloud Gray, Peach Pink
+0007       10007    Doctor Soft Home Slidders      Cocoa Brown, Cloud Gray, Peach Pink, Mango Mint, Orange Mint
+0008       10008    Doctor Soft Home Slidders      Cloud Gray
+0009       10009    Doctor Soft Home Slidders      Pink Slik, Cocoa Brown, Orange Mint
+0010       10010    Doctor Soft Home Slidders      Pink Silk, Orange Mint, Cocoa Brown, Cloud Gray
+0011       10011    Doctor Soft Home Slidders      Deep Orange, Royal Blue, Peach Pink, Wine Maroon, Ebony Black
+0012       10012    Doctor Soft Home Slidders      Violet, Peach Pink, Ebony Black, Cloud Gray
+0013       10013    Doctor Soft Home Slidders      Pink Silk, Pistichio Mint, Silver Gray, Cocoa Brown
+0014       10014    Doctor Soft Home Slidders      Violet, Ebony Black, Cloud Gray, Peach Pink
+0015       10015    Doctor Soft Home Slidders      Persian Green, Orange Mint, Lemon Mint, Silver Gray
+0016       10016    Doctor Soft Home Slidders      Pink Silk, Deep Orange, Mango Silk, Persian Green
+0017       10017    Doctor Soft Home Slidders      Lemon Green, Silver Gray, Peach Pink, Mango Silk
+0018       10018    Doctor Soft Home Slidders      Violet, Cloud Gray, Peach Pink, Ebony Black
+0019       10019    Doctor Soft Home Slidders      Mariegold, Peach Pink, Wine Red, Sea Blue
+0020       10020    Doctor Soft Home Slidders      Violet, Peach Pink
+0021       10021    Doctor Soft Home Slidders      Pineapple Yellow
+
+--- Missing photo folders (product skipped) ---
+(none)
+
+--- Duplicate SKU across multiple folders ---
+(none)
+
+--- Duplicate SKU across multiple spreadsheet rows ---
+SKU 1160 appears on rows [6] and 9 ('Soft Bunny's Diamond Socks') - both kept, sharing the same photo folder
+
+--- Colours with no matching photo folder ---
+SKU 1160 (Soft Koala Socks): no photo folder for ['Champagne White', 'Cherry Maroon', 'Chestnut Pink', 'Pearl Silver', 'Pistachio Green']
+SKU 1153 (Kids Kitty Socks): no photo folder for ['Ice Blue(32-35)(24-27)']
+SKU 1104 (Kids Socks): no photo folder for ['Pistachio']
+
+--- Photo folders not used by any listed colour ---
+SKU 1160 (Soft Koala Socks): unused photo folders ['Ebony Black', 'Flamingo Pink', 'Hot Pink', 'Jet Gray', 'Snow White']
+SKU 1201 (Soft Frooty Socks): unused photo folders ['Gold Pineapple']
+SKU 1153 (Kids Kitty Socks): unused photo folders ['Ice Blur']
+SKU 1104 (Kids Socks): unused photo folders ['Blue']
+
+--- Folders with no image files ---
+(none)

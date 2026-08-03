@@ -117,6 +117,14 @@ class OrderItem(Base):
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="order_items")
 
+    @property
+    def product_name(self):
+        return self.product.name if self.product else None
+
+    @property
+    def product_image(self):
+        return self.product.image_url if self.product else None
+
 
 class Review(Base):
     __tablename__ = "reviews"

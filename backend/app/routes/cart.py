@@ -39,12 +39,16 @@ def add_to_cart(
     product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
+
     cart_item = db.query(models.CartItem).filter(
         models.CartItem.cart_id == cart.id,
         models.CartItem.product_id == item.product_id
     ).first()
-    
+
+    requested_quantity = (cart_item.quantity if cart_item else 0) + item.quantity
+    if requested_quantity > product.stock:
+        raise HTTPException(status_code=400, detail=f"Only {product.stock} in stock")
+
     if cart_item:
         cart_item.quantity += item.quantity
     else:
@@ -54,7 +58,7 @@ def add_to_cart(
             quantity=item.quantity
         )
         db.add(cart_item)
-    
+
     db.commit()
     db.refresh(cart)
     return cart
@@ -76,10 +80,14 @@ def update_cart_item(
         models.CartItem.id == item_id,
         models.CartItem.cart_id == cart.id
     ).first()
-    
+
     if not cart_item:
         raise HTTPException(status_code=404, detail="Cart item not found")
-    
+
+    product = db.query(models.Product).filter(models.Product.id == cart_item.product_id).first()
+    if product and item_update.quantity > product.stock:
+        raise HTTPException(status_code=400, detail=f"Only {product.stock} in stock")
+
     cart_item.quantity = item_update.quantity
     db.commit()
     db.refresh(cart)

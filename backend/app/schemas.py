@@ -34,8 +34,8 @@ class UserResponse(UserBase):
 class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
-    price: float
-    stock: int
+    price: float = Field(..., ge=0)
+    stock: int = Field(..., ge=0)
     category: str
     
 class ProductCreate(ProductBase):
@@ -47,8 +47,8 @@ class ProductCreate(ProductBase):
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    price: Optional[float] = None
-    stock: Optional[int] = None
+    price: Optional[float] = Field(None, ge=0)
+    stock: Optional[int] = Field(None, ge=0)
     category: Optional[str] = None
     image_url: Optional[str] = None
     color: Optional[str] = None
@@ -71,10 +71,10 @@ class ProductResponse(ProductBase):
 
 class CartItemCreate(BaseModel):
     product_id: int
-    quantity: int = 1
+    quantity: int = Field(1, ge=1)
 
 class CartItemUpdate(BaseModel):
-    quantity: int
+    quantity: int = Field(..., ge=1)
 
 class CartItemResponse(BaseModel):
     id: int
@@ -100,7 +100,9 @@ class OrderItemCreate(BaseModel):
 class OrderItemResponse(OrderItemCreate):
     id: int
     order_id: int
-    
+    product_name: Optional[str] = None
+    product_image: Optional[str] = None
+
     class Config:
         from_attributes = True
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
+from app.utils.auth import get_current_admin_user
 from sqlalchemy import or_
 
 router = APIRouter()
@@ -49,7 +50,11 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/products", response_model=schemas.ProductResponse)
-def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)):
+def create_product(
+    product: schemas.ProductCreate,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(get_current_admin_user)
+):
     """Create new product (Admin only)"""
     db_product = models.Product(**product.dict())
     db.add(db_product)
@@ -62,7 +67,8 @@ def create_product(product: schemas.ProductCreate, db: Session = Depends(get_db)
 def update_product(
     product_id: int,
     product_update: schemas.ProductUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(get_current_admin_user)
 ):
     """Update product (Admin only)"""
     db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
@@ -79,7 +85,11 @@ def update_product(
 
 
 @router.delete("/products/{product_id}")
-def delete_product(product_id: int, db: Session = Depends(get_db)):
+def delete_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(get_current_admin_user)
+):
     """Delete product (Admin only)"""
     db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if not db_product:

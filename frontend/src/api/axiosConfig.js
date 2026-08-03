@@ -1,110 +1,136 @@
 import axios from 'axios';
+import store from '../store';
+import { logout } from '../features/authSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const ASSET_BASE_URL = API_URL.replace(/\/api\/?$/, '');
 
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+// Product image_url values from the API are backend-relative paths
+// (e.g. /static/products/...) - resolve them against the backend origin,
+// not whatever origin the frontend happens to be served from.
+export const getImageUrl = (path) => {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path)) return path;
+  return `${ASSET_BASE_URL}${path}`;
 };
+
+const client = axios.create({ baseURL: API_URL });
+
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      store.dispatch(logout());
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const api = {
   // Products
   getProducts: (skip = 0, limit = 10, category = null) => {
-    return axios.get(`${API_URL}/products`, {
-      params: { skip, limit, category },
-    });
+    return client.get('/products', { params: { skip, limit, category } });
   },
   getProductById: (id) => {
-    return axios.get(`${API_URL}/products/${id}`);
+    return client.get(`/products/${id}`);
   },
   searchProducts: (query) => {
-    return axios.get(`${API_URL}/products/search`, { params: { q: query } });
+    return client.get('/products/search', { params: { q: query } });
   },
   getCategories: () => {
-    return axios.get(`${API_URL}/categories`);
+    return client.get('/categories');
+  },
+  createProduct: (product) => {
+    return client.post('/products', product);
+  },
+  updateProduct: (id, product) => {
+    return client.put(`/products/${id}`, product);
+  },
+  deleteProduct: (id) => {
+    return client.delete(`/products/${id}`);
   },
 
   // Auth
   register: (userData) => {
-    return axios.post(`${API_URL}/auth/register`, userData);
+    return client.post('/auth/register', userData);
   },
   login: (credentials) => {
-    return axios.post(`${API_URL}/auth/login`, credentials);
+    return client.post('/auth/login', credentials);
   },
   getCurrentUser: () => {
-    return axios.get(`${API_URL}/auth/me`, {
-      headers: getAuthHeader(),
-    });
+    return client.get('/auth/me');
   },
 
   // Cart
   getCart: () => {
-    return axios.get(`${API_URL}/cart`, {
-      headers: getAuthHeader(),
-    });
+    return client.get('/cart');
   },
   addToCart: (cartItem) => {
-    return axios.post(`${API_URL}/cart/add`, cartItem, {
-      headers: getAuthHeader(),
-    });
+    return client.post('/cart/add', cartItem);
   },
   updateCartItem: (itemId, quantity) => {
-    return axios.put(`${API_URL}/cart/${itemId}`, { quantity }, {
-      headers: getAuthHeader(),
-    });
+    return client.put(`/cart/${itemId}`, { quantity });
   },
   removeFromCart: (itemId) => {
-    return axios.delete(`${API_URL}/cart/${itemId}`, {
-      headers: getAuthHeader(),
-    });
+    return client.delete(`/cart/${itemId}`);
   },
   clearCart: () => {
-    return axios.delete(`${API_URL}/cart`, {
-      headers: getAuthHeader(),
-    });
+    return client.delete('/cart');
   },
 
   // Orders
   createOrder: (orderData) => {
-    return axios.post(`${API_URL}/orders`, orderData, {
-      headers: getAuthHeader(),
-    });
+    return client.post('/orders', orderData);
   },
   getOrders: () => {
-    return axios.get(`${API_URL}/orders`, {
-      headers: getAuthHeader(),
-    });
+    return client.get('/orders');
   },
   getOrderById: (id) => {
-    return axios.get(`${API_URL}/orders/${id}`, {
-      headers: getAuthHeader(),
-    });
+    return client.get(`/orders/${id}`);
+  },
+  updateOrder: (id, orderUpdate) => {
+    return client.put(`/orders/${id}`, orderUpdate);
+  },
+  getAllOrders: (skip = 0, limit = 100) => {
+    return client.get('/orders/admin/all', { params: { skip, limit } });
   },
 
   // Reviews
   getProductReviews: (productId) => {
-    return axios.get(`${API_URL}/products/${productId}/reviews`);
+    return client.get(`/products/${productId}/reviews`);
   },
   createReview: (reviewData) => {
-    return axios.post(`${API_URL}/reviews`, reviewData, {
-      headers: getAuthHeader(),
+    return client.post('/reviews', reviewData);
+  },
+
+  // Payments - Stripe
+  createPaymentIntent: (orderId) => {
+    return client.post('/payments/create-payment-intent', null, { params: { order_id: orderId } });
+  },
+  confirmPayment: (orderId, paymentIntentId) => {
+    return client.post('/payments/confirm', null, {
+      params: { order_id: orderId, payment_intent_id: paymentIntentId },
     });
   },
 
-  // Payments
-  createPaymentIntent: (orderId) => {
-    return axios.post(`${API_URL}/payments/create-payment-intent`, { order_id: orderId }, {
-      headers: getAuthHeader(),
-    });
+  // Payments - Razorpay
+  createRazorpayOrder: (orderId) => {
+    return client.post('/payments/razorpay/create-order', null, { params: { order_id: orderId } });
   },
-  confirmPayment: (orderId, paymentIntentId) => {
-    return axios.post(
-      `${API_URL}/payments/confirm`,
-      { order_id: orderId, payment_intent_id: paymentIntentId },
-      {
-        headers: getAuthHeader(),
-      }
-    );
+  verifyRazorpayPayment: (params) => {
+    return client.post('/payments/razorpay/verify', null, { params });
+  },
+
+  getPaymentStatus: (orderId) => {
+    return client.get(`/payments/${orderId}`);
   },
 };
 
