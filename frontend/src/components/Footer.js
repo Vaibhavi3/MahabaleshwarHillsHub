@@ -21,9 +21,9 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white">Contact Us</a></li>
-              <li><a href="#" className="hover:text-white">FAQ</a></li>
-              <li><a href="#" className="hover:text-white">Shipping Info</a></li>
+              <li><span className="cursor-default">Contact Us</span></li>
+              <li><span className="cursor-default">FAQ</span></li>
+              <li><span className="cursor-default">Shipping Info</span></li>
             </ul>
           </div>
           <div>
