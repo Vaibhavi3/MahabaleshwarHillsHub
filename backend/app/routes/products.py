@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_admin_user
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 router = APIRouter()
 
@@ -47,6 +47,43 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+
+@router.get("/products/{product_id}/variants", response_model=list[schemas.ProductResponse])
+def get_product_variants(product_id: int, db: Session = Depends(get_db)):
+    """Other colour variants of the same product (same name, different id)"""
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return (
+        db.query(models.Product)
+        .filter(models.Product.name == product.name, models.Product.id != product_id)
+        .all()
+    )
+
+
+@router.get("/products/{product_id}/similar", response_model=list[schemas.ProductResponse])
+def get_similar_products(
+    product_id: int,
+    limit: int = Query(8, ge=1, le=20),
+    db: Session = Depends(get_db)
+):
+    """Other products in the same category, ranked by closest price"""
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return (
+        db.query(models.Product)
+        .filter(
+            models.Product.category == product.category,
+            models.Product.name != product.name,
+        )
+        .order_by(func.abs(models.Product.price - product.price))
+        .limit(limit)
+        .all()
+    )
 
 
 @router.post("/products", response_model=schemas.ProductResponse)

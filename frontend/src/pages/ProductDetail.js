@@ -1,26 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
+import ProductCard from '../components/ProductCard';
 import toast from 'react-hot-toast';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [variants, setVariants] = useState([]);
+  const [similar, setSimilar] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchProductDetails = async () => {
+      setLoading(true);
       try {
         const productResponse = await api.getProductById(id);
         setProduct(productResponse.data);
 
-        const reviewsResponse = await api.getProductReviews(id);
+        const [reviewsResponse, variantsResponse, similarResponse] = await Promise.all([
+          api.getProductReviews(id),
+          api.getProductVariants(id),
+          api.getSimilarProducts(id),
+        ]);
         setReviews(reviewsResponse.data);
+        setVariants(variantsResponse.data);
+        setSimilar(similarResponse.data);
       } catch (error) {
         toast.error('Failed to load product');
       } finally {
@@ -29,6 +39,7 @@ const ProductDetail = () => {
     };
 
     fetchProductDetails();
+    window.scrollTo({ top: 0 });
   }, [id]);
 
   const handleAddToCart = () => {
@@ -72,6 +83,42 @@ const ProductDetail = () => {
             <span className="text-2xl text-yellow-500">★ {product.rating?.toFixed(1) || 'N/A'}</span>
             <span className="text-gray-600">Stock: {product.stock}</span>
           </div>
+
+          {variants.length > 0 && (
+            <div className="mb-6">
+              <label className="block mb-2 font-medium">
+                Colour: <span className="font-normal text-gray-600">{product.color}</span>
+              </label>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  to={`/products/${product.id}`}
+                  title={product.color}
+                  className="w-14 h-14 rounded-lg overflow-hidden border-2 border-purple-600 ring-2 ring-purple-200"
+                >
+                  <img
+                    src={getImageUrl(product.image_url) || 'https://via.placeholder.com/60'}
+                    alt={product.color}
+                    className="w-full h-full object-cover"
+                  />
+                </Link>
+                {variants.map((v) => (
+                  <Link
+                    key={v.id}
+                    to={`/products/${v.id}`}
+                    title={v.color}
+                    className="w-14 h-14 rounded-lg overflow-hidden border-2 border-transparent hover:border-purple-400"
+                  >
+                    <img
+                      src={getImageUrl(v.image_url) || 'https://via.placeholder.com/60'}
+                      alt={v.color}
+                      className="w-full h-full object-cover"
+                    />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mb-6">
             <label className="block mb-2">Quantity:</label>
             <input
@@ -92,7 +139,18 @@ const ProductDetail = () => {
         </div>
       </div>
 
-      <div className="mt-12">
+      {similar.length > 0 && (
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {similar.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-16">
         <h2 className="text-2xl font-bold mb-6">Reviews</h2>
         {reviews.length > 0 ? (
           <div className="space-y-4">

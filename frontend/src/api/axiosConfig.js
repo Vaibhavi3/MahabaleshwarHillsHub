@@ -48,6 +48,12 @@ export const api = {
   getCategories: () => {
     return client.get('/categories');
   },
+  getProductVariants: (id) => {
+    return client.get(`/products/${id}/variants`);
+  },
+  getSimilarProducts: (id, limit = 8) => {
+    return client.get(`/products/${id}/similar`, { params: { limit } });
+  },
   createProduct: (product) => {
     return client.post('/products', product);
   },
