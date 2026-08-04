@@ -1,0 +1,200 @@
+[
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Brown & Cream",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-brown-cream/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Red & Grey",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-red-grey/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Blue-Grey & Cream",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-blue-grey-cream/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Navy & Rust",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-navy-rust/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Mauve & Cream",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-mauve-cream/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Brown & Slate Blue",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-brown-slate-blue/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Blush Pink & Black",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-blush-pink-black/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Wine & Pink",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-wine-pink/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Charcoal & Purple",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-charcoal-purple/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Grey, Black & Tan",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-grey-black-tan/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Burgundy & Grey",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-burgundy-grey/main.jpg"
+  },
+  {
+    "name": "Classic Winter Pattern Socks",
+    "color": "Grey, Black & Pink",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-classic-winter-pattern-socks-grey-black-pink/main.jpg"
+  },
+  {
+    "name": "Cute Reindeer Pattern Socks",
+    "color": "Pink & Grey",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-cute-reindeer-pattern-socks-pink-grey/main.jpg"
+  },
+  {
+    "name": "Cute Sheep Pattern Socks",
+    "color": "Blue & Tan",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-cute-sheep-pattern-socks-blue-tan/main.jpg"
+  },
+  {
+    "name": "Cute Sleeping Cat Pattern Socks",
+    "color": "Maroon & Cream",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-cute-sleeping-cat-pattern-socks-maroon-cream/main.jpg"
+  },
+  {
+    "name": "Cute Reindeer Silhouette Socks",
+    "color": "Grey & Purple",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-cute-reindeer-silhouette-socks-grey-purple/main.jpg"
+  },
+  {
+    "name": "Cute Fox Pattern Socks",
+    "color": "Grey & Red",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-cute-fox-pattern-socks-grey-red/main.jpg"
+  },
+  {
+    "name": "Cute Dog Pattern Socks",
+    "color": "Red & White",
+    "category": "socks",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter socks with anti-slip grip dots, a reinforced heel and a cozy sherpa cuff - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai-cute-dog-pattern-socks-red-white/main.jpg"
+  }
+]
