@@ -59,3 +59,10 @@ Thumbs.db
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# Raw source photo dumps - not used by the app, kept locally only.
+# Committing these via LFS blew past GitHub's free 1GB/month LFS
+# bandwidth quota (5.4GB here), breaking every Render deploy clone.
+/1345-1168/
+/E-Com Photos/
+/Home Slidders/
