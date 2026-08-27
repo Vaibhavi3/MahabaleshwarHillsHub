@@ -1,43 +1,73 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FiFacebook, FiInstagram, FiTwitter } from 'react-icons/fi';
+
+const COLUMNS = [
+  {
+    title: 'Online Shopping',
+    links: [
+      { label: 'Home Socks', to: '/products?category=socks' },
+      { label: 'Home Slidders', to: '/products?category=slidders' },
+      { label: 'Handmade Bags', to: '/products?category=bags' },
+      { label: 'New Arrivals', to: '/products' },
+    ],
+  },
+  {
+    title: 'Customer Policies',
+    links: [
+      { label: 'Contact Us', to: '#' },
+      { label: 'FAQ', to: '#' },
+      { label: 'Shipping Info', to: '#' },
+      { label: 'Returns & Exchange', to: '#' },
+    ],
+  },
+  {
+    title: 'Useful Links',
+    links: [
+      { label: 'Your Orders', to: '/orders' },
+      { label: 'Your Bag', to: '/cart' },
+      { label: 'Login / Register', to: '/auth' },
+    ],
+  },
+];
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white mt-16">
+    <footer className="bg-white border-t border-gray-200 mt-16">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {COLUMNS.map((col) => (
+            <div key={col.title}>
+              <h4 className="font-bold text-xs uppercase tracking-wide text-muted mb-4">{col.title}</h4>
+              <ul className="space-y-2.5">
+                {col.links.map((link) => (
+                  <li key={link.label}>
+                    <Link to={link.to} className="text-sm text-ink hover:text-brand transition-colors">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
           <div>
-            <h3 className="text-xl font-bold mb-4">Mahabaleshwar Hills Hub</h3>
-            <p className="text-gray-400">Premium handmade products from Mahabaleshwar artisans</p>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="/" className="hover:text-white">Home</a></li>
-              <li><a href="/products" className="hover:text-white">Products</a></li>
-              <li><a href="/cart" className="hover:text-white">Cart</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Support</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><span className="cursor-default">Contact Us</span></li>
-              <li><span className="cursor-default">FAQ</span></li>
-              <li><span className="cursor-default">Shipping Info</span></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Follow Us</h4>
+            <h4 className="font-bold text-xs uppercase tracking-wide text-muted mb-4">Follow Us</h4>
             <div className="flex gap-4">
-              <FiFacebook className="text-2xl cursor-pointer hover:text-purple-400" />
-              <FiInstagram className="text-2xl cursor-pointer hover:text-purple-400" />
-              <FiTwitter className="text-2xl cursor-pointer hover:text-purple-400" />
+              <FiFacebook className="text-xl cursor-pointer text-ink hover:text-brand transition-colors" />
+              <FiInstagram className="text-xl cursor-pointer text-ink hover:text-brand transition-colors" />
+              <FiTwitter className="text-xl cursor-pointer text-ink hover:text-brand transition-colors" />
+            </div>
+            <div className="mt-6">
+              <span className="text-2xl font-extrabold gradient-text">MAHABALESHWAR</span>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Hills Hub</p>
             </div>
           </div>
         </div>
-        <hr className="border-gray-700 my-8" />
-        <div className="text-center text-gray-400">
+      </div>
+      <div className="border-t border-gray-200">
+        <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-muted">
           <p>&copy; 2026 Mahabaleshwar Hills Hub. All rights reserved.</p>
+          <p>Handmade with care in Mahabaleshwar, Maharashtra</p>
         </div>
       </div>
     </footer>

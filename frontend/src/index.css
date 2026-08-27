@@ -1,15 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Assistant', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
     'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: #282c3f;
 }
 
 code {
@@ -18,25 +20,58 @@ code {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff3f6c 0%, #ff9eb4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .product-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(40, 44, 63, 0.12);
+}
+
+.product-card:hover .product-card-overlay {
+  opacity: 1;
 }
 
 .btn-primary {
-  @apply px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors;
+  @apply px-6 py-2.5 bg-brand text-white rounded font-bold uppercase text-sm tracking-wide hover:bg-brand-dark transition-colors;
 }
 
 .btn-secondary {
-  @apply px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors;
+  @apply px-6 py-2.5 bg-white text-ink border border-gray-300 rounded font-bold uppercase text-sm tracking-wide hover:border-ink transition-colors;
+}
+
+.btn-outline {
+  @apply px-6 py-2.5 bg-white text-brand border border-brand rounded font-bold uppercase text-sm tracking-wide hover:bg-brand hover:text-white transition-colors;
+}
+
+.nav-link {
+  @apply text-ink font-semibold text-sm uppercase tracking-wide hover:text-brand transition-colors py-1 border-b-2 border-transparent hover:border-brand;
+}
+
+.filter-chip {
+  @apply px-4 py-1.5 rounded-full border text-xs font-semibold uppercase tracking-wide cursor-pointer transition-colors;
+}
+
+.filter-chip-active {
+  @apply bg-brand text-white border-brand;
+}
+
+.filter-chip-inactive {
+  @apply bg-white text-ink border-gray-300 hover:border-ink;
+}
+
+::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d5d9;
+  border-radius: 4px;
 }
