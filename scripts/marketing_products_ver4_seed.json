@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Cute Cat Face Doctor Soft Slippers",
+    "color": "Brown",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai4-cute-cat-face-doctor-soft-slippers-brown/main.jpg"
+  },
+  {
+    "name": "Cute Cat Face Doctor Soft Slippers",
+    "color": "Mint",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai4-cute-cat-face-doctor-soft-slippers-mint/main.jpg"
+  },
+  {
+    "name": "Cute Cat Face Doctor Soft Slippers",
+    "color": "Magenta Pink",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai4-cute-cat-face-doctor-soft-slippers-magenta-pink/main.jpg"
+  },
+  {
+    "name": "Cute Cat Face Doctor Soft Slippers",
+    "color": "Tan",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai4-cute-cat-face-doctor-soft-slippers-tan/main.jpg"
+  }
+]

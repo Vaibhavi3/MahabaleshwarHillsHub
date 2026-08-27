@@ -526,5 +526,60 @@
     "size": "One Size",
     "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
     "image_url": "/static/products/ai2-cute-animal-face-slippers-cream-fishbone/main.jpg"
+  },
+  {
+    "name": "Star & Moon Slide Slippers",
+    "color": "Dusty Rose",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai2-star-moon-slide-slippers-dusty-rose/main.jpg"
+  },
+  {
+    "name": "Starry Bunny Ear Slide Slippers",
+    "color": "Black",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai2-starry-bunny-ear-slide-slippers-black/main.jpg"
+  },
+  {
+    "name": "Bunny Pompom Slide Slippers",
+    "color": "Camel Tan",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai2-bunny-pompom-slide-slippers-camel-tan/main.jpg"
+  },
+  {
+    "name": "Bunny Pompom Slide Slippers",
+    "color": "Cream",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai2-bunny-pompom-slide-slippers-cream/main.jpg"
+  },
+  {
+    "name": "Bunny Pompom Slide Slippers",
+    "color": "Grey",
+    "category": "slidders",
+    "price": 999,
+    "stock": 20,
+    "material": "Ultra Soft Plush",
+    "size": "One Size",
+    "description": "Ultra soft plush winter footwear with an anti-slip sole and a cozy plush lining - perfect for winter comfort or gifting.",
+    "image_url": "/static/products/ai2-bunny-pompom-slide-slippers-grey/main.jpg"
   }
 ]
