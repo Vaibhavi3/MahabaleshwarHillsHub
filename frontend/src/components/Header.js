@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiSearch } from 'react-icons/fi';
+import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiSearch, FiPackage } from 'react-icons/fi';
 import { logout } from '../features/authSlice';
 
 const NAV_LINKS = [
@@ -16,6 +16,7 @@ const Header = () => {
   const [query, setQuery] = useState('');
   const { user } = useSelector((state) => state.auth);
   const { items } = useSelector((state) => state.cart);
+  const { items: wishlistItems } = useSelector((state) => state.wishlist);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -87,8 +88,18 @@ const Header = () => {
             )}
 
             <Link to="/orders" className="hidden sm:flex flex-col items-center text-ink hover:text-brand transition-colors">
-              <FiHeart className="text-xl" />
+              <FiPackage className="text-xl" />
               <span className="text-[11px] font-semibold uppercase mt-0.5">Orders</span>
+            </Link>
+
+            <Link to="/wishlist" className="relative flex flex-col items-center text-ink hover:text-brand transition-colors">
+              <FiHeart className="text-xl" />
+              {wishlistItems.length > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 bg-brand text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                  {wishlistItems.length}
+                </span>
+              )}
+              <span className="text-[11px] font-semibold uppercase mt-0.5">Wishlist</span>
             </Link>
 
             <Link to="/cart" className="relative flex flex-col items-center text-ink hover:text-brand transition-colors">

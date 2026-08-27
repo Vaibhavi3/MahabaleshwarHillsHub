@@ -25,6 +25,7 @@ const COLUMNS = [
     title: 'Useful Links',
     links: [
       { label: 'Your Orders', to: '/orders' },
+      { label: 'Your Wishlist', to: '/wishlist' },
       { label: 'Your Bag', to: '/cart' },
       { label: 'Login / Register', to: '/auth' },
     ],

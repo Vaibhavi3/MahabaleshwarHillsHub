@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
+import { toggleWishlist } from '../features/wishlistSlice';
 import ProductCard from '../components/ProductCard';
 import { FiHeart, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -19,8 +20,9 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState('');
   const [pincodeMsg, setPincodeMsg] = useState('');
-  const [wishlisted, setWishlisted] = useState(false);
   const dispatch = useDispatch();
+  const wishlistItems = useSelector((state) => state.wishlist.items);
+  const wishlisted = product ? wishlistItems.some((item) => item.id === product.id) : false;
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -61,6 +63,19 @@ const ProductDetail = () => {
       );
       toast.success('Added to bag');
     }
+  };
+
+  const handleWishlist = () => {
+    if (!product) return;
+    dispatch(
+      toggleWishlist({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+      })
+    );
+    toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
   };
 
   const handleCheckPincode = (e) => {
@@ -190,11 +205,11 @@ const ProductDetail = () => {
               Add to Bag
             </button>
             <button
-              onClick={() => setWishlisted((w) => !w)}
+              onClick={handleWishlist}
               className="btn-secondary flex-1 py-3.5 text-base flex items-center justify-center gap-2"
             >
               <FiHeart className={wishlisted ? 'text-brand fill-current' : ''} />
-              Wishlist
+              {wishlisted ? 'Wishlisted' : 'Wishlist'}
             </button>
           </div>
 

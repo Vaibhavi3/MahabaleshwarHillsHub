@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { getImageUrl } from '../api/axiosConfig';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
+import { toggleWishlist } from '../features/wishlistSlice';
 import { FiHeart } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -10,7 +11,8 @@ const BRAND = 'Ancles Home Socks';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
-  const [wishlisted, setWishlisted] = useState(false);
+  const wishlistItems = useSelector((state) => state.wishlist.items);
+  const wishlisted = wishlistItems.some((item) => item.id === product.id);
   const rating = product.rating || 0;
 
   const handleAddToCart = (e) => {
@@ -29,7 +31,15 @@ const ProductCard = ({ product }) => {
 
   const handleWishlist = (e) => {
     e.preventDefault();
-    setWishlisted((w) => !w);
+    dispatch(
+      toggleWishlist({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+      })
+    );
+    toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
   };
 
   return (
