@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 
@@ -125,7 +126,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-8"><h1 className="text-3xl font-bold">Admin Dashboard</h1><Link to="/crm" className="btn-primary">Open CRM</Link></div>
 
       <div className="flex gap-4 mb-8 border-b">
         <button

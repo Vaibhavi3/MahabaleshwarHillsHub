@@ -11,6 +11,7 @@ import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Auth from './pages/Auth';
 import AdminDashboard from './pages/AdminDashboard';
+import CRM from './pages/CRM';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -39,6 +40,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/crm"
+            element={
+              <ProtectedRoute>
+                <CRM />
               </ProtectedRoute>
             }
           />

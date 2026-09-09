@@ -138,6 +138,17 @@ export const api = {
   getPaymentStatus: (orderId) => {
     return client.get(`/payments/${orderId}`);
   },
+
+  // CRM
+  getCRMOverview: () => client.get('/crm/overview'),
+  getCRMCustomers: (params) => client.get('/crm/customers', { params }),
+  getCRMCustomer: (id) => client.get('/crm/customers/' + id),
+  getCRMLeads: (params) => client.get('/crm/leads', { params }),
+  createCRMLead: (lead) => client.post('/crm/leads', lead),
+  updateCRMLead: (id, lead) => client.patch('/crm/leads/' + id, lead),
+  getCRMActivities: (params) => client.get('/crm/activities', { params }),
+  createCRMActivity: (activity) => client.post('/crm/activities', activity),
+  updateCRMActivity: (id, activity) => client.patch('/crm/activities/' + id, activity),
 };
 
 export default api;
