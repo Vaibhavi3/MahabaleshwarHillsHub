@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
@@ -124,7 +124,7 @@ const CRM = () => {
     }
   };
 
-  const pipelineTotal = useMemo(() => Object.values(overview?.pipeline || {}).reduce((sum, item) => sum + Number(item.value || 0), 0), [overview]);
+  const pipelineTotal = Object.values(overview?.pipeline || {}).reduce((sum, item) => sum + Number(item.value || 0), 0);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
