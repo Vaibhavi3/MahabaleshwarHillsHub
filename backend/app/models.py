@@ -156,3 +156,36 @@ class Payment(Base):
     response_data = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class CRMLead(Base):
+    __tablename__ = "crm_leads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    first_name = Column(String(80), nullable=False)
+    last_name = Column(String(80))
+    email = Column(String(150), index=True)
+    phone = Column(String(30))
+    company = Column(String(150))
+    source = Column(String(50), default="website")
+    status = Column(String(30), default="new", index=True)
+    value = Column(Float, default=0.0)
+    notes = Column(Text)
+    assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class CRMActivity(Base):
+    __tablename__ = "crm_activities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    lead_id = Column(Integer, ForeignKey("crm_leads.id"), nullable=True, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    type = Column(String(30), default="note")
+    title = Column(String(150), nullable=False)
+    description = Column(Text)
+    due_date = Column(DateTime(timezone=True), nullable=True)
+    completed = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
