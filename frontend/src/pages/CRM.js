@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
@@ -31,22 +31,22 @@ const CRM = () => {
   const [leadForm, setLeadForm] = useState({ first_name: '', last_name: '', email: '', phone: '', company: '', source: 'website', value: '', notes: '' });
   const [taskForm, setTaskForm] = useState({ title: '', description: '', due_date: '', customer_id: '', lead_id: '' });
 
-  const loadOverview = async () => {
+  const loadOverview = useCallback(async () => {
     const response = await api.getCRMOverview();
     setOverview(response.data);
-  };
-  const loadCustomers = async () => {
+  }, []);
+  const loadCustomers = useCallback(async () => {
     const response = await api.getCRMCustomers({ search: customerSearch || undefined });
     setCustomers(response.data);
-  };
-  const loadLeads = async () => {
+  }, [customerSearch]);
+  const loadLeads = useCallback(async () => {
     const response = await api.getCRMLeads();
     setLeads(response.data);
-  };
-  const loadActivities = async () => {
+  }, []);
+  const loadActivities = useCallback(async () => {
     const response = await api.getCRMActivities({ open_only: tab === 'tasks' });
     setActivities(response.data);
-  };
+  }, [tab]);
 
   useEffect(() => {
     if (!user?.is_admin) return;
@@ -54,7 +54,7 @@ const CRM = () => {
     Promise.all([loadOverview(), loadCustomers(), loadLeads(), loadActivities()])
       .catch((error) => toast.error(error.response?.data?.detail || 'Could not load CRM data'))
       .finally(() => setLoading(false));
-  }, [user, customerSearch, tab]);
+  }, [user, loadOverview, loadCustomers, loadLeads, loadActivities]);
 
   if (!user?.is_admin) return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Admin access only</div>;
   if (loading && !overview) return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Loading CRM...</div>;
