@@ -233,15 +233,21 @@ const ProductDetail = () => {
 
           <div className="border-t border-gray-200 pt-6 grid grid-cols-3 gap-4 text-center">
             <div className="flex flex-col items-center gap-2 text-xs text-muted">
-              <FiTruck size={20} className="text-ink" />
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                <FiTruck size={18} className="text-brand" />
+              </div>
               Free Shipping
             </div>
             <div className="flex flex-col items-center gap-2 text-xs text-muted">
-              <FiRefreshCw size={20} className="text-ink" />
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                <FiRefreshCw size={18} className="text-brand" />
+              </div>
               Easy Returns
             </div>
             <div className="flex flex-col items-center gap-2 text-xs text-muted">
-              <FiShield size={20} className="text-ink" />
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                <FiShield size={18} className="text-brand" />
+              </div>
               Secure Payment
             </div>
           </div>

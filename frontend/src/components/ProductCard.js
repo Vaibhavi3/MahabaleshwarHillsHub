@@ -48,7 +48,7 @@ const ProductCard = ({ product }) => {
         <img
           src={getImageUrl(product.image_url) || 'https://via.placeholder.com/300x400'}
           alt={product.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <button
           onClick={handleWishlist}

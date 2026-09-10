@@ -39,6 +39,9 @@ export const api = {
   getProducts: (skip = 0, limit = 10, category = null) => {
     return client.get('/products', { params: { skip, limit, category } });
   },
+  getProductsCount: (category = null) => {
+    return client.get('/products/count', { params: { category } });
+  },
   getProductById: (id) => {
     return client.get(`/products/${id}`);
   },
