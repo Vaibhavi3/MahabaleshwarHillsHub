@@ -123,7 +123,7 @@ const ProductDetail = () => {
               </Link>
             ))}
           </div>
-          <div className="flex-1 bg-surface rounded overflow-hidden aspect-[3/4]">
+          <div className="flex-1 bg-surface rounded overflow-hidden aspect-square">
             <img
               src={getImageUrl(product.image_url) || 'https://via.placeholder.com/500'}
               alt={product.name}

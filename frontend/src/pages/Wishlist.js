@@ -37,7 +37,7 @@ const Wishlist = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
         {items.map((item) => (
           <div key={item.id} className="bg-white">
-            <Link to={`/products/${item.id}`} className="block relative aspect-[3/4] bg-surface overflow-hidden mb-3">
+            <Link to={`/products/${item.id}`} className="block relative aspect-square bg-surface overflow-hidden mb-3">
               <img
                 src={getImageUrl(item.image_url) || 'https://via.placeholder.com/300x400'}
                 alt={item.name}

@@ -44,7 +44,7 @@ const ProductCard = ({ product }) => {
 
   return (
     <Link to={`/products/${product.id}`} className="product-card bg-white block group">
-      <div className="relative aspect-[3/4] bg-surface overflow-hidden">
+      <div className="relative aspect-square bg-surface overflow-hidden">
         <img
           src={getImageUrl(product.image_url) || 'https://via.placeholder.com/300x400'}
           alt={product.name}
