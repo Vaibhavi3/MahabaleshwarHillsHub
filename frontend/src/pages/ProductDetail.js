@@ -111,14 +111,14 @@ const ProductDetail = () => {
               <Link
                 key={t.id}
                 to={`/products/${t.id}`}
-                className={`w-16 h-16 rounded overflow-hidden border-2 ${
+                className={`w-16 h-16 rounded overflow-hidden border-2 bg-surface ${
                   t.id === product.id ? 'border-brand' : 'border-transparent hover:border-gray-300'
                 }`}
               >
                 <img
                   src={getImageUrl(t.image_url) || 'https://via.placeholder.com/64'}
                   alt={t.color}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </Link>
             ))}
@@ -159,12 +159,12 @@ const ProductDetail = () => {
                 <Link
                   to={`/products/${product.id}`}
                   title={product.color}
-                  className="w-14 h-14 rounded-lg overflow-hidden border-2 border-brand ring-2 ring-brand-light"
+                  className="w-14 h-14 rounded-lg overflow-hidden border-2 border-brand ring-2 ring-brand-light bg-surface"
                 >
                   <img
                     src={getImageUrl(product.image_url) || 'https://via.placeholder.com/60'}
                     alt={product.color}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </Link>
                 {variants.map((v) => (
@@ -172,12 +172,12 @@ const ProductDetail = () => {
                     key={v.id}
                     to={`/products/${v.id}`}
                     title={v.color}
-                    className="w-14 h-14 rounded-lg overflow-hidden border-2 border-transparent hover:border-gray-300"
+                    className="w-14 h-14 rounded-lg overflow-hidden border-2 border-transparent hover:border-gray-300 bg-surface"
                   >
                     <img
                       src={getImageUrl(v.image_url) || 'https://via.placeholder.com/60'}
                       alt={v.color}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </Link>
                 ))}

@@ -32,7 +32,7 @@ const Cart = () => {
             <img
               src={getImageUrl(item.image_url) || 'https://via.placeholder.com/100'}
               alt={item.name}
-              className="w-20 h-20 object-cover rounded"
+              className="w-20 h-20 object-contain bg-surface rounded"
             />
             <div className="flex-1">
               <h3 className="font-semibold">{item.name}</h3>
