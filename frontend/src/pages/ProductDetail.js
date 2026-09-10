@@ -105,7 +105,7 @@ const ProductDetail = () => {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-start">
           <div className="hidden sm:flex flex-col gap-3 shrink-0">
             {thumbs.slice(0, 6).map((t) => (
               <Link
@@ -123,11 +123,11 @@ const ProductDetail = () => {
               </Link>
             ))}
           </div>
-          <div className="flex-1 bg-surface rounded overflow-hidden aspect-square">
+          <div className="flex-1 bg-surface rounded overflow-hidden">
             <img
               src={getImageUrl(product.image_url) || 'https://via.placeholder.com/500'}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-auto block"
             />
           </div>
         </div>
@@ -266,7 +266,7 @@ const ProductDetail = () => {
       {similar.length > 0 && (
         <div className="mt-16">
           <h2 className="text-xl font-extrabold text-ink mb-6">You May Also Like</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 items-start">
             {similar.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

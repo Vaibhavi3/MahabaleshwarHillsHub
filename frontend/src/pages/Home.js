@@ -181,7 +181,7 @@ const Home = () => {
         {loading ? (
           <div className="text-center text-muted py-12">Loading...</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 items-start">
             {bestsellers.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -199,7 +199,7 @@ const Home = () => {
         {loading ? (
           <div className="text-center text-muted py-12">Loading...</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 items-start">
             {newArrivals.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

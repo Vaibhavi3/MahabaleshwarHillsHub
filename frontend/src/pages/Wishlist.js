@@ -34,14 +34,14 @@ const Wishlist = () => {
       <h1 className="text-2xl font-extrabold text-ink mb-8">
         My Wishlist <span className="text-muted font-normal text-base">({items.length})</span>
       </h1>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 items-start">
         {items.map((item) => (
           <div key={item.id} className="bg-white">
-            <Link to={`/products/${item.id}`} className="block relative aspect-square bg-surface overflow-hidden mb-3">
+            <Link to={`/products/${item.id}`} className="block relative bg-surface overflow-hidden mb-3">
               <img
                 src={getImageUrl(item.image_url) || 'https://via.placeholder.com/300x400'}
                 alt={item.name}
-                className="w-full h-full object-cover"
+                className="w-full h-auto block"
               />
             </Link>
             <p className="text-sm text-ink font-semibold truncate mb-1">{item.name}</p>
