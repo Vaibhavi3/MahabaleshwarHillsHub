@@ -12,7 +12,7 @@ router = APIRouter()
 def get_products(
     db: Session = Depends(get_db),
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1, le=500),
     category: str = Query(None)
 ):
     """Get all products with optional filtering"""
