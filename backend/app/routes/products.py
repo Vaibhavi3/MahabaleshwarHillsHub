@@ -24,6 +24,15 @@ def get_products(
     return query.offset(skip).limit(limit).all()
 
 
+@router.get("/products/count")
+def get_products_count(db: Session = Depends(get_db), category: str = Query(None)):
+    """Get the total product count, optionally filtered by category"""
+    query = db.query(func.count(models.Product.id))
+    if category:
+        query = query.filter(models.Product.category == category)
+    return {"total": query.scalar()}
+
+
 @router.get("/products/search", response_model=list[schemas.ProductResponse])
 def search_products(
     q: str = Query(..., min_length=1),
