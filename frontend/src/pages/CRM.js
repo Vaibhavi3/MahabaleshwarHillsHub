@@ -19,7 +19,7 @@ const Metric = ({ label, value, detail }) => (
 );
 
 const CRM = () => {
-  const { user } = useSelector((state) => state.auth);
+  const { user, token } = useSelector((state) => state.auth);
   const [tab, setTab] = useState('overview');
   const [overview, setOverview] = useState(null);
   const [customers, setCustomers] = useState([]);
@@ -56,6 +56,7 @@ const CRM = () => {
       .finally(() => setLoading(false));
   }, [user, loadOverview, loadCustomers, loadLeads, loadActivities]);
 
+  if (token && !user) return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Restoring your admin session...</div>;
   if (!user?.is_admin) return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Admin access only</div>;
   if (loading && !overview) return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Loading CRM...</div>;
 

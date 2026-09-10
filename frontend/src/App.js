@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import api from './api/axiosConfig';
+import { logout, setUser } from './features/authSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -16,6 +19,16 @@ import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+  const dispatch = useDispatch();
+  const { token, user } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (!token || user) return;
+    api.getCurrentUser()
+      .then((response) => dispatch(setUser({ user: response.data, token })))
+      .catch(() => dispatch(logout()));
+  }, [dispatch, token, user]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
