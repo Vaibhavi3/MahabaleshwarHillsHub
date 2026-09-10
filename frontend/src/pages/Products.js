@@ -48,7 +48,7 @@ const Products = () => {
         if (searchQuery) {
           productsResponse = await api.searchProducts(searchQuery);
         } else {
-          productsResponse = await api.getProducts(0, 100, selectedCategory || null);
+          productsResponse = await api.getProducts(0, 500, selectedCategory || null);
         }
         setAllProducts(productsResponse.data);
 
@@ -89,7 +89,7 @@ const Products = () => {
       const c = primaryColor(p.color);
       if (c) set.add(c);
     });
-    return Array.from(set).slice(0, 14);
+    return Array.from(set).sort();
   }, [allProducts]);
 
   const filteredProducts = useMemo(() => {
