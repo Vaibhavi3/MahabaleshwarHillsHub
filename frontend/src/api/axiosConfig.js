@@ -54,6 +54,9 @@ export const api = {
   getSimilarProducts: (id, limit = 8) => {
     return client.get(`/products/${id}/similar`, { params: { limit } });
   },
+  getFrequentlyBoughtTogether: (id, limit = 4) => {
+    return client.get(`/products/${id}/frequently-bought-together`, { params: { limit } });
+  },
   createProduct: (product) => {
     return client.post('/products', product);
   },
@@ -137,6 +140,28 @@ export const api = {
 
   getPaymentStatus: (orderId) => {
     return client.get(`/payments/${orderId}`);
+  },
+
+  // Coupons
+  validateCoupon: (code, orderTotal) => {
+    return client.post('/coupons/validate', { code, order_total: orderTotal });
+  },
+  getCoupons: () => {
+    return client.get('/coupons');
+  },
+  createCoupon: (coupon) => {
+    return client.post('/coupons', coupon);
+  },
+  updateCoupon: (id, coupon) => {
+    return client.put(`/coupons/${id}`, coupon);
+  },
+  deleteCoupon: (id) => {
+    return client.delete(`/coupons/${id}`);
+  },
+
+  // Recommendations
+  getRecommendationsForYou: (limit = 8) => {
+    return client.get('/recommendations/for-you', { params: { limit } });
   },
 };
 

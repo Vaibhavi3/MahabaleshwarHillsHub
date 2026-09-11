@@ -95,7 +95,7 @@ const RazorpayButton = ({ order, onSuccess }) => {
 };
 
 const Checkout = () => {
-  const { items } = useSelector((state) => state.cart);
+  const { items, couponCode, discountAmount } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -106,6 +106,7 @@ const Checkout = () => {
   const [address, setAddress] = useState({ address: '', city: '', state: '', postal_code: '', country: 'India' });
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = Math.max(0, subtotal - discountAmount);
 
   const handleChange = (e) => setAddress({ ...address, [e.target.name]: e.target.value });
 
@@ -121,7 +122,11 @@ const Checkout = () => {
       }
 
       const shipping_address = `${address.address}, ${address.city}, ${address.state} ${address.postal_code}, ${address.country}`;
-      const response = await api.createOrder({ shipping_address, payment_method: paymentMethod });
+      const response = await api.createOrder({
+        shipping_address,
+        payment_method: paymentMethod,
+        coupon_code: couponCode || undefined,
+      });
       setOrder(response.data);
       setStep('payment');
     } catch (error) {
@@ -217,9 +222,21 @@ const Checkout = () => {
               </div>
             ))}
           </div>
+          {couponCode && (
+            <div className="space-y-1 mb-2 pb-2 border-b">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Subtotal</span>
+                <span>₹{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-emerald-700 font-semibold">
+                <span>Coupon ({couponCode})</span>
+                <span>- ₹{discountAmount.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
           <div className="border-t pt-4 flex justify-between font-bold text-lg">
             <span>Total</span>
-            <span>₹{subtotal.toFixed(2)}</span>
+            <span>₹{total.toFixed(2)}</span>
           </div>
         </div>
       </div>

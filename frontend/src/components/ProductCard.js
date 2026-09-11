@@ -14,9 +14,12 @@ const ProductCard = ({ product }) => {
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const wishlisted = wishlistItems.some((item) => item.id === product.id);
   const rating = product.rating || 0;
+  const outOfStock = product.stock <= 0;
+  const lowStock = !outOfStock && product.stock <= 5;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
+    if (outOfStock) return;
     dispatch(
       addToCart({
         id: product.id,
@@ -60,14 +63,24 @@ const ProductCard = ({ product }) => {
           />
         </button>
 
-        <div className="product-card-overlay absolute bottom-0 left-0 right-0 opacity-0 transition-opacity duration-200">
-          <button
-            onClick={handleAddToCart}
-            className="w-full bg-ink text-white text-xs font-bold uppercase tracking-wide py-2.5 hover:bg-black transition-colors"
-          >
-            Add to Bag
-          </button>
-        </div>
+        {outOfStock && (
+          <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+            <span className="bg-ink text-white text-xs font-bold uppercase tracking-wide px-4 py-1.5 rounded-full">
+              Out of Stock
+            </span>
+          </div>
+        )}
+
+        {!outOfStock && (
+          <div className="product-card-overlay absolute bottom-0 left-0 right-0 opacity-0 transition-opacity duration-200">
+            <button
+              onClick={handleAddToCart}
+              className="w-full bg-ink text-white text-xs font-bold uppercase tracking-wide py-2.5 hover:bg-black transition-colors"
+            >
+              Add to Bag
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="pt-3 pb-4 px-0.5">
@@ -81,6 +94,9 @@ const ProductCard = ({ product }) => {
             </span>
           )}
         </div>
+        {lowStock && (
+          <p className="text-xs font-semibold text-brand mt-1">Only {product.stock} left!</p>
+        )}
       </div>
     </Link>
   );

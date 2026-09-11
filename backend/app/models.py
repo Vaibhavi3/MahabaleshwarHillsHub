@@ -87,11 +87,14 @@ class CartItem(Base):
 
 class Order(Base):
     __tablename__ = "orders"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     order_number = Column(String(50), unique=True, index=True, nullable=False)
     total_amount = Column(Float, nullable=False)
+    subtotal_amount = Column(Float)
+    coupon_code = Column(String(50))
+    discount_amount = Column(Float, default=0)
     status = Column(String(20), default="pending")
     payment_status = Column(String(20), default="pending")
     payment_method = Column(String(50))
@@ -100,7 +103,7 @@ class Order(Base):
     notes = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
@@ -141,6 +144,23 @@ class Review(Base):
     
     user = relationship("User", back_populates="reviews")
     product = relationship("Product", back_populates="reviews")
+
+
+class Coupon(Base):
+    __tablename__ = "coupons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, index=True, nullable=False)
+    description = Column(String(255))
+    discount_type = Column(String(10), default="percent")  # "percent" or "flat"
+    discount_value = Column(Float, nullable=False)
+    min_order_value = Column(Float, default=0)
+    max_discount = Column(Float)  # cap for percent-type coupons
+    usage_limit = Column(Integer)  # null = unlimited
+    used_count = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    expires_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class Payment(Base):

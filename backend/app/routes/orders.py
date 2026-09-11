@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
+from app.routes.coupons import compute_discount
 import uuid
 
 router = APIRouter()
@@ -35,11 +36,26 @@ def create_order(
             products_by_id[item.product_id] = product
             total_amount += product.price * item.quantity
 
+        subtotal_amount = total_amount
+        discount_amount = 0
+        coupon_code = None
+        coupon = None
+        if order.coupon_code:
+            coupon = db.query(models.Coupon).filter(models.Coupon.code.ilike(order.coupon_code.strip())).first()
+            valid, message, discount_amount = compute_discount(coupon, subtotal_amount)
+            if not valid:
+                raise HTTPException(status_code=400, detail=message)
+            coupon_code = coupon.code
+            total_amount = round(subtotal_amount - discount_amount, 2)
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         db_order = models.Order(
             user_id=current_user.id,
             order_number=order_number,
             total_amount=total_amount,
+            subtotal_amount=subtotal_amount,
+            coupon_code=coupon_code,
+            discount_amount=discount_amount,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,
@@ -61,6 +77,9 @@ def create_order(
             product.stock -= item.quantity
 
         db.query(models.CartItem).filter(models.CartItem.cart_id == cart.id).delete()
+
+        if coupon:
+            coupon.used_count += 1
 
         db.commit()
     except HTTPException:

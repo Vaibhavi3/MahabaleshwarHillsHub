@@ -14,6 +14,7 @@ load_dotenv()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
@@ -77,6 +78,29 @@ async def get_current_user(
             detail="User account is disabled"
         )
 
+    return user
+
+
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
+    db: Session = Depends(get_db)
+) -> Optional[models.User]:
+    """Like get_current_user, but returns None instead of raising when no
+    (or an invalid) token is present - for endpoints that personalize when
+    logged in but still work for guests."""
+    if credentials is None:
+        return None
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+    except JWTError:
+        return None
+
+    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    if user is None or not user.is_active:
+        return None
     return user
 
 

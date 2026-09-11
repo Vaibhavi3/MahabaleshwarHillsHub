@@ -110,6 +110,7 @@ class OrderCreate(BaseModel):
     shipping_address: str
     payment_method: str
     notes: Optional[str] = None
+    coupon_code: Optional[str] = None
 
 class OrderUpdate(BaseModel):
     status: Optional[str] = None
@@ -122,14 +123,60 @@ class OrderResponse(BaseModel):
     order_number: str
     user_id: int
     total_amount: float
+    subtotal_amount: Optional[float] = None
+    coupon_code: Optional[str] = None
+    discount_amount: float = 0
     status: str
     payment_status: str
     payment_method: str
+    tracking_number: Optional[str] = None
     items: List[OrderItemResponse] = []
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+
+class CouponBase(BaseModel):
+    code: str = Field(..., min_length=3, max_length=50)
+    description: Optional[str] = None
+    discount_type: str = Field("percent", pattern="^(percent|flat)$")
+    discount_value: float = Field(..., gt=0)
+    min_order_value: float = Field(0, ge=0)
+    max_discount: Optional[float] = Field(None, gt=0)
+    usage_limit: Optional[int] = Field(None, gt=0)
+    is_active: bool = True
+    expires_at: Optional[datetime] = None
+
+class CouponCreate(CouponBase):
+    pass
+
+class CouponUpdate(BaseModel):
+    description: Optional[str] = None
+    discount_type: Optional[str] = Field(None, pattern="^(percent|flat)$")
+    discount_value: Optional[float] = Field(None, gt=0)
+    min_order_value: Optional[float] = Field(None, ge=0)
+    max_discount: Optional[float] = Field(None, gt=0)
+    usage_limit: Optional[int] = Field(None, gt=0)
+    is_active: Optional[bool] = None
+    expires_at: Optional[datetime] = None
+
+class CouponResponse(CouponBase):
+    id: int
+    used_count: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class CouponValidateRequest(BaseModel):
+    code: str
+    order_total: float = Field(..., ge=0)
+
+class CouponValidateResponse(BaseModel):
+    valid: bool
+    message: str
+    discount_amount: float = 0
+    final_total: float = 0
 
 class ReviewCreate(BaseModel):
     product_id: int

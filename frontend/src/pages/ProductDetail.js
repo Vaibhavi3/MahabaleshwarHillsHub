@@ -16,6 +16,7 @@ const ProductDetail = () => {
   const [reviews, setReviews] = useState([]);
   const [variants, setVariants] = useState([]);
   const [similar, setSimilar] = useState([]);
+  const [frequentlyBought, setFrequentlyBought] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState('');
@@ -31,14 +32,16 @@ const ProductDetail = () => {
         const productResponse = await api.getProductById(id);
         setProduct(productResponse.data);
 
-        const [reviewsResponse, variantsResponse, similarResponse] = await Promise.all([
+        const [reviewsResponse, variantsResponse, similarResponse, fbtResponse] = await Promise.all([
           api.getProductReviews(id),
           api.getProductVariants(id),
           api.getSimilarProducts(id),
+          api.getFrequentlyBoughtTogether(id),
         ]);
         setReviews(reviewsResponse.data);
         setVariants(variantsResponse.data);
         setSimilar(similarResponse.data);
+        setFrequentlyBought(fbtResponse.data);
       } catch (error) {
         toast.error('Failed to load product');
       } finally {
@@ -51,7 +54,7 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleAddToCart = () => {
-    if (product) {
+    if (product && product.stock > 0) {
       dispatch(
         addToCart({
           id: product.id,
@@ -97,6 +100,8 @@ const ProductDetail = () => {
 
   const avgRating = product.rating || 0;
   const thumbs = [product, ...variants];
+  const outOfStock = product.stock <= 0;
+  const lowStock = !outOfStock && product.stock <= 5;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -148,7 +153,14 @@ const ProductDetail = () => {
           <div className="flex items-baseline gap-3 mb-1">
             <span className="text-3xl font-extrabold text-ink">₹{product.price}</span>
           </div>
-          <p className="text-xs text-muted mb-6">inclusive of all taxes</p>
+          <p className="text-xs text-muted mb-1">inclusive of all taxes</p>
+          {outOfStock ? (
+            <p className="text-sm font-bold text-red-600 mb-6">Out of Stock</p>
+          ) : lowStock ? (
+            <p className="text-sm font-bold text-brand mb-6">Hurry! Only {product.stock} left</p>
+          ) : (
+            <div className="mb-6" />
+          )}
 
           {variants.length > 0 && (
             <div className="mb-6">
@@ -195,14 +207,19 @@ const ProductDetail = () => {
                 max={product.stock}
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                className="border border-gray-300 rounded px-3 py-1.5 w-16"
+                disabled={outOfStock}
+                className="border border-gray-300 rounded px-3 py-1.5 w-16 disabled:opacity-50"
               />
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-8">
-            <button onClick={handleAddToCart} className="btn-primary flex-1 py-3.5 text-base">
-              Add to Bag
+            <button
+              onClick={handleAddToCart}
+              disabled={outOfStock}
+              className="btn-primary flex-1 py-3.5 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {outOfStock ? 'Out of Stock' : 'Add to Bag'}
             </button>
             <button
               onClick={handleWishlist}
@@ -256,6 +273,18 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      {frequentlyBought.length > 0 && (
+        <div className="mt-16">
+          <h2 className="text-xl font-extrabold text-ink mb-1">Frequently Bought Together</h2>
+          <p className="text-sm text-muted mb-6">Based on what other customers purchased alongside this</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+            {frequentlyBought.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {similar.length > 0 && (
         <div className="mt-16">

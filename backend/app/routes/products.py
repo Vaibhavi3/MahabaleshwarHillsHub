@@ -86,6 +86,58 @@ def get_similar_products(
     )
 
 
+@router.get("/products/{product_id}/frequently-bought-together", response_model=list[schemas.ProductResponse])
+def get_frequently_bought_together(
+    product_id: int,
+    limit: int = Query(4, ge=1, le=10),
+    db: Session = Depends(get_db)
+):
+    """Item-item collaborative filtering: products most often bought in the
+    same order as this one, ranked by co-purchase frequency. Falls back to
+    same-category picks for products with no purchase history yet."""
+    order_ids_subq = (
+        db.query(models.OrderItem.order_id)
+        .filter(models.OrderItem.product_id == product_id)
+        .subquery()
+    )
+
+    co_purchased = (
+        db.query(
+            models.OrderItem.product_id,
+            func.count(func.distinct(models.OrderItem.order_id)).label("co_count"),
+        )
+        .filter(
+            models.OrderItem.order_id.in_(db.query(order_ids_subq.c.order_id)),
+            models.OrderItem.product_id != product_id,
+        )
+        .group_by(models.OrderItem.product_id)
+        .order_by(func.count(func.distinct(models.OrderItem.order_id)).desc())
+        .limit(limit)
+        .all()
+    )
+
+    product_ids = [row[0] for row in co_purchased]
+    products = []
+    if product_ids:
+        rows_by_id = {p.id: p for p in db.query(models.Product).filter(models.Product.id.in_(product_ids)).all()}
+        products = [rows_by_id[pid] for pid in product_ids if pid in rows_by_id]
+
+    if len(products) < limit:
+        product = db.query(models.Product).filter(models.Product.id == product_id).first()
+        if product:
+            exclude_ids = set(product_ids) | {product_id}
+            fallback = (
+                db.query(models.Product)
+                .filter(models.Product.category == product.category, models.Product.id.notin_(exclude_ids))
+                .order_by(models.Product.rating.desc())
+                .limit(limit - len(products))
+                .all()
+            )
+            products.extend(fallback)
+
+    return products
+
+
 @router.post("/products", response_model=schemas.ProductResponse)
 def create_product(
     product: schemas.ProductCreate,
