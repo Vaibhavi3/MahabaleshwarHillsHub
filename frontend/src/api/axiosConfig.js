@@ -36,11 +36,11 @@ client.interceptors.response.use(
 
 export const api = {
   // Products
-  getProducts: (skip = 0, limit = 10, category = null) => {
-    return client.get('/products', { params: { skip, limit, category } });
+  getProducts: (skip = 0, limit = 10, category = null, subcategory = null) => {
+    return client.get('/products', { params: { skip, limit, category, subcategory } });
   },
-  getProductsCount: (category = null) => {
-    return client.get('/products/count', { params: { category } });
+  getProductsCount: (category = null, subcategory = null) => {
+    return client.get('/products/count', { params: { category, subcategory } });
   },
   getProductById: (id) => {
     return client.get(`/products/${id}`);

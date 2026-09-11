@@ -4,6 +4,7 @@ import api from '../api/axiosConfig';
 import ProductCard from '../components/ProductCard';
 import { FiFilter, FiX, FiChevronDown } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 
 const CATEGORY_LABELS = {
   socks: 'Home Socks',
@@ -33,12 +34,18 @@ const Products = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const [selectedSubcategory, setSelectedSubcategory] = useState(searchParams.get('subcategory') || '');
   const [selectedPriceBuckets, setSelectedPriceBuckets] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
   const [sortBy, setSortBy] = useState('recommended');
   const [loading, setLoading] = useState(true);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const searchQuery = searchParams.get('q') || '';
+
+  useEffect(() => {
+    setSelectedCategory(searchParams.get('category') || '');
+    setSelectedSubcategory(searchParams.get('subcategory') || '');
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,7 +55,7 @@ const Products = () => {
         if (searchQuery) {
           productsResponse = await api.searchProducts(searchQuery);
         } else {
-          productsResponse = await api.getProducts(0, 500, selectedCategory || null);
+          productsResponse = await api.getProducts(0, 500, selectedCategory || null, selectedSubcategory || null);
         }
         setAllProducts(productsResponse.data);
 
@@ -62,12 +69,21 @@ const Products = () => {
     };
 
     fetchData();
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, selectedSubcategory, searchQuery]);
 
   const handleCategoryChange = (slug) => {
     setSelectedCategory(slug);
+    setSelectedSubcategory('');
     const params = {};
     if (slug) params.category = slug;
+    setSearchParams(params);
+  };
+
+  const handleSubcategoryChange = (slug) => {
+    const next = selectedSubcategory === slug ? '' : slug;
+    setSelectedSubcategory(next);
+    const params = { category: 'socks' };
+    if (next) params.subcategory = next;
     setSearchParams(params);
   };
 
@@ -158,6 +174,25 @@ const Products = () => {
         </div>
       </div>
 
+      {selectedCategory === 'socks' && (
+        <div>
+          <h3 className="font-bold text-ink uppercase text-sm mb-3 tracking-wide">Sock Type</h3>
+          <div className="space-y-2">
+            {SOCK_SUBCATEGORIES.map((sub) => (
+              <button
+                key={sub.slug}
+                onClick={() => handleSubcategoryChange(sub.slug)}
+                className={`block text-sm w-full text-left ${
+                  selectedSubcategory === sub.slug ? 'text-brand font-bold' : 'text-ink hover:text-brand'
+                }`}
+              >
+                {sub.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <h3 className="font-bold text-ink uppercase text-sm mb-3 tracking-wide">Price</h3>
         <div className="space-y-2">
@@ -207,10 +242,13 @@ const Products = () => {
       <div className="mb-6">
         <p className="text-xs text-muted uppercase tracking-wide mb-1">
           Home {selectedCategory && `/ ${CATEGORY_LABELS[selectedCategory] || selectedCategory}`}
+          {selectedSubcategory && ` / ${SOCK_SUBCATEGORIES.find((s) => s.slug === selectedSubcategory)?.label || selectedSubcategory}`}
         </p>
         <h1 className="text-2xl font-extrabold text-ink">
           {searchQuery
             ? `Results for "${searchQuery}"`
+            : selectedSubcategory
+            ? SOCK_SUBCATEGORIES.find((s) => s.slug === selectedSubcategory)?.label || selectedSubcategory
             : selectedCategory
             ? CATEGORY_LABELS[selectedCategory] || selectedCategory
             : 'All Products'}

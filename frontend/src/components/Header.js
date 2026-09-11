@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiSearch, FiPackage } from 'react-icons/fi';
 import { logout } from '../features/authSlice';
+import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 
 const NAV_LINKS = [
-  { to: '/products?category=socks', label: 'Home Socks' },
+  { to: '/products?category=socks', label: 'Home Socks', subcategories: SOCK_SUBCATEGORIES },
   { to: '/products?category=slidders', label: 'Home Slidders' },
   { to: '/products?category=bags', label: 'Handmade Bags' },
   { to: '/products', label: 'New Arrivals' },
@@ -45,11 +46,30 @@ const Header = () => {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-6 shrink-0">
-            {NAV_LINKS.map((link) => (
-              <Link key={link.label} to={link.to} className="nav-link whitespace-nowrap">
-                {link.label}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) =>
+              link.subcategories ? (
+                <div key={link.label} className="relative group py-3 -my-3">
+                  <Link to={link.to} className="nav-link whitespace-nowrap">
+                    {link.label}
+                  </Link>
+                  <div className="hidden group-hover:block absolute top-full left-0 bg-white border border-gray-200 rounded shadow-lg py-2 min-w-[160px] z-50">
+                    {link.subcategories.map((sub) => (
+                      <Link
+                        key={sub.slug}
+                        to={`/products?category=socks&subcategory=${sub.slug}`}
+                        className="block px-4 py-2 text-sm text-ink hover:bg-surface hover:text-brand whitespace-nowrap"
+                      >
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Link key={link.label} to={link.to} className="nav-link whitespace-nowrap">
+                  {link.label}
+                </Link>
+              )
+            )}
           </nav>
 
           <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-xl">
@@ -139,9 +159,25 @@ const Header = () => {
         <div className="lg:hidden bg-white border-t border-gray-200">
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
             {NAV_LINKS.map((link) => (
-              <Link key={link.label} to={link.to} className="nav-link" onClick={() => setIsOpen(false)}>
-                {link.label}
-              </Link>
+              <div key={link.label}>
+                <Link to={link.to} className="nav-link" onClick={() => setIsOpen(false)}>
+                  {link.label}
+                </Link>
+                {link.subcategories && (
+                  <div className="flex flex-col gap-2 pl-4 mt-2">
+                    {link.subcategories.map((sub) => (
+                      <Link
+                        key={sub.slug}
+                        to={`/products?category=socks&subcategory=${sub.slug}`}
+                        className="text-sm text-muted hover:text-brand"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
             {user && (
               <Link to="/orders" className="nav-link" onClick={() => setIsOpen(false)}>
