@@ -37,7 +37,8 @@ class ProductBase(BaseModel):
     price: float = Field(..., ge=0)
     stock: int = Field(..., ge=0)
     category: str
-    
+    subcategory: Optional[str] = None
+
 class ProductCreate(ProductBase):
     image_url: Optional[str] = None
     color: Optional[str] = None
@@ -50,6 +51,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     stock: Optional[int] = Field(None, ge=0)
     category: Optional[str] = None
+    subcategory: Optional[str] = None
     image_url: Optional[str] = None
     color: Optional[str] = None
     size: Optional[str] = None

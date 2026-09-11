@@ -46,6 +46,7 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock = Column(Integer, default=0)
     category = Column(String(50), index=True)
+    subcategory = Column(String(50), index=True)
     image_url = Column(String(500))
     color = Column(String(255))
     size = Column(String(255))
