@@ -12,16 +12,30 @@ router = APIRouter()
 def get_products(
     db: Session = Depends(get_db),
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
-    category: str = Query(None)
+    limit: int = Query(10, ge=1, le=500),
+    category: str = Query(None),
+    subcategory: str = Query(None)
 ):
     """Get all products with optional filtering"""
     query = db.query(models.Product)
-    
+
     if category:
         query = query.filter(models.Product.category == category)
-    
+    if subcategory:
+        query = query.filter(models.Product.subcategory == subcategory)
+
     return query.offset(skip).limit(limit).all()
+
+
+@router.get("/products/count")
+def get_products_count(db: Session = Depends(get_db), category: str = Query(None), subcategory: str = Query(None)):
+    """Get the total product count, optionally filtered by category/subcategory"""
+    query = db.query(func.count(models.Product.id))
+    if category:
+        query = query.filter(models.Product.category == category)
+    if subcategory:
+        query = query.filter(models.Product.subcategory == subcategory)
+    return {"total": query.scalar()}
 
 
 @router.get("/products/search", response_model=list[schemas.ProductResponse])

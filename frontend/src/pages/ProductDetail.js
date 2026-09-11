@@ -110,29 +110,29 @@ const ProductDetail = () => {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-start">
           <div className="hidden sm:flex flex-col gap-3 shrink-0">
             {thumbs.slice(0, 6).map((t) => (
               <Link
                 key={t.id}
                 to={`/products/${t.id}`}
-                className={`w-16 h-16 rounded overflow-hidden border-2 ${
+                className={`w-16 h-16 rounded overflow-hidden border-2 bg-surface ${
                   t.id === product.id ? 'border-brand' : 'border-transparent hover:border-gray-300'
                 }`}
               >
                 <img
                   src={getImageUrl(t.image_url) || 'https://via.placeholder.com/64'}
                   alt={t.color}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </Link>
             ))}
           </div>
-          <div className="flex-1 bg-surface rounded overflow-hidden aspect-[3/4]">
+          <div className="flex-1 bg-surface rounded overflow-hidden">
             <img
               src={getImageUrl(product.image_url) || 'https://via.placeholder.com/500'}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-auto block"
             />
           </div>
         </div>
@@ -171,12 +171,12 @@ const ProductDetail = () => {
                 <Link
                   to={`/products/${product.id}`}
                   title={product.color}
-                  className="w-14 h-14 rounded-lg overflow-hidden border-2 border-brand ring-2 ring-brand-light"
+                  className="w-14 h-14 rounded-lg overflow-hidden border-2 border-brand ring-2 ring-brand-light bg-surface"
                 >
                   <img
                     src={getImageUrl(product.image_url) || 'https://via.placeholder.com/60'}
                     alt={product.color}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </Link>
                 {variants.map((v) => (
@@ -184,12 +184,12 @@ const ProductDetail = () => {
                     key={v.id}
                     to={`/products/${v.id}`}
                     title={v.color}
-                    className="w-14 h-14 rounded-lg overflow-hidden border-2 border-transparent hover:border-gray-300"
+                    className="w-14 h-14 rounded-lg overflow-hidden border-2 border-transparent hover:border-gray-300 bg-surface"
                   >
                     <img
                       src={getImageUrl(v.image_url) || 'https://via.placeholder.com/60'}
                       alt={v.color}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </Link>
                 ))}
@@ -250,15 +250,21 @@ const ProductDetail = () => {
 
           <div className="border-t border-gray-200 pt-6 grid grid-cols-3 gap-4 text-center">
             <div className="flex flex-col items-center gap-2 text-xs text-muted">
-              <FiTruck size={20} className="text-ink" />
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                <FiTruck size={18} className="text-brand" />
+              </div>
               Free Shipping
             </div>
             <div className="flex flex-col items-center gap-2 text-xs text-muted">
-              <FiRefreshCw size={20} className="text-ink" />
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                <FiRefreshCw size={18} className="text-brand" />
+              </div>
               Easy Returns
             </div>
             <div className="flex flex-col items-center gap-2 text-xs text-muted">
-              <FiShield size={20} className="text-ink" />
+              <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                <FiShield size={18} className="text-brand" />
+              </div>
               Secure Payment
             </div>
           </div>
@@ -289,7 +295,7 @@ const ProductDetail = () => {
       {similar.length > 0 && (
         <div className="mt-16">
           <h2 className="text-xl font-extrabold text-ink mb-6">You May Also Like</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 items-start">
             {similar.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

@@ -36,8 +36,11 @@ client.interceptors.response.use(
 
 export const api = {
   // Products
-  getProducts: (skip = 0, limit = 10, category = null) => {
-    return client.get('/products', { params: { skip, limit, category } });
+  getProducts: (skip = 0, limit = 10, category = null, subcategory = null) => {
+    return client.get('/products', { params: { skip, limit, category, subcategory } });
+  },
+  getProductsCount: (category = null, subcategory = null) => {
+    return client.get('/products/count', { params: { category, subcategory } });
   },
   getProductById: (id) => {
     return client.get(`/products/${id}`);
@@ -163,6 +166,17 @@ export const api = {
   getRecommendationsForYou: (limit = 8) => {
     return client.get('/recommendations/for-you', { params: { limit } });
   },
+
+  // CRM
+  getCRMOverview: () => client.get('/crm/overview'),
+  getCRMCustomers: (params) => client.get('/crm/customers', { params }),
+  getCRMCustomer: (id) => client.get('/crm/customers/' + id),
+  getCRMLeads: (params) => client.get('/crm/leads', { params }),
+  createCRMLead: (lead) => client.post('/crm/leads', lead),
+  updateCRMLead: (id, lead) => client.patch('/crm/leads/' + id, lead),
+  getCRMActivities: (params) => client.get('/crm/activities', { params }),
+  createCRMActivity: (activity) => client.post('/crm/activities', activity),
+  updateCRMActivity: (id, activity) => client.patch('/crm/activities/' + id, activity),
 };
 
 export default api;

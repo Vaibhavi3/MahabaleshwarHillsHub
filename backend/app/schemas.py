@@ -37,7 +37,8 @@ class ProductBase(BaseModel):
     price: float = Field(..., ge=0)
     stock: int = Field(..., ge=0)
     category: str
-    
+    subcategory: Optional[str] = None
+
 class ProductCreate(ProductBase):
     image_url: Optional[str] = None
     color: Optional[str] = None
@@ -50,6 +51,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     stock: Optional[int] = Field(None, ge=0)
     category: Optional[str] = None
+    subcategory: Optional[str] = None
     image_url: Optional[str] = None
     color: Optional[str] = None
     size: Optional[str] = None
@@ -226,3 +228,102 @@ class TokenResponse(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+class CRMLeadCreate(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=80)
+    last_name: Optional[str] = Field(None, max_length=80)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=30)
+    company: Optional[str] = Field(None, max_length=150)
+    source: str = Field("website", max_length=50)
+    status: str = Field("new", max_length=30)
+    value: float = Field(0, ge=0)
+    notes: Optional[str] = None
+
+class CRMLeadUpdate(BaseModel):
+    first_name: Optional[str] = Field(None, min_length=1, max_length=80)
+    last_name: Optional[str] = Field(None, max_length=80)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=30)
+    company: Optional[str] = Field(None, max_length=150)
+    source: Optional[str] = Field(None, max_length=50)
+    status: Optional[str] = Field(None, max_length=30)
+    value: Optional[float] = Field(None, ge=0)
+    notes: Optional[str] = None
+
+class CRMLeadResponse(CRMLeadCreate):
+    id: int
+    assigned_to_id: Optional[int] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class CRMActivityCreate(BaseModel):
+    customer_id: Optional[int] = None
+    lead_id: Optional[int] = None
+    type: str = Field("note", max_length=30)
+    title: str = Field(..., min_length=1, max_length=150)
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+
+class CRMActivityUpdate(BaseModel):
+    type: Optional[str] = Field(None, max_length=30)
+    title: Optional[str] = Field(None, min_length=1, max_length=150)
+    description: Optional[str] = None
+    due_date: Optional[datetime] = None
+    completed: Optional[bool] = None
+
+class CRMActivityResponse(CRMActivityCreate):
+    id: int
+    created_by_id: int
+    completed: bool
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    customer_name: Optional[str] = None
+    lead_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class CRMCustomerSummary(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    city: Optional[str] = None
+    created_at: datetime
+    order_count: int = 0
+    lifetime_value: float = 0.0
+    last_order_at: Optional[datetime] = None
+
+class CRMCustomerOrder(BaseModel):
+    id: int
+    order_number: str
+    total_amount: float
+    status: str
+    payment_status: str
+    created_at: datetime
+
+class CRMCustomerDetail(BaseModel):
+    customer: CRMCustomerSummary
+    orders: List[CRMCustomerOrder] = []
+    activities: List[CRMActivityResponse] = []
+
+class CRMRecentOrder(BaseModel):
+    id: int
+    order_number: str
+    customer_name: str
+    total_amount: float
+    status: str
+    created_at: datetime
+
+class CRMOverviewResponse(BaseModel):
+    total_customers: int
+    total_orders: int
+    total_revenue: float
+    active_leads: int
+    open_tasks: int
+    recent_orders: List[CRMRecentOrder] = []
+    pipeline: dict
