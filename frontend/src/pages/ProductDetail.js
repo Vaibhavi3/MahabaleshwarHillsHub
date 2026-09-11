@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
 import { toggleWishlist } from '../features/wishlistSlice';
+import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
 import { FiHeart, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -22,6 +23,9 @@ const ProductDetail = () => {
   const [pincode, setPincode] = useState('');
   const [pincodeMsg, setPincodeMsg] = useState('');
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { token } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const wishlisted = product ? wishlistItems.some((item) => item.id === product.id) : false;
 
@@ -55,6 +59,7 @@ const ProductDetail = () => {
 
   const handleAddToCart = () => {
     if (product && product.stock > 0) {
+      if (!requireAuth(token, navigate, location, 'Please login or register to add items to your bag')) return;
       dispatch(
         addToCart({
           id: product.id,
@@ -70,6 +75,7 @@ const ProductDetail = () => {
 
   const handleWishlist = () => {
     if (!product) return;
+    if (!requireAuth(token, navigate, location, 'Please login or register to save items to your wishlist')) return;
     dispatch(
       toggleWishlist({
         id: product.id,

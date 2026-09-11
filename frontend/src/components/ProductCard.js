@@ -1,9 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getImageUrl } from '../api/axiosConfig';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
 import { toggleWishlist } from '../features/wishlistSlice';
+import { requireAuth } from '../utils/requireAuth';
 import { FiHeart } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -11,6 +12,9 @@ const BRAND = 'Ancles Home Socks';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { token } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const wishlisted = wishlistItems.some((item) => item.id === product.id);
   const rating = product.rating || 0;
@@ -20,6 +24,7 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     if (outOfStock) return;
+    if (!requireAuth(token, navigate, location, 'Please login or register to add items to your bag')) return;
     dispatch(
       addToCart({
         id: product.id,
@@ -34,6 +39,7 @@ const ProductCard = ({ product }) => {
 
   const handleWishlist = (e) => {
     e.preventDefault();
+    if (!requireAuth(token, navigate, location, 'Please login or register to save items to your wishlist')) return;
     dispatch(
       toggleWishlist({
         id: product.id,
