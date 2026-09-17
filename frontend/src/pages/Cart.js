@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon } from '../features/cartSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
-import { FiTrash2, FiTag, FiX } from 'react-icons/fi';
+import { FiTrash2, FiTag, FiX, FiTruck, FiShield } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const Cart = () => {
@@ -78,7 +78,7 @@ const Cart = () => {
             />
             <div className="flex-1">
               <h3 className="font-semibold">{item.name}</h3>
-              <p className="text-purple-600 font-bold">₹{item.price}</p>
+              <p className="text-ink font-bold">₹{item.price}</p>
             </div>
             <input
               type="number"
@@ -138,6 +138,14 @@ const Cart = () => {
         <div className="flex justify-between text-lg mb-4 border-t pt-4">
           <span>Total</span>
           <span className="font-bold">₹{total.toFixed(2)}</span>
+        </div>
+        <div className="flex flex-col gap-1.5 mb-4 text-xs text-muted">
+          <span className="flex items-center gap-1.5">
+            <FiTruck className="text-brand shrink-0" /> Free shipping on every order, no minimum
+          </span>
+          <span className="flex items-center gap-1.5">
+            <FiShield className="text-brand shrink-0" /> Pay securely online via Stripe or Razorpay
+          </span>
         </div>
         <button onClick={() => navigate('/checkout')} className="btn-primary w-full mb-2">
           Proceed to Checkout
