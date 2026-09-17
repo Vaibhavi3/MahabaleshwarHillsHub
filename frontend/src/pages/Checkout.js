@@ -5,6 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
+import { FiTruck, FiShield } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY || '');
@@ -190,6 +191,9 @@ const Checkout = () => {
                   Stripe (International Cards)
                 </label>
               </div>
+              <p className="flex items-center gap-1.5 text-xs text-muted -mt-2">
+                <FiShield className="text-brand shrink-0" /> All payments are processed securely online. Cash on Delivery is not available.
+              </p>
 
               <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
                 {submitting ? 'Please wait...' : 'Continue to Payment'}
@@ -237,6 +241,14 @@ const Checkout = () => {
           <div className="border-t pt-4 flex justify-between font-bold text-lg">
             <span>Total</span>
             <span>₹{total.toFixed(2)}</span>
+          </div>
+          <div className="flex flex-col gap-1.5 mt-4 pt-4 border-t text-xs text-muted">
+            <span className="flex items-center gap-1.5">
+              <FiTruck className="text-brand shrink-0" /> Free shipping on every order, no minimum
+            </span>
+            <span className="flex items-center gap-1.5">
+              <FiShield className="text-brand shrink-0" /> Secure checkout via Stripe or Razorpay
+            </span>
           </div>
         </div>
       </div>
