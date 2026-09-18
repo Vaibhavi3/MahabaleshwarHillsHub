@@ -97,7 +97,28 @@ const ProductDetail = () => {
   };
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-8 text-center text-muted">Loading...</div>;
+    return (
+      <div className="container mx-auto px-4 py-8 animate-pulse">
+        <div className="h-3 bg-surface rounded w-1/3 mb-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="flex gap-4 items-start">
+            <div className="hidden sm:flex flex-col gap-3 shrink-0">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="w-16 h-16 rounded bg-surface" />
+              ))}
+            </div>
+            <div className="flex-1 aspect-[3/4] bg-surface rounded" />
+          </div>
+          <div>
+            <div className="h-5 bg-surface rounded w-1/3 mb-3" />
+            <div className="h-4 bg-surface rounded w-2/3 mb-6" />
+            <div className="h-8 bg-surface rounded w-1/4 mb-6" />
+            <div className="h-11 bg-surface rounded w-full mb-3" />
+            <div className="h-11 bg-surface rounded w-full" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!product) {
