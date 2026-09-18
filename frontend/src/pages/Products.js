@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import ProductCard from '../components/ProductCard';
-import { FiFilter, FiX, FiChevronDown } from 'react-icons/fi';
+import { ProductGridSkeleton } from '../components/ProductCardSkeleton';
+import { FiFilter, FiX, FiChevronDown, FiSearch } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 
@@ -288,9 +289,44 @@ const Products = () => {
 
         <div className="flex-1">
           {loading ? (
-            <div className="text-center text-muted py-16">Loading...</div>
+            <ProductGridSkeleton count={8} />
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center text-muted py-16">No products found</div>
+            <div className="flex flex-col items-center text-center py-16 px-4">
+              <div className="w-14 h-14 rounded-full bg-surface flex items-center justify-center mb-4">
+                <FiSearch className="text-muted" size={24} />
+              </div>
+              {searchQuery ? (
+                <>
+                  <p className="font-bold text-ink mb-1">No results for &ldquo;{searchQuery}&rdquo;</p>
+                  <p className="text-sm text-muted mb-5 max-w-sm">
+                    Try a different search term, or check the spelling. You can also browse our categories below.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-bold text-ink mb-1">No products match these filters</p>
+                  <p className="text-sm text-muted mb-5 max-w-sm">
+                    Try removing a filter to see more results.
+                  </p>
+                </>
+              )}
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {(searchQuery || activeFilterCount > 0) && (
+                  <button
+                    onClick={() => {
+                      clearFilters();
+                      setSearchParams(selectedCategory ? { category: selectedCategory } : {});
+                    }}
+                    className="btn-secondary"
+                  >
+                    Clear {searchQuery ? 'Search' : 'Filters'}
+                  </button>
+                )}
+                <button onClick={() => handleCategoryChange('')} className="btn-primary">
+                  Browse All Products
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 items-start">
               {filteredProducts.map((product) => (

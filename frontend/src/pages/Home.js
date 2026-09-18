@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import ProductCard from '../components/ProductCard';
+import { ProductGridSkeleton } from '../components/ProductCardSkeleton';
 import toast from 'react-hot-toast';
 import { FiTruck, FiRefreshCw, FiShield, FiHeart } from 'react-icons/fi';
 
@@ -179,7 +180,7 @@ const Home = () => {
           </Link>
         </div>
         {loading ? (
-          <div className="text-center text-muted py-12">Loading...</div>
+          <ProductGridSkeleton count={8} className="md:grid-cols-3 lg:grid-cols-4" />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 items-start">
             {bestsellers.map((product) => (
@@ -197,7 +198,7 @@ const Home = () => {
           </Link>
         </div>
         {loading ? (
-          <div className="text-center text-muted py-12">Loading...</div>
+          <ProductGridSkeleton count={8} className="md:grid-cols-3 lg:grid-cols-4" />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 items-start">
             {newArrivals.map((product) => (
