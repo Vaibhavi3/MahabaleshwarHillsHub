@@ -179,11 +179,37 @@ const Header = () => {
                 )}
               </div>
             ))}
-            {user && (
-              <Link to="/orders" className="nav-link" onClick={() => setIsOpen(false)}>
-                Orders
-              </Link>
-            )}
+            <div className="border-t border-gray-200 pt-4 flex flex-col gap-3">
+              {user ? (
+                <>
+                  <p className="text-sm text-muted">
+                    Signed in as <span className="font-semibold text-ink">{user.username}</span>
+                  </p>
+                  <Link to="/orders" className="nav-link" onClick={() => setIsOpen(false)}>
+                    Orders
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-2 text-sm font-semibold uppercase text-ink hover:text-brand w-fit"
+                  >
+                    <FiLogOut />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/auth"
+                  className="flex items-center gap-2 text-sm font-semibold uppercase text-ink hover:text-brand w-fit"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <FiUser />
+                  Login / Register
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       )}
