@@ -79,14 +79,23 @@ const Cart = () => {
             <div className="flex-1">
               <h3 className="font-semibold">{item.name}</h3>
               <p className="text-ink font-bold">₹{item.price}</p>
+              {item.stock > 0 && item.stock <= 5 && (
+                <p className="text-xs font-semibold text-brand mt-1">Only {item.stock} left</p>
+              )}
             </div>
             <input
               type="number"
               min="1"
+              max={item.stock || undefined}
               value={item.quantity}
-              onChange={(e) =>
-                dispatch(updateCartItem({ id: item.id, quantity: Math.max(1, parseInt(e.target.value) || 1) }))
-              }
+              onChange={(e) => {
+                const requested = Math.max(1, parseInt(e.target.value) || 1);
+                const capped = item.stock ? Math.min(requested, item.stock) : requested;
+                if (item.stock && requested > item.stock) {
+                  toast.error(`Only ${item.stock} left in stock`);
+                }
+                dispatch(updateCartItem({ id: item.id, quantity: capped }));
+              }}
               className="border rounded px-3 py-1 w-16 text-center"
             />
             <span className="font-semibold w-24 text-right">₹{(item.price * item.quantity).toFixed(2)}</span>

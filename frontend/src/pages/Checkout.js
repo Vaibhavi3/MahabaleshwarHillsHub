@@ -5,8 +5,48 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
-import { FiTruck, FiShield } from 'react-icons/fi';
+import { FiTruck, FiShield, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+
+const CHECKOUT_STEPS = [
+  { key: 'address', label: 'Shipping' },
+  { key: 'payment', label: 'Payment' },
+];
+
+const CheckoutProgress = ({ step }) => {
+  const activeIndex = CHECKOUT_STEPS.findIndex((s) => s.key === step);
+  return (
+    <div className="flex items-center mb-8 max-w-sm">
+      {CHECKOUT_STEPS.map((s, i) => {
+        const isDone = i < activeIndex;
+        const isActive = i === activeIndex;
+        return (
+          <React.Fragment key={s.key}>
+            <div className="flex items-center gap-2 shrink-0">
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                  isDone || isActive ? 'bg-brand text-white' : 'bg-surface text-muted'
+                }`}
+              >
+                {isDone ? <FiCheck size={14} /> : i + 1}
+              </span>
+              <span
+                className={`text-sm font-bold uppercase tracking-wide ${
+                  isDone || isActive ? 'text-ink' : 'text-muted'
+                }`}
+              >
+                {s.label}
+              </span>
+            </div>
+            {i < CHECKOUT_STEPS.length - 1 && (
+              <div className={`flex-1 h-0.5 mx-3 ${isDone ? 'bg-brand' : 'bg-gray-200'}`} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+};
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY || '');
 
@@ -149,7 +189,8 @@ const Checkout = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+      <CheckoutProgress step={step} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white rounded-lg shadow p-6">
           {step === 'address' ? (

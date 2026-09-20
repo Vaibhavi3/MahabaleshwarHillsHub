@@ -66,6 +66,7 @@ const ProductDetail = () => {
           name: product.name,
           price: product.price,
           image_url: product.image_url,
+          stock: product.stock,
           quantity: parseInt(quantity),
         })
       );
@@ -82,6 +83,7 @@ const ProductDetail = () => {
         name: product.name,
         price: product.price,
         image_url: product.image_url,
+        stock: product.stock,
       })
     );
     toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
