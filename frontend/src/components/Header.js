@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiSearch, FiPackage } from 'react-icons/fi';
+import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage } from 'react-icons/fi';
 import { logout } from '../features/authSlice';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
+import SearchBox from './SearchBox';
 
 const NAV_LINKS = [
   { to: '/products?category=socks', label: 'Home Socks', subcategories: SOCK_SUBCATEGORIES },
@@ -14,22 +15,13 @@ const NAV_LINKS = [
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState('');
   const { user } = useSelector((state) => state.auth);
   const { items } = useSelector((state) => state.cart);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const handleLogout = () => {
     dispatch(logout());
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (query.trim()) {
-      navigate(`/products?q=${encodeURIComponent(query.trim())}`);
-    }
   };
 
   return (
@@ -72,18 +64,7 @@ const Header = () => {
             )}
           </nav>
 
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-xl">
-            <div className="flex items-center w-full bg-surface rounded px-4 py-2.5 gap-3">
-              <FiSearch className="text-muted text-lg shrink-0" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search for socks, slidders, bags..."
-                className="bg-transparent w-full text-sm outline-none placeholder:text-muted"
-              />
-            </div>
-          </form>
+          <SearchBox className="hidden md:flex flex-1 max-w-xl" />
 
           <div className="flex items-center gap-5 ml-auto shrink-0">
             {user ? (
@@ -141,18 +122,7 @@ const Header = () => {
           </div>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="md:hidden pb-3">
-          <div className="flex items-center w-full bg-surface rounded px-4 py-2.5 gap-3">
-            <FiSearch className="text-muted text-lg shrink-0" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for socks, slidders, bags..."
-              className="bg-transparent w-full text-sm outline-none placeholder:text-muted"
-            />
-          </div>
-        </form>
+        <SearchBox className="md:hidden pb-3" />
       </div>
 
       {isOpen && (
