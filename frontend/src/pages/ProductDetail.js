@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { useDispatch, useSelector } from 'react-redux';
@@ -22,6 +22,8 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState('');
   const [pincodeMsg, setPincodeMsg] = useState('');
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const buyBoxObserverRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,6 +58,26 @@ const ProductDetail = () => {
     fetchProductDetails();
     window.scrollTo({ top: 0 });
   }, [id]);
+
+  // Callback ref (not a plain ref + effect): the buy box only mounts once
+  // loading finishes, on a later render than the one that sets `product`,
+  // so an effect keyed on `product` would attach before the node exists.
+  const buyBoxRef = useCallback((node) => {
+    if (buyBoxObserverRef.current) {
+      buyBoxObserverRef.current.disconnect();
+      buyBoxObserverRef.current = null;
+    }
+    if (node) {
+      const observer = new IntersectionObserver(
+        ([entry]) => setShowStickyBar(!entry.isIntersecting),
+        { rootMargin: '-64px 0px 0px 0px' }
+      );
+      observer.observe(node);
+      buyBoxObserverRef.current = observer;
+    }
+  }, []);
+
+  useEffect(() => () => buyBoxObserverRef.current && buyBoxObserverRef.current.disconnect(), []);
 
   const handleAddToCart = () => {
     if (product && product.stock > 0) {
@@ -133,7 +155,7 @@ const ProductDetail = () => {
   const lowStock = !outOfStock && product.stock <= 5;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className={`container mx-auto px-4 py-8 ${showStickyBar ? 'pb-24 md:pb-8' : ''}`}>
       <p className="text-xs text-muted uppercase tracking-wide mb-6">
         Home / {product.category} / <span className="text-ink">{product.name}</span>
       </p>
@@ -242,7 +264,7 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 mb-8">
+          <div ref={buyBoxRef} className="flex flex-col sm:flex-row gap-3 mb-8">
             <button
               onClick={handleAddToCart}
               disabled={outOfStock}
@@ -352,6 +374,28 @@ const ProductDetail = () => {
           <p className="text-muted text-sm">No reviews yet</p>
         )}
       </div>
+
+      {showStickyBar && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(40,44,63,0.1)] px-4 py-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-ink truncate">₹{product.price}</p>
+            {outOfStock ? (
+              <p className="text-xs font-bold text-red-600">Out of Stock</p>
+            ) : lowStock ? (
+              <p className="text-xs font-bold text-brand">Only {product.stock} left</p>
+            ) : (
+              <p className="text-xs text-muted">Free Shipping</p>
+            )}
+          </div>
+          <button
+            onClick={handleAddToCart}
+            disabled={outOfStock}
+            className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {outOfStock ? 'Out of Stock' : 'Add to Bag'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
