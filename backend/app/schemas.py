@@ -220,6 +220,20 @@ class PaymentResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class StockAlertStatus(BaseModel):
+    subscribed: bool
+
+
+class StockAlertResponse(BaseModel):
+    id: int
+    product_id: int
+    notified: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

@@ -6,7 +6,7 @@ import { addToCart } from '../features/cartSlice';
 import { toggleWishlist } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
-import { FiHeart, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
+import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const BRAND = 'Ancles Home Socks';
@@ -23,6 +23,8 @@ const ProductDetail = () => {
   const [pincode, setPincode] = useState('');
   const [pincodeMsg, setPincodeMsg] = useState('');
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [notifySubscribed, setNotifySubscribed] = useState(false);
+  const [notifyBusy, setNotifyBusy] = useState(false);
   const buyBoxObserverRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -48,6 +50,17 @@ const ProductDetail = () => {
         setVariants(variantsResponse.data);
         setSimilar(similarResponse.data);
         setFrequentlyBought(fbtResponse.data);
+
+        if (productResponse.data.stock <= 0) {
+          try {
+            const statusResponse = await api.getStockAlertStatus(id);
+            setNotifySubscribed(statusResponse.data.subscribed);
+          } catch {
+            setNotifySubscribed(false);
+          }
+        } else {
+          setNotifySubscribed(false);
+        }
       } catch (error) {
         toast.error('Failed to load product');
       } finally {
@@ -109,6 +122,27 @@ const ProductDetail = () => {
       })
     );
     toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+  };
+
+  const handleNotifyMe = async () => {
+    if (!product || notifyBusy) return;
+    if (!requireAuth(token, navigate, location, "Please login to get notified when this item's back")) return;
+    setNotifyBusy(true);
+    try {
+      if (notifySubscribed) {
+        await api.unsubscribeStockAlert(product.id);
+        setNotifySubscribed(false);
+        toast.success("We won't notify you for this item");
+      } else {
+        await api.subscribeStockAlert(product.id);
+        setNotifySubscribed(true);
+        toast.success("We'll email you when it's back in stock");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Something went wrong, please try again');
+    } finally {
+      setNotifyBusy(false);
+    }
   };
 
   const handleCheckPincode = (e) => {
@@ -264,14 +298,28 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          <div ref={buyBoxRef} className="flex flex-col sm:flex-row gap-3 mb-8">
-            <button
-              onClick={handleAddToCart}
-              disabled={outOfStock}
-              className="btn-primary flex-1 py-3.5 text-base disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {outOfStock ? 'Out of Stock' : 'Add to Bag'}
-            </button>
+          <div ref={buyBoxRef} className={`flex flex-col sm:flex-row gap-3 ${outOfStock ? 'mb-2' : 'mb-8'}`}>
+            {outOfStock ? (
+              <button
+                onClick={handleNotifyMe}
+                disabled={notifyBusy}
+                className={`flex-1 py-3.5 text-base flex items-center justify-center gap-2 rounded font-bold uppercase tracking-wide disabled:opacity-60 ${
+                  notifySubscribed
+                    ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-600'
+                    : 'btn-primary'
+                }`}
+              >
+                {notifySubscribed ? <FiCheck /> : <FiBell />}
+                {notifySubscribed ? "We'll Notify You" : 'Notify Me When Available'}
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                className="btn-primary flex-1 py-3.5 text-base"
+              >
+                Add to Bag
+              </button>
+            )}
             <button
               onClick={handleWishlist}
               className="btn-secondary flex-1 py-3.5 text-base flex items-center justify-center gap-2"
@@ -280,6 +328,13 @@ const ProductDetail = () => {
               {wishlisted ? 'Wishlisted' : 'Wishlist'}
             </button>
           </div>
+          {outOfStock && (
+            <p className="text-xs text-muted mb-8">
+              {notifySubscribed
+                ? "You're on the list - we'll email you the moment it's restocked."
+                : "This piece is handmade in small batches and currently sold out. We'll email you the moment more are ready."}
+            </p>
+          )}
 
           <form onSubmit={handleCheckPincode} className="mb-8">
             <p className="text-sm font-bold text-ink uppercase mb-2">Check Delivery</p>
@@ -387,13 +442,24 @@ const ProductDetail = () => {
               <p className="text-xs text-muted">Free Shipping</p>
             )}
           </div>
-          <button
-            onClick={handleAddToCart}
-            disabled={outOfStock}
-            className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {outOfStock ? 'Out of Stock' : 'Add to Bag'}
-          </button>
+          {outOfStock ? (
+            <button
+              onClick={handleNotifyMe}
+              disabled={notifyBusy}
+              className={`px-6 py-3 rounded font-bold uppercase tracking-wide flex items-center gap-2 disabled:opacity-60 ${
+                notifySubscribed
+                  ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-600'
+                  : 'btn-primary'
+              }`}
+            >
+              {notifySubscribed ? <FiCheck /> : <FiBell />}
+              {notifySubscribed ? 'Notified' : 'Notify Me'}
+            </button>
+          ) : (
+            <button onClick={handleAddToCart} className="btn-primary px-8 py-3">
+              Add to Bag
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   const [page, setPage] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
+  const [alertCounts, setAlertCounts] = useState({});
 
   const loadProducts = useCallback(async () => {
     try {
@@ -34,6 +35,12 @@ const AdminDashboard = () => {
       setProducts(response.data);
     } catch (error) {
       toast.error('Failed to load products');
+    }
+    try {
+      const countsResponse = await api.getStockAlertPendingCounts();
+      setAlertCounts(countsResponse.data);
+    } catch (error) {
+      // non-critical - the product table just won't show waiting counts
     }
   }, [page]);
 
@@ -208,7 +215,17 @@ const AdminDashboard = () => {
                       <td className="p-3">{p.category}</td>
                       <td className="p-3">{p.color}</td>
                       <td className="p-3">₹{p.price}</td>
-                      <td className="p-3">{p.stock}</td>
+                      <td className="p-3">
+                        {p.stock}
+                        {p.stock <= 0 && alertCounts[String(p.id)] > 0 && (
+                          <span
+                            className="ml-2 inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full"
+                            title="Customers waiting for a back-in-stock email"
+                          >
+                            {alertCounts[String(p.id)]} waiting
+                          </span>
+                        )}
+                      </td>
                       <td className="p-3 flex gap-3">
                         <button onClick={() => handleEdit(p)} className="text-purple-600 hover:underline">
                           Edit

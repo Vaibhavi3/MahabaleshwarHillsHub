@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_admin_user
+from app.utils.email import send_email
 from sqlalchemy import or_, func
 
 router = APIRouter()
@@ -177,14 +178,52 @@ def update_product(
     db_product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if not db_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
+
+    was_out_of_stock = db_product.stock <= 0
+
     update_data = product_update.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_product, key, value)
-    
+
     db.commit()
     db.refresh(db_product)
+
+    if was_out_of_stock and db_product.stock > 0:
+        _notify_back_in_stock(db, db_product)
+
     return db_product
+
+
+def _notify_back_in_stock(db: Session, product: models.Product) -> None:
+    """Email everyone with a pending "notify me" alert for this product,
+    then mark them notified. Silently no-ops per-recipient if SMTP isn't
+    configured (send_email logs and returns False) - the alerts still get
+    marked so we don't keep retrying a permanently unconfigured mailer."""
+    pending_alerts = (
+        db.query(models.StockAlert)
+        .filter(
+            models.StockAlert.product_id == product.id,
+            models.StockAlert.notified.is_(False),
+        )
+        .all()
+    )
+    if not pending_alerts:
+        return
+
+    for alert in pending_alerts:
+        send_email(
+            alert.email,
+            f"Back in stock: {product.name}",
+            (
+                f"Good news - {product.name} is back in stock at Mahabaleshwar Hills Hub.\n\n"
+                f"It's handmade in small batches, so it may sell out again.\n\n"
+                f"https://mahabaleshwar-hills-hub-pi.vercel.app/products/{product.id}"
+            ),
+        )
+        alert.notified = True
+        alert.notified_at = func.now()
+
+    db.commit()
 
 
 @router.delete("/products/{product_id}")

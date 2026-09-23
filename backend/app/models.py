@@ -196,6 +196,21 @@ class CRMLead(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 
+class StockAlert(Base):
+    __tablename__ = "stock_alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    email = Column(String(150), nullable=False)
+    notified = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    notified_at = Column(DateTime(timezone=True))
+
+    product = relationship("Product")
+    user = relationship("User")
+
+
 class CRMActivity(Base):
     __tablename__ = "crm_activities"
 
