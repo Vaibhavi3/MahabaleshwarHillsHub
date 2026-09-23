@@ -11,3 +11,9 @@
 # git blobs instead of LFS - LFS bandwidth is a paid/metered quota that
 # broke Render deploys once the repo's LFS content grew past 1GB/month.
 backend/static/products/** -filter -diff -merge -text
+
+# Same reasoning applies to frontend build assets (e.g. the homepage
+# hero image): Vercel's build environment does not smudge Git LFS
+# pointers back into real files, so an LFS-tracked asset here silently
+# ships as a tiny pointer stub instead of the actual image.
+frontend/src/assets/** -filter -diff -merge -text
