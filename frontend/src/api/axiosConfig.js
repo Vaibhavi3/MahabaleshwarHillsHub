@@ -167,6 +167,20 @@ export const api = {
     return client.get('/recommendations/for-you', { params: { limit } });
   },
 
+  // Stock alerts ("notify me" when back in stock)
+  getStockAlertStatus: (productId) => {
+    return client.get(`/products/${productId}/notify-me`);
+  },
+  subscribeStockAlert: (productId) => {
+    return client.post(`/products/${productId}/notify-me`);
+  },
+  unsubscribeStockAlert: (productId) => {
+    return client.delete(`/products/${productId}/notify-me`);
+  },
+  getStockAlertPendingCounts: () => {
+    return client.get('/stock-alerts/admin/pending-counts');
+  },
+
   // CRM
   getCRMOverview: () => client.get('/crm/overview'),
   getCRMCustomers: (params) => client.get('/crm/customers', { params }),
