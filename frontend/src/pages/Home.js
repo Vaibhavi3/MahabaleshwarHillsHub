@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import { ProductGridSkeleton } from '../components/ProductCardSkeleton';
 import toast from 'react-hot-toast';
 import { FiTruck, FiRefreshCw, FiShield, FiHeart } from 'react-icons/fi';
+import heroHills from '../assets/hero-hills.jpg';
 
 const CATEGORIES = [
   { slug: 'socks', label: 'Home Socks' },
@@ -73,28 +74,35 @@ const Home = () => {
 
   return (
     <div className="bg-white">
-      <section className="bg-gradient-to-r from-ink to-[#3d4159] text-white">
-        <div className="container mx-auto px-4 py-16 md:py-24 text-center">
+      <section
+        className="relative bg-ink text-white bg-cover bg-center"
+        style={{ backgroundImage: `url(${heroHills})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/70 to-ink/40" />
+        <div className="relative container mx-auto px-4 py-16 md:py-24 text-center">
           <p className="uppercase tracking-[0.3em] text-brand-light font-bold text-sm mb-3">
             Winter Comfort Edit
           </p>
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight drop-shadow-md">
             Cozy Feet, All Season
           </h1>
-          <p className="text-base md:text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-gray-200 mb-8 max-w-2xl mx-auto drop-shadow">
             Handmade socks, slidders &amp; bags crafted by Mahabaleshwar artisans - soft, colourful,
             made to last.
           </p>
           <Link to="/products" className="btn-primary text-base px-10 py-3.5 inline-block">
             Shop Now
           </Link>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8 text-xs md:text-sm font-semibold uppercase tracking-wide text-gray-300">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8 text-xs md:text-sm font-semibold uppercase tracking-wide text-gray-200">
             {catalogSize > 0 && <span>{catalogSize}+ Handmade Designs</span>}
-            <span className="hidden sm:inline text-gray-500">•</span>
+            <span className="hidden sm:inline text-gray-400">•</span>
             <span>Pan-India Delivery</span>
-            <span className="hidden sm:inline text-gray-500">•</span>
+            <span className="hidden sm:inline text-gray-400">•</span>
             <span>Secure Checkout</span>
           </div>
+          <p className="relative text-[10px] text-gray-400 mt-10">
+            Backdrop: the Mahabaleshwar hills &mdash; photo by Vinayaraj, Wikimedia Commons, CC BY-SA 4.0
+          </p>
         </div>
       </section>
 
