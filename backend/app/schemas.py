@@ -120,6 +120,14 @@ class OrderUpdate(BaseModel):
     tracking_number: Optional[str] = None
     notes: Optional[str] = None
 
+class OrderStatusHistoryResponse(BaseModel):
+    id: int
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class OrderResponse(BaseModel):
     id: int
     order_number: str
@@ -133,6 +141,7 @@ class OrderResponse(BaseModel):
     payment_method: str
     tracking_number: Optional[str] = None
     items: List[OrderItemResponse] = []
+    status_history: List[OrderStatusHistoryResponse] = []
     created_at: datetime
 
     class Config:
