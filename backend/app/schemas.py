@@ -199,10 +199,17 @@ class ReviewResponse(BaseModel):
     title: Optional[str]
     comment: Optional[str]
     helpful_count: int
+    verified_purchase: bool
+    reviewer_name: str
+    voted_helpful: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+
+class ReviewHelpfulResponse(BaseModel):
+    helpful_count: int
+    voted_helpful: bool
 
 class PaymentCreate(BaseModel):
     order_id: int

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -140,11 +140,24 @@ class Review(Base):
     title = Column(String(100))
     comment = Column(Text)
     helpful_count = Column(Integer, default=0)
+    verified_purchase = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     user = relationship("User", back_populates="reviews")
     product = relationship("Product", back_populates="reviews")
+    helpful_votes = relationship("ReviewHelpfulVote", cascade="all, delete-orphan")
+
+
+class ReviewHelpfulVote(Base):
+    __tablename__ = "review_helpful_votes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    review_id = Column(Integer, ForeignKey("reviews.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("review_id", "user_id", name="uq_review_helpful_vote"),)
 
 
 class Coupon(Base):
