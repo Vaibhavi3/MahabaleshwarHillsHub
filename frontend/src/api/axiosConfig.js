@@ -122,6 +122,12 @@ export const api = {
   createReview: (reviewData) => {
     return client.post('/reviews', reviewData);
   },
+  updateReview: (reviewId, reviewData) => {
+    return client.put(`/reviews/${reviewId}`, reviewData);
+  },
+  toggleReviewHelpful: (reviewId) => {
+    return client.post(`/reviews/${reviewId}/helpful`);
+  },
 
   // Payments - Stripe
   createPaymentIntent: (orderId) => {

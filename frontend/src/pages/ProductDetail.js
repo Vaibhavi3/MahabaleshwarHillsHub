@@ -6,7 +6,9 @@ import { addToCart } from '../features/cartSlice';
 import { toggleWishlist } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
-import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck } from 'react-icons/fi';
+import RatingBreakdown from '../components/RatingBreakdown';
+import WriteReviewModal from '../components/WriteReviewModal';
+import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck, FiStar, FiCheckCircle, FiThumbsUp } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const BRAND = 'Ancles Home Socks';
@@ -25,11 +27,13 @@ const ProductDetail = () => {
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [notifySubscribed, setNotifySubscribed] = useState(false);
   const [notifyBusy, setNotifyBusy] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [helpfulBusy, setHelpfulBusy] = useState(null);
   const buyBoxObserverRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token } = useSelector((state) => state.auth);
+  const { token, user } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const wishlisted = product ? wishlistItems.some((item) => item.id === product.id) : false;
 
@@ -142,6 +146,54 @@ const ProductDetail = () => {
       toast.error(error.response?.data?.detail || 'Something went wrong, please try again');
     } finally {
       setNotifyBusy(false);
+    }
+  };
+
+  const myReview = user ? reviews.find((r) => r.user_id === user.id) : null;
+
+  const handleWriteReviewClick = () => {
+    if (!requireAuth(token, navigate, location, 'Please login to write a review')) return;
+    setShowReviewModal(true);
+  };
+
+  const handleSubmitReview = async (payload) => {
+    try {
+      if (myReview) {
+        await api.updateReview(myReview.id, payload);
+        toast.success('Review updated');
+      } else {
+        await api.createReview({ product_id: product.id, ...payload });
+        toast.success('Thanks for your review!');
+      }
+      const [reviewsResponse, productResponse] = await Promise.all([
+        api.getProductReviews(id),
+        api.getProductById(id),
+      ]);
+      setReviews(reviewsResponse.data);
+      setProduct(productResponse.data);
+      setShowReviewModal(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Something went wrong, please try again');
+    }
+  };
+
+  const handleToggleHelpful = async (reviewId) => {
+    if (!requireAuth(token, navigate, location, 'Please login to mark a review helpful')) return;
+    if (helpfulBusy) return;
+    setHelpfulBusy(reviewId);
+    try {
+      const response = await api.toggleReviewHelpful(reviewId);
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewId
+            ? { ...r, helpful_count: response.data.helpful_count, voted_helpful: response.data.voted_helpful }
+            : r
+        )
+      );
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Something went wrong, please try again');
+    } finally {
+      setHelpfulBusy(null);
     }
   };
 
@@ -410,25 +462,80 @@ const ProductDetail = () => {
       )}
 
       <div className="mt-16 border-t border-gray-200 pt-8">
-        <h2 className="text-xl font-extrabold text-ink mb-6">Ratings &amp; Reviews</h2>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h2 className="text-xl font-extrabold text-ink">Ratings &amp; Reviews</h2>
+          <button onClick={handleWriteReviewClick} className="btn-secondary px-5 py-2 text-sm">
+            {myReview ? 'Edit Your Review' : 'Write a Review'}
+          </button>
+        </div>
+
+        {reviews.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-8 mb-8 pb-8 border-b border-gray-200">
+            <div className="flex flex-col items-start sm:items-center sm:w-32 shrink-0">
+              <p className="text-4xl font-extrabold text-ink leading-none">{avgRating.toFixed(1)}</p>
+              <div className="flex gap-0.5 my-2 text-brand">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <FiStar
+                    key={star}
+                    size={16}
+                    className={star <= Math.round(avgRating) ? 'fill-current' : 'text-gray-300'}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-muted">{reviews.length} review{reviews.length !== 1 ? 's' : ''}</p>
+            </div>
+            <RatingBreakdown reviews={reviews} />
+          </div>
+        )}
+
         {reviews.length > 0 ? (
           <div className="space-y-4">
             {reviews.map((review) => (
               <div key={review.id} className="border border-gray-200 rounded p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="flex items-center gap-1 bg-emerald-700 text-white text-xs font-bold px-2 py-0.5 rounded">
-                    {review.rating} ★
-                  </span>
-                  <span className="text-sm font-semibold text-ink">{review.title}</span>
+                <div className="flex justify-between items-start mb-2 gap-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="flex items-center gap-1 bg-emerald-700 text-white text-xs font-bold px-2 py-0.5 rounded">
+                      {review.rating} ★
+                    </span>
+                    <span className="text-sm font-semibold text-ink">{review.title}</span>
+                  </div>
+                  {review.verified_purchase && (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 shrink-0">
+                      <FiCheckCircle size={13} /> Verified Purchase
+                    </span>
+                  )}
                 </div>
-                <p className="text-gray-700 text-sm">{review.comment}</p>
+                <p className="text-gray-700 text-sm mb-3">{review.comment}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted">
+                    {review.reviewer_name} &middot; {new Date(review.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </p>
+                  <button
+                    onClick={() => handleToggleHelpful(review.id)}
+                    disabled={helpfulBusy === review.id}
+                    className={`flex items-center gap-1.5 text-xs font-semibold disabled:opacity-50 ${
+                      review.voted_helpful ? 'text-brand' : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    <FiThumbsUp size={13} className={review.voted_helpful ? 'fill-current' : ''} />
+                    Helpful{review.helpful_count > 0 ? ` (${review.helpful_count})` : ''}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-muted text-sm">No reviews yet</p>
+          <p className="text-muted text-sm">No reviews yet - be the first to share what you think.</p>
         )}
       </div>
+
+      {showReviewModal && (
+        <WriteReviewModal
+          initialReview={myReview}
+          onClose={() => setShowReviewModal(false)}
+          onSubmit={handleSubmitReview}
+        />
+      )}
 
       {showStickyBar && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(40,44,63,0.1)] px-4 py-3 flex items-center gap-3">
