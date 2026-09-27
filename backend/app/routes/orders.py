@@ -64,6 +64,7 @@ def create_order(
         )
         db.add(db_order)
         db.flush()
+        db.add(models.OrderStatusHistory(order_id=db_order.id, status="pending"))
 
         for item in cart_items:
             product = products_by_id[item.product_id]
@@ -152,9 +153,15 @@ def update_order(
         raise HTTPException(status_code=403, detail="Not authorized")
     
     update_data = order_update.dict(exclude_unset=True)
+    new_status = update_data.get("status")
+    status_changed = new_status is not None and new_status != order.status
+
     for key, value in update_data.items():
         setattr(order, key, value)
-    
+
+    if status_changed:
+        db.add(models.OrderStatusHistory(order_id=order.id, status=new_status))
+
     db.commit()
     db.refresh(order)
     return order
