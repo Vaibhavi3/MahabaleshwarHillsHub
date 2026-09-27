@@ -122,6 +122,9 @@ export const api = {
   createReview: (reviewData) => {
     return client.post('/reviews', reviewData);
   },
+  voteReviewHelpful: (reviewId) => {
+    return client.post(`/reviews/${reviewId}/helpful`);
+  },
 
   // Payments - Stripe
   createPaymentIntent: (orderId) => {

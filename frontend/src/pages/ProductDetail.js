@@ -6,6 +6,7 @@ import { addToCart } from '../features/cartSlice';
 import { toggleWishlist } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
+import ReviewsSection from '../components/ReviewsSection';
 import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -409,26 +410,7 @@ const ProductDetail = () => {
         </div>
       )}
 
-      <div className="mt-16 border-t border-gray-200 pt-8">
-        <h2 className="text-xl font-extrabold text-ink mb-6">Ratings &amp; Reviews</h2>
-        {reviews.length > 0 ? (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <div key={review.id} className="border border-gray-200 rounded p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="flex items-center gap-1 bg-emerald-700 text-white text-xs font-bold px-2 py-0.5 rounded">
-                    {review.rating} ★
-                  </span>
-                  <span className="text-sm font-semibold text-ink">{review.title}</span>
-                </div>
-                <p className="text-gray-700 text-sm">{review.comment}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted text-sm">No reviews yet</p>
-        )}
-      </div>
+      <ReviewsSection productId={product.id} reviews={reviews} setReviews={setReviews} />
 
       {showStickyBar && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(40,44,63,0.1)] px-4 py-3 flex items-center gap-3">
