@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import toast from 'react-hot-toast';
+import OrderTimeline from '../components/OrderTimeline';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -58,6 +59,13 @@ const Orders = () => {
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'}`}>
                 {order.status}
               </span>
+            </div>
+            <div className="border-y py-3 mb-4">
+              <OrderTimeline
+                status={order.status}
+                statusHistory={order.status_history}
+                createdAt={order.created_at}
+              />
             </div>
             <div className="space-y-3 mb-4">
               {order.items.map((item) => (
