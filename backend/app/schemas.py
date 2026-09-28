@@ -71,6 +71,40 @@ class ProductResponse(ProductBase):
     class Config:
         from_attributes = True
 
+class AddressBase(BaseModel):
+    label: str = Field("Home", max_length=20)
+    full_name: str = Field(..., min_length=1, max_length=100)
+    phone: str = Field(..., min_length=6, max_length=20)
+    address_line1: str = Field(..., min_length=1, max_length=255)
+    address_line2: Optional[str] = Field(None, max_length=255)
+    city: str = Field(..., min_length=1, max_length=50)
+    state: str = Field(..., min_length=1, max_length=50)
+    postal_code: str = Field(..., min_length=1, max_length=10)
+    country: str = Field("India", max_length=50)
+    is_default: bool = False
+
+class AddressCreate(AddressBase):
+    pass
+
+class AddressUpdate(BaseModel):
+    label: Optional[str] = Field(None, max_length=20)
+    full_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    phone: Optional[str] = Field(None, min_length=6, max_length=20)
+    address_line1: Optional[str] = Field(None, min_length=1, max_length=255)
+    address_line2: Optional[str] = Field(None, max_length=255)
+    city: Optional[str] = Field(None, min_length=1, max_length=50)
+    state: Optional[str] = Field(None, min_length=1, max_length=50)
+    postal_code: Optional[str] = Field(None, min_length=1, max_length=10)
+    country: Optional[str] = Field(None, max_length=50)
+    is_default: Optional[bool] = None
+
+class AddressResponse(AddressBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class CartItemCreate(BaseModel):
     product_id: int
     quantity: int = Field(1, ge=1)

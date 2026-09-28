@@ -7,6 +7,7 @@ import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
 import { FiTruck, FiShield, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import AddressBook from '../components/AddressBook';
 
 const CHECKOUT_STEPS = [
   { key: 'address', label: 'Shipping' },
@@ -144,15 +145,17 @@ const Checkout = () => {
   const [order, setOrder] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [submitting, setSubmitting] = useState(false);
-  const [address, setAddress] = useState({ address: '', city: '', state: '', postal_code: '', country: 'India' });
+  const [selectedAddress, setSelectedAddress] = useState(null);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = Math.max(0, subtotal - discountAmount);
 
-  const handleChange = (e) => setAddress({ ...address, [e.target.name]: e.target.value });
-
   const handleCreateOrder = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    if (!selectedAddress) {
+      toast.error('Please add or select a delivery address');
+      return;
+    }
     setSubmitting(true);
     try {
       // Backend orders are built from the server-side cart, so mirror the
@@ -162,7 +165,8 @@ const Checkout = () => {
         await api.addToCart({ product_id: item.id, quantity: item.quantity });
       }
 
-      const shipping_address = `${address.address}, ${address.city}, ${address.state} ${address.postal_code}, ${address.country}`;
+      const addressLine2 = selectedAddress.address_line2 ? `, ${selectedAddress.address_line2}` : '';
+      const shipping_address = `${selectedAddress.full_name}, ${selectedAddress.phone} - ${selectedAddress.address_line1}${addressLine2}, ${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.postal_code}, ${selectedAddress.country}`;
       const response = await api.createOrder({
         shipping_address,
         payment_method: paymentMethod,
@@ -194,32 +198,9 @@ const Checkout = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white rounded-lg shadow p-6">
           {step === 'address' ? (
-            <form onSubmit={handleCreateOrder} className="space-y-4">
+            <div className="space-y-4">
               <h2 className="text-xl font-semibold mb-2">Shipping Address</h2>
-              <div>
-                <label className="block text-sm font-medium mb-1">Address</label>
-                <input name="address" value={address.address} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">City</label>
-                  <input name="city" value={address.city} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">State</label>
-                  <input name="state" value={address.state} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Postal Code</label>
-                  <input name="postal_code" value={address.postal_code} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Country</label>
-                  <input name="country" value={address.country} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-                </div>
-              </div>
+              <AddressBook selectable onSelect={setSelectedAddress} />
 
               <h2 className="text-xl font-semibold mb-2 pt-2">Payment Method</h2>
               <div className="flex gap-6">
@@ -236,10 +217,10 @@ const Checkout = () => {
                 <FiShield className="text-brand shrink-0" /> All payments are processed securely online. Cash on Delivery is not available.
               </p>
 
-              <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
+              <button type="button" onClick={handleCreateOrder} disabled={submitting || !selectedAddress} className="btn-primary w-full disabled:opacity-50">
                 {submitting ? 'Please wait...' : 'Continue to Payment'}
               </button>
-            </form>
+            </div>
           ) : (
             <div>
               <h2 className="text-xl font-semibold mb-4">Payment</h2>
