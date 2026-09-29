@@ -35,6 +35,9 @@ class User(Base):
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     cart = relationship("Cart", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    addresses = relationship(
+        "Address", back_populates="user", cascade="all, delete-orphan", order_by="Address.id"
+    )
 
 
 class Product(Base):
@@ -58,6 +61,27 @@ class Product(Base):
     
     reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan")
     order_items = relationship("OrderItem", back_populates="product", cascade="all, delete-orphan")
+
+
+class Address(Base):
+    __tablename__ = "addresses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    label = Column(String(20), default="Home")  # "Home", "Work", or "Other"
+    full_name = Column(String(100), nullable=False)
+    phone = Column(String(20), nullable=False)
+    address_line1 = Column(String(255), nullable=False)
+    address_line2 = Column(String(255))
+    city = Column(String(50), nullable=False)
+    state = Column(String(50), nullable=False)
+    postal_code = Column(String(10), nullable=False)
+    country = Column(String(50), default="India")
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User", back_populates="addresses")
 
 
 class Cart(Base):

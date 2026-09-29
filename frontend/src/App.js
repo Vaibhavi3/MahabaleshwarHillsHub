@@ -12,6 +12,7 @@ import Cart from './pages/Cart';
 import Wishlist from './pages/Wishlist';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
+import Addresses from './pages/Addresses';
 import Auth from './pages/Auth';
 import AdminDashboard from './pages/AdminDashboard';
 import CRM from './pages/CRM';
@@ -53,6 +54,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/addresses"
+            element={
+              <ProtectedRoute>
+                <Addresses />
               </ProtectedRoute>
             }
           />
