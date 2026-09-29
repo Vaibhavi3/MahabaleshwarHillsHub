@@ -250,6 +250,42 @@ class StockAlertResponse(BaseModel):
         from_attributes = True
 
 
+class AddressBase(BaseModel):
+    label: str = Field("Home", max_length=20)
+    full_name: str = Field(..., min_length=1, max_length=100)
+    phone: str = Field(..., min_length=6, max_length=20)
+    address_line: str = Field(..., min_length=1)
+    city: str = Field(..., min_length=1, max_length=50)
+    state: str = Field(..., min_length=1, max_length=50)
+    postal_code: str = Field(..., min_length=1, max_length=10)
+    country: str = Field("India", max_length=50)
+    is_default: bool = False
+
+
+class AddressCreate(AddressBase):
+    pass
+
+
+class AddressUpdate(BaseModel):
+    label: Optional[str] = None
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    address_line: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postal_code: Optional[str] = None
+    country: Optional[str] = None
+    is_default: Optional[bool] = None
+
+
+class AddressResponse(AddressBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str

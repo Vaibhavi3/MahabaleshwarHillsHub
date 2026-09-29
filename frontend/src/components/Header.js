@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage } from 'react-icons/fi';
+import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage, FiMapPin } from 'react-icons/fi';
 import { logout } from '../features/authSlice';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 import SearchBox from './SearchBox';
@@ -93,6 +93,13 @@ const Header = () => {
               <span className="text-[11px] font-semibold uppercase mt-0.5">Orders</span>
             </Link>
 
+            {user && (
+              <Link to="/addresses" className="hidden sm:flex flex-col items-center text-ink hover:text-brand transition-colors">
+                <FiMapPin className="text-xl" />
+                <span className="text-[11px] font-semibold uppercase mt-0.5">Addresses</span>
+              </Link>
+            )}
+
             <Link to="/wishlist" className="relative flex flex-col items-center text-ink hover:text-brand transition-colors">
               <FiHeart className="text-xl" />
               {wishlistItems.length > 0 && (
@@ -157,6 +164,9 @@ const Header = () => {
                   </p>
                   <Link to="/orders" className="nav-link" onClick={() => setIsOpen(false)}>
                     Orders
+                  </Link>
+                  <Link to="/addresses" className="nav-link" onClick={() => setIsOpen(false)}>
+                    Addresses
                   </Link>
                   <button
                     onClick={() => {

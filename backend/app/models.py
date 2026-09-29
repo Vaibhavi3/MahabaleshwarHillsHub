@@ -241,6 +241,26 @@ class StockAlert(Base):
     user = relationship("User")
 
 
+class Address(Base):
+    __tablename__ = "addresses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    label = Column(String(20), default="Home")
+    full_name = Column(String(100), nullable=False)
+    phone = Column(String(20), nullable=False)
+    address_line = Column(Text, nullable=False)
+    city = Column(String(50), nullable=False)
+    state = Column(String(50), nullable=False)
+    postal_code = Column(String(10), nullable=False)
+    country = Column(String(50), default="India")
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    user = relationship("User")
+
+
 class CRMActivity(Base):
     __tablename__ = "crm_activities"
 

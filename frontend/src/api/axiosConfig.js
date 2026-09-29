@@ -184,6 +184,23 @@ export const api = {
     return client.get('/stock-alerts/admin/pending-counts');
   },
 
+  // Address book (saved shipping addresses)
+  getAddresses: () => {
+    return client.get('/addresses');
+  },
+  createAddress: (address) => {
+    return client.post('/addresses', address);
+  },
+  updateAddress: (id, address) => {
+    return client.put(`/addresses/${id}`, address);
+  },
+  deleteAddress: (id) => {
+    return client.delete(`/addresses/${id}`);
+  },
+  setDefaultAddress: (id) => {
+    return client.post(`/addresses/${id}/default`);
+  },
+
   // CRM
   getCRMOverview: () => client.get('/crm/overview'),
   getCRMCustomers: (params) => client.get('/crm/customers', { params }),

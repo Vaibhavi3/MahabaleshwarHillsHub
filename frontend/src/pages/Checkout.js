@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
-import { FiTruck, FiShield, FiCheck } from 'react-icons/fi';
+import { FiTruck, FiShield, FiCheck, FiEdit2, FiPlus } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import AddressForm from '../components/AddressForm';
 
 const CHECKOUT_STEPS = [
   { key: 'address', label: 'Shipping' },
@@ -144,15 +145,54 @@ const Checkout = () => {
   const [order, setOrder] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [submitting, setSubmitting] = useState(false);
-  const [address, setAddress] = useState({ address: '', city: '', state: '', postal_code: '', country: 'India' });
+
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [addressFormOpen, setAddressFormOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = Math.max(0, subtotal - discountAmount);
 
-  const handleChange = (e) => setAddress({ ...address, [e.target.name]: e.target.value });
+  useEffect(() => {
+    const loadAddresses = async () => {
+      try {
+        const response = await api.getAddresses();
+        setSavedAddresses(response.data);
+        if (response.data.length > 0) {
+          const preferred = response.data.find((a) => a.is_default) || response.data[0];
+          setSelectedAddressId(preferred.id);
+        } else {
+          setAddressFormOpen(true);
+        }
+      } catch (error) {
+        toast.error('Failed to load your saved addresses');
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+    loadAddresses();
+  }, []);
+
+  const handleAddressSaved = (saved) => {
+    setSavedAddresses((prev) => {
+      const rest = saved.is_default ? prev.map((a) => ({ ...a, is_default: false })) : [...prev];
+      const withoutSaved = rest.filter((a) => a.id !== saved.id);
+      return [...withoutSaved, saved].sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0));
+    });
+    setSelectedAddressId(saved.id);
+    setAddressFormOpen(false);
+    setEditingAddress(null);
+  };
 
   const handleCreateOrder = async (e) => {
     e.preventDefault();
+    const selected = savedAddresses.find((a) => a.id === selectedAddressId);
+    if (!selected) {
+      toast.error('Please select or add a shipping address');
+      return;
+    }
     setSubmitting(true);
     try {
       // Backend orders are built from the server-side cart, so mirror the
@@ -162,7 +202,7 @@ const Checkout = () => {
         await api.addToCart({ product_id: item.id, quantity: item.quantity });
       }
 
-      const shipping_address = `${address.address}, ${address.city}, ${address.state} ${address.postal_code}, ${address.country}`;
+      const shipping_address = `${selected.full_name}, ${selected.phone}, ${selected.address_line}, ${selected.city}, ${selected.state} ${selected.postal_code}, ${selected.country}`;
       const response = await api.createOrder({
         shipping_address,
         payment_method: paymentMethod,
@@ -194,52 +234,107 @@ const Checkout = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white rounded-lg shadow p-6">
           {step === 'address' ? (
-            <form onSubmit={handleCreateOrder} className="space-y-4">
-              <h2 className="text-xl font-semibold mb-2">Shipping Address</h2>
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium mb-1">Address</label>
-                <input name="address" value={address.address} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">City</label>
-                  <input name="city" value={address.city} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">State</label>
-                  <input name="state" value={address.state} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Postal Code</label>
-                  <input name="postal_code" value={address.postal_code} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Country</label>
-                  <input name="country" value={address.country} onChange={handleChange} required className="w-full border rounded-lg px-4 py-2" />
-                </div>
+                <h2 className="text-xl font-semibold mb-3">Shipping Address</h2>
+                {loadingAddresses ? (
+                  <p className="text-sm text-muted">Loading your addresses...</p>
+                ) : addressFormOpen ? (
+                  <AddressForm
+                    initial={editingAddress}
+                    onSaved={handleAddressSaved}
+                    onCancel={
+                      savedAddresses.length > 0
+                        ? () => {
+                            setAddressFormOpen(false);
+                            setEditingAddress(null);
+                          }
+                        : undefined
+                    }
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {savedAddresses.map((addr) => (
+                      <label
+                        key={addr.id}
+                        className={`flex items-start gap-3 border rounded-lg p-4 cursor-pointer transition-colors ${
+                          selectedAddressId === addr.id ? 'border-brand ring-1 ring-brand' : 'border-gray-200 hover:border-ink'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="savedAddress"
+                          checked={selectedAddressId === addr.id}
+                          onChange={() => setSelectedAddressId(addr.id)}
+                          className="mt-1 accent-brand shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-ink bg-surface px-2 py-0.5 rounded">
+                              {addr.label}
+                            </span>
+                            {addr.is_default && (
+                              <span className="text-[10px] font-bold uppercase text-brand">Default</span>
+                            )}
+                          </div>
+                          <p className="font-semibold text-sm text-ink">
+                            {addr.full_name} &middot; {addr.phone}
+                          </p>
+                          <p className="text-sm text-muted">
+                            {addr.address_line}, {addr.city}, {addr.state} {addr.postal_code}, {addr.country}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setEditingAddress(addr);
+                            setAddressFormOpen(true);
+                          }}
+                          className="text-muted hover:text-brand shrink-0"
+                          title="Edit address"
+                        >
+                          <FiEdit2 size={15} />
+                        </button>
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingAddress(null);
+                        setAddressFormOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 text-sm font-bold uppercase text-brand hover:underline"
+                    >
+                      <FiPlus /> Add a new address
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <h2 className="text-xl font-semibold mb-2 pt-2">Payment Method</h2>
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={(e) => setPaymentMethod(e.target.value)} />
-                  Razorpay (UPI / Cards)
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="radio" name="paymentMethod" value="stripe" checked={paymentMethod === 'stripe'} onChange={(e) => setPaymentMethod(e.target.value)} />
-                  Stripe (International Cards)
-                </label>
-              </div>
-              <p className="flex items-center gap-1.5 text-xs text-muted -mt-2">
-                <FiShield className="text-brand shrink-0" /> All payments are processed securely online. Cash on Delivery is not available.
-              </p>
+              {!addressFormOpen && savedAddresses.length > 0 && (
+                <form onSubmit={handleCreateOrder} className="space-y-4 pt-2 border-t">
+                  <h2 className="text-xl font-semibold mb-2 pt-4">Payment Method</h2>
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2">
+                      <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                      Razorpay (UPI / Cards)
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="radio" name="paymentMethod" value="stripe" checked={paymentMethod === 'stripe'} onChange={(e) => setPaymentMethod(e.target.value)} />
+                      Stripe (International Cards)
+                    </label>
+                  </div>
+                  <p className="flex items-center gap-1.5 text-xs text-muted -mt-2">
+                    <FiShield className="text-brand shrink-0" /> All payments are processed securely online. Cash on Delivery is not available.
+                  </p>
 
-              <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
-                {submitting ? 'Please wait...' : 'Continue to Payment'}
-              </button>
-            </form>
+                  <button type="submit" disabled={submitting || !selectedAddressId} className="btn-primary w-full disabled:opacity-50">
+                    {submitting ? 'Please wait...' : 'Continue to Payment'}
+                  </button>
+                </form>
+              )}
+            </div>
           ) : (
             <div>
               <h2 className="text-xl font-semibold mb-4">Payment</h2>
