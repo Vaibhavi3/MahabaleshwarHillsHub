@@ -6,6 +6,7 @@ import { addToCart } from '../features/cartSlice';
 import { toggleWishlist } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
+import ZoomableImage from '../components/ZoomableImage';
 import ReviewsSection from '../components/ReviewsSection';
 import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -214,12 +215,8 @@ const ProductDetail = () => {
               </Link>
             ))}
           </div>
-          <div className="flex-1 bg-surface rounded overflow-hidden">
-            <img
-              src={getImageUrl(product.image_url) || 'https://via.placeholder.com/500'}
-              alt={product.name}
-              className="w-full h-auto block"
-            />
+          <div className="flex-1 bg-surface">
+            <ZoomableImage src={getImageUrl(product.image_url)} alt={product.name} />
           </div>
         </div>
 
