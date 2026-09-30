@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { getImageUrl } from '../api/axiosConfig';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
 import { toggleWishlist } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
-import { FiHeart } from 'react-icons/fi';
+import { FiHeart, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import QuickViewModal from './QuickViewModal';
 
 const BRAND = 'Ancles Home Socks';
 
@@ -20,6 +21,13 @@ const ProductCard = ({ product }) => {
   const rating = product.rating || 0;
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
+
+  const handleQuickView = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setQuickViewOpen(true);
+  };
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -71,6 +79,14 @@ const ProductCard = ({ product }) => {
           />
         </button>
 
+        <button
+          onClick={handleQuickView}
+          aria-label="Quick view"
+          className="absolute top-2 left-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow-sm opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200"
+        >
+          <FiEye className="text-ink" size={16} />
+        </button>
+
         {outOfStock && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
             <span className="bg-ink text-white text-xs font-bold uppercase tracking-wide px-4 py-1.5 rounded-full">
@@ -106,6 +122,10 @@ const ProductCard = ({ product }) => {
           <p className="text-xs font-semibold text-brand mt-1">Only {product.stock} left!</p>
         )}
       </div>
+
+      {quickViewOpen && (
+        <QuickViewModal product={product} onClose={() => setQuickViewOpen(false)} />
+      )}
     </Link>
   );
 };
