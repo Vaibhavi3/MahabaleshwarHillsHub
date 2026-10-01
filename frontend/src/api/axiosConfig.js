@@ -111,6 +111,9 @@ export const api = {
   updateOrder: (id, orderUpdate) => {
     return client.put(`/orders/${id}`, orderUpdate);
   },
+  cancelOrder: (id, reason) => {
+    return client.post(`/orders/${id}/cancel`, { reason });
+  },
   getAllOrders: (skip = 0, limit = 100) => {
     return client.get('/orders/admin/all', { params: { skip, limit } });
   },

@@ -8,6 +8,12 @@ import uuid
 
 router = APIRouter()
 
+# Statuses from which a customer may still self-cancel. Once an order has
+# shipped it's already in the courier's hands, so cancellation has to go
+# through support instead (matches Myntra/Nykaa/Ajio's "cancel before
+# shipped" rule).
+CANCELLABLE_STATUSES = {"pending", "confirmed"}
+
 
 @router.post("/orders", response_model=schemas.OrderResponse)
 def create_order(
@@ -92,6 +98,47 @@ def create_order(
 
     db.refresh(db_order)
     return db_order
+
+
+@router.post("/orders/{order_id}/cancel", response_model=schemas.OrderResponse)
+def cancel_order(
+    order_id: int,
+    payload: schemas.OrderCancelRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Customer self-service cancellation, matching Myntra/Nykaa/Ajio's
+    "Cancel Order" flow on My Orders: only allowed while the order hasn't
+    shipped yet. Restocks every item so inventory stays accurate."""
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    if order.status not in CANCELLABLE_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail="This order has already shipped and can no longer be cancelled here. Please contact support.",
+        )
+
+    reason = payload.reason.strip()
+    if not reason:
+        raise HTTPException(status_code=400, detail="Please select a reason for cancelling")
+
+    for item in order.items:
+        product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
+        if product:
+            product.stock += item.quantity
+
+    order.status = "cancelled"
+    order.cancellation_reason = reason
+    db.add(models.OrderStatusHistory(order_id=order.id, status="cancelled"))
+
+    db.commit()
+    db.refresh(order)
+    return order
 
 
 @router.get("/orders", response_model=list[schemas.OrderResponse])
