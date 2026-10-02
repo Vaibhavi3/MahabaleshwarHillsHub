@@ -154,6 +154,9 @@ class OrderUpdate(BaseModel):
     tracking_number: Optional[str] = None
     notes: Optional[str] = None
 
+class OrderCancelRequest(BaseModel):
+    reason: str
+
 class OrderStatusHistoryResponse(BaseModel):
     id: int
     status: str
@@ -174,6 +177,7 @@ class OrderResponse(BaseModel):
     payment_status: str
     payment_method: str
     tracking_number: Optional[str] = None
+    cancellation_reason: Optional[str] = None
     items: List[OrderItemResponse] = []
     status_history: List[OrderStatusHistoryResponse] = []
     created_at: datetime

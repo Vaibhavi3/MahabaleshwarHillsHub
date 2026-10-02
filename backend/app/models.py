@@ -126,6 +126,7 @@ class Order(Base):
     shipping_address = Column(Text)
     tracking_number = Column(String(100))
     notes = Column(Text)
+    cancellation_reason = Column(String(255))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

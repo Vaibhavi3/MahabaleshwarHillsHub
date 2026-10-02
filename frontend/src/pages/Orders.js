@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import OrderTimeline from '../components/OrderTimeline';
+import CancelOrderModal from '../components/CancelOrderModal';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -12,9 +13,12 @@ const STATUS_COLORS = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
+const CANCELLABLE_STATUSES = new Set(['pending', 'confirmed']);
+
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancelTarget, setCancelTarget] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -29,6 +33,17 @@ const Orders = () => {
     };
     load();
   }, []);
+
+  const handleCancelConfirm = async (reason) => {
+    try {
+      const response = await api.cancelOrder(cancelTarget.id, reason);
+      setOrders((prev) => prev.map((o) => (o.id === response.data.id ? response.data : o)));
+      toast.success('Order cancelled');
+      setCancelTarget(null);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not cancel this order');
+    }
+  };
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8 text-center">Loading...</div>;
@@ -82,13 +97,32 @@ const Orders = () => {
                 </div>
               ))}
             </div>
-            <div className="flex justify-between border-t pt-4">
+            <div className="flex justify-between items-center border-t pt-4">
               <span className="text-gray-600">Payment: {order.payment_status}</span>
               <span className="font-bold text-lg">₹{order.total_amount.toFixed(2)}</span>
             </div>
+            {order.status === 'cancelled' && order.cancellation_reason && (
+              <p className="text-xs text-muted mt-2">Cancellation reason: {order.cancellation_reason}</p>
+            )}
+            {CANCELLABLE_STATUSES.has(order.status) && (
+              <button
+                onClick={() => setCancelTarget(order)}
+                className="mt-4 text-sm font-semibold uppercase text-red-600 hover:underline"
+              >
+                Cancel Order
+              </button>
+            )}
           </div>
         ))}
       </div>
+
+      {cancelTarget && (
+        <CancelOrderModal
+          order={cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          onConfirm={handleCancelConfirm}
+        />
+      )}
     </div>
   );
 };
