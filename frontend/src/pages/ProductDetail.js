@@ -8,6 +8,7 @@ import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
 import ZoomableImage from '../components/ZoomableImage';
 import ReviewsSection from '../components/ReviewsSection';
+import OffersList from '../components/OffersList';
 import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -351,6 +352,8 @@ const ProductDetail = () => {
             </div>
             {pincodeMsg && <p className="text-sm text-muted mt-2">{pincodeMsg}</p>}
           </form>
+
+          <OffersList />
 
           <div className="border-t border-gray-200 pt-6 grid grid-cols-3 gap-4 text-center">
             <div className="flex flex-col items-center gap-2 text-xs text-muted">

@@ -60,6 +60,33 @@ def validate_coupon(
     )
 
 
+@router.get("/coupons/active", response_model=list[schemas.CouponPublicResponse])
+def list_active_coupons(db: Session = Depends(get_db)):
+    """Public "Available Offers" listing, Myntra/Nykaa/Ajio-style: lets a
+    shopper discover and apply a live coupon without already knowing its
+    code from somewhere else. Excludes coupons that are inactive, expired,
+    or have hit their usage limit."""
+    now = datetime.now(timezone.utc)
+    candidates = (
+        db.query(models.Coupon)
+        .filter(models.Coupon.is_active.is_(True))
+        .order_by(models.Coupon.discount_value.desc())
+        .all()
+    )
+    active = []
+    for coupon in candidates:
+        if coupon.expires_at:
+            expires_at = coupon.expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if expires_at < now:
+                continue
+        if coupon.usage_limit is not None and coupon.used_count >= coupon.usage_limit:
+            continue
+        active.append(coupon)
+    return active
+
+
 @router.get("/coupons", response_model=list[schemas.CouponResponse])
 def list_coupons(db: Session = Depends(get_db), _admin: models.User = Depends(get_current_admin_user)):
     """List all coupons (Admin only)"""
