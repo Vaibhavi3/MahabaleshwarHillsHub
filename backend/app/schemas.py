@@ -213,6 +213,19 @@ class CouponResponse(CouponBase):
     class Config:
         from_attributes = True
 
+class CouponPublicResponse(BaseModel):
+    """Trimmed coupon view for the public "Available Offers" listing - no
+    usage_limit/used_count, which are internal admin bookkeeping."""
+    code: str
+    description: Optional[str] = None
+    discount_type: str
+    discount_value: float
+    min_order_value: float
+    max_discount: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
 class CouponValidateRequest(BaseModel):
     code: str
     order_total: float = Field(..., ge=0)

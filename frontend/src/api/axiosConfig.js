@@ -152,6 +152,9 @@ export const api = {
   validateCoupon: (code, orderTotal) => {
     return client.post('/coupons/validate', { code, order_total: orderTotal });
   },
+  getActiveCoupons: () => {
+    return client.get('/coupons/active');
+  },
   getCoupons: () => {
     return client.get('/coupons');
   },

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon } from '../features/cartSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
+import OffersList from '../components/OffersList';
 import { FiTrash2, FiTag, FiX, FiTruck, FiShield } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -12,6 +13,7 @@ const Cart = () => {
   const navigate = useNavigate();
   const [codeInput, setCodeInput] = useState('');
   const [applying, setApplying] = useState(false);
+  const [applyingCode, setApplyingCode] = useState(null);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const total = Math.max(0, subtotal - discountAmount);
@@ -34,14 +36,14 @@ const Cart = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subtotal]);
 
-  const handleApplyCoupon = async (e) => {
-    e.preventDefault();
-    if (!codeInput.trim()) return;
+  const applyCouponCode = async (code) => {
+    if (!code.trim()) return;
     setApplying(true);
+    setApplyingCode(code);
     try {
-      const { data } = await api.validateCoupon(codeInput.trim(), subtotal);
+      const { data } = await api.validateCoupon(code.trim(), subtotal);
       if (data.valid) {
-        dispatch(applyCoupon({ couponCode: codeInput.trim().toUpperCase(), discountAmount: data.discount_amount }));
+        dispatch(applyCoupon({ couponCode: code.trim().toUpperCase(), discountAmount: data.discount_amount }));
         toast.success(`Coupon applied - you saved ₹${data.discount_amount.toFixed(2)}`);
         setCodeInput('');
       } else {
@@ -51,7 +53,13 @@ const Cart = () => {
       toast.error(error.response?.data?.detail || 'Could not apply coupon');
     } finally {
       setApplying(false);
+      setApplyingCode(null);
     }
+  };
+
+  const handleApplyCoupon = (e) => {
+    e.preventDefault();
+    applyCouponCode(codeInput);
   };
 
   if (items.length === 0) {
@@ -107,6 +115,7 @@ const Cart = () => {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6 max-w-md ml-auto">
+        {!couponCode && <OffersList onApply={applyCouponCode} applyingCode={applyingCode} />}
         <form onSubmit={handleApplyCoupon} className="mb-4">
           {couponCode ? (
             <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
