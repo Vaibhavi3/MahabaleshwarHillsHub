@@ -287,6 +287,19 @@ class PaymentResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class WishlistItemResponse(BaseModel):
+    id: int
+    created_at: datetime
+    product: ProductResponse
+
+    class Config:
+        from_attributes = True
+
+
+class WishlistSyncRequest(BaseModel):
+    product_ids: List[int] = Field(default_factory=list, max_length=200)
+
+
 class StockAlertStatus(BaseModel):
     subscribed: bool
 

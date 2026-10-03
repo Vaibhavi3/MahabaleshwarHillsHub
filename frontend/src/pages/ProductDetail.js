@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
-import { toggleWishlist } from '../features/wishlistSlice';
+import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
 import ZoomableImage from '../components/ZoomableImage';
@@ -112,19 +112,18 @@ const ProductDetail = () => {
     }
   };
 
-  const handleWishlist = () => {
+  const handleWishlist = async () => {
     if (!product) return;
     if (!requireAuth(token, navigate, location, 'Please login or register to save items to your wishlist')) return;
-    dispatch(
-      toggleWishlist({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image_url: product.image_url,
-        stock: product.stock,
-      })
-    );
-    toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    try {
+      const response = wishlisted
+        ? await api.removeFromWishlistApi(product.id)
+        : await api.addToWishlist(product.id);
+      dispatch(setWishlistItems(mapWishlistResponse(response.data)));
+      toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    } catch (error) {
+      toast.error('Could not update wishlist. Please try again.');
+    }
   };
 
   const handleNotifyMe = async () => {

@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { addToCart } from '../features/cartSlice';
-import { toggleWishlist } from '../features/wishlistSlice';
+import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import { FiX, FiHeart } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -76,18 +76,17 @@ const QuickViewModal = ({ product, onClose }) => {
     onClose();
   };
 
-  const handleWishlist = () => {
+  const handleWishlist = async () => {
     if (!requireAuth(token, navigate, location, 'Please login or register to save items to your wishlist')) return;
-    dispatch(
-      toggleWishlist({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image_url: product.image_url,
-        stock: product.stock,
-      })
-    );
-    toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    try {
+      const response = wishlisted
+        ? await api.removeFromWishlistApi(product.id)
+        : await api.addToWishlist(product.id);
+      dispatch(setWishlistItems(mapWishlistResponse(response.data)));
+      toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    } catch (error) {
+      toast.error('Could not update wishlist. Please try again.');
+    }
   };
 
   // Portaled to <body>: ProductCard renders this inside its own <a> (the
