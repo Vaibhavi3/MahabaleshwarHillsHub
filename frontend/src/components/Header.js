@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage, FiMapPin } from 'react-icons/fi';
 import { logout } from '../features/authSlice';
+import { clearWishlist } from '../features/wishlistSlice';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 import SearchBox from './SearchBox';
 
@@ -22,6 +23,7 @@ const Header = () => {
 
   const handleLogout = () => {
     dispatch(logout());
+    dispatch(clearWishlist());
   };
 
   return (

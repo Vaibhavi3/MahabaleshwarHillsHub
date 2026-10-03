@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFromWishlist } from '../features/wishlistSlice';
+import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { addToCart } from '../features/cartSlice';
-import { getImageUrl } from '../api/axiosConfig';
+import api, { getImageUrl } from '../api/axiosConfig';
 import { FiTrash2, FiShoppingBag } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -11,9 +11,18 @@ const Wishlist = () => {
   const { items } = useSelector((state) => state.wishlist);
   const dispatch = useDispatch();
 
+  const handleRemove = async (productId) => {
+    try {
+      const response = await api.removeFromWishlistApi(productId);
+      dispatch(setWishlistItems(mapWishlistResponse(response.data)));
+    } catch (error) {
+      toast.error('Could not remove item. Please try again.');
+    }
+  };
+
   const handleMoveToBag = (item) => {
     dispatch(addToCart({ ...item, quantity: 1 }));
-    dispatch(removeFromWishlist(item.id));
+    handleRemove(item.id);
     toast.success('Moved to bag');
   };
 
@@ -54,7 +63,7 @@ const Wishlist = () => {
                 <FiShoppingBag size={14} /> Add to Bag
               </button>
               <button
-                onClick={() => dispatch(removeFromWishlist(item.id))}
+                onClick={() => handleRemove(item.id)}
                 className="px-3 border border-gray-300 text-ink hover:border-ink transition-colors"
                 title="Remove from wishlist"
               >

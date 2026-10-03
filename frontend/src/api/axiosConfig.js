@@ -1,6 +1,7 @@
 import axios from 'axios';
 import store from '../store';
 import { logout } from '../features/authSlice';
+import { clearWishlist } from '../features/wishlistSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const ASSET_BASE_URL = API_URL.replace(/\/api\/?$/, '');
@@ -29,6 +30,7 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       store.dispatch(logout());
+      store.dispatch(clearWishlist());
     }
     return Promise.reject(error);
   }
@@ -188,6 +190,20 @@ export const api = {
   },
   getStockAlertPendingCounts: () => {
     return client.get('/stock-alerts/admin/pending-counts');
+  },
+
+  // Wishlist (account-backed, syncs across devices once logged in)
+  getWishlist: () => {
+    return client.get('/wishlist');
+  },
+  addToWishlist: (productId) => {
+    return client.post(`/wishlist/${productId}`);
+  },
+  removeFromWishlistApi: (productId) => {
+    return client.delete(`/wishlist/${productId}`);
+  },
+  syncWishlist: (productIds) => {
+    return client.post('/wishlist/sync', { product_ids: productIds });
   },
 
   // Addresses

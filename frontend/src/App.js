@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import api from './api/axiosConfig';
 import { logout, setUser } from './features/authSlice';
+import { setWishlistItems, clearWishlist, mapWishlistResponse } from './features/wishlistSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -22,13 +23,30 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   const dispatch = useDispatch();
   const { token, user } = useSelector((state) => state.auth);
+  const wishlistItems = useSelector((state) => state.wishlist.items);
 
   useEffect(() => {
     if (!token || user) return;
     api.getCurrentUser()
       .then((response) => dispatch(setUser({ user: response.data, token })))
-      .catch(() => dispatch(logout()));
+      .catch(() => {
+        dispatch(logout());
+        dispatch(clearWishlist());
+      });
   }, [dispatch, token, user]);
+
+  useEffect(() => {
+    if (!token) return;
+    // Right after login (or on app load with a saved session), pull the
+    // account's wishlist and fold in anything saved to this browser's
+    // local storage before login - so a shopper's pre-login picks aren't
+    // lost, and from then on the wishlist follows their account.
+    const localIds = wishlistItems.map((item) => item.id);
+    api.syncWishlist(localIds)
+      .then((response) => dispatch(setWishlistItems(mapWishlistResponse(response.data))))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   return (
     <div className="flex flex-col min-h-screen">
