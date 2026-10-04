@@ -262,6 +262,7 @@ class ReviewResponse(BaseModel):
     verified_purchase: bool
     reviewer_name: str
     voted_helpful: bool
+    photo_ids: list[int]
     created_at: datetime
 
     class Config:

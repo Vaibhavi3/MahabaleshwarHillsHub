@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
@@ -7,6 +8,10 @@ from sqlalchemy import func
 from typing import Optional
 
 router = APIRouter()
+
+MAX_PHOTOS_PER_REVIEW = 4
+MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5MB
+ALLOWED_PHOTO_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
 
 def _reviewer_name(user: models.User) -> str:
@@ -44,6 +49,7 @@ def _to_response(review: models.Review, voted_review_ids: set) -> schemas.Review
         verified_purchase=review.verified_purchase,
         reviewer_name=_reviewer_name(review.user),
         voted_helpful=review.id in voted_review_ids,
+        photo_ids=[p.id for p in review.photos],
         created_at=review.created_at,
     )
 
@@ -215,3 +221,57 @@ def toggle_review_helpful(
     db.commit()
     db.refresh(db_review)
     return schemas.ReviewHelpfulResponse(helpful_count=db_review.helpful_count, voted_helpful=voted)
+
+
+@router.post("/reviews/{review_id}/photos", response_model=schemas.ReviewResponse)
+async def upload_review_photos(
+    review_id: int,
+    files: list[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Attach up to MAX_PHOTOS_PER_REVIEW real customer photos to your own
+    review, inspired by Myntra/Nykaa/Ajio's "reviews with images". Photos
+    are stored as bytes in the DB (not the filesystem), so they survive
+    Render's ephemeral disk the same way the review text does."""
+    db_review = db.query(models.Review).filter(models.Review.id == review_id).first()
+    if not db_review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    if db_review.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    existing_count = len(db_review.photos)
+    if existing_count + len(files) > MAX_PHOTOS_PER_REVIEW:
+        raise HTTPException(
+            status_code=400,
+            detail=f"You can attach at most {MAX_PHOTOS_PER_REVIEW} photos per review",
+        )
+
+    for upload in files:
+        if upload.content_type not in ALLOWED_PHOTO_TYPES:
+            raise HTTPException(status_code=400, detail="Photos must be JPEG, PNG, or WebP")
+        data = await upload.read()
+        if len(data) > MAX_PHOTO_BYTES:
+            raise HTTPException(status_code=400, detail="Each photo must be under 5MB")
+        db.add(models.ReviewPhoto(review_id=review_id, content_type=upload.content_type, data=data))
+
+    db.commit()
+    db.refresh(db_review)
+
+    voted_review_ids = set()
+    existing_vote = db.query(models.ReviewHelpfulVote).filter(
+        models.ReviewHelpfulVote.review_id == review_id,
+        models.ReviewHelpfulVote.user_id == current_user.id,
+    ).first()
+    if existing_vote:
+        voted_review_ids.add(review_id)
+    return _to_response(db_review, voted_review_ids)
+
+
+@router.get("/reviews/photos/{photo_id}")
+def get_review_photo(photo_id: int, db: Session = Depends(get_db)):
+    """Serve a customer's uploaded review photo by id."""
+    photo = db.query(models.ReviewPhoto).filter(models.ReviewPhoto.id == photo_id).first()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+    return Response(content=photo.data, media_type=photo.content_type)

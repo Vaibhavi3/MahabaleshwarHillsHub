@@ -15,6 +15,10 @@ export const getImageUrl = (path) => {
   return `${ASSET_BASE_URL}${path}`;
 };
 
+// Review photos are served from the API, not /static - build the URL from
+// the photo id the review response gives us.
+export const getReviewPhotoUrl = (photoId) => `${API_URL}/reviews/photos/${photoId}`;
+
 const client = axios.create({ baseURL: API_URL });
 
 client.interceptors.request.use((config) => {
@@ -129,6 +133,11 @@ export const api = {
   },
   voteReviewHelpful: (reviewId) => {
     return client.post(`/reviews/${reviewId}/helpful`);
+  },
+  uploadReviewPhotos: (reviewId, files) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+    return client.post(`/reviews/${reviewId}/photos`, formData);
   },
 
   // Payments - Stripe
