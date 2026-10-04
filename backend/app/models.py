@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -189,6 +189,22 @@ class Review(Base):
     user = relationship("User", back_populates="reviews")
     product = relationship("Product", back_populates="reviews")
     helpful_votes = relationship("ReviewHelpfulVote", cascade="all, delete-orphan")
+    photos = relationship("ReviewPhoto", back_populates="review", cascade="all, delete-orphan", order_by="ReviewPhoto.id")
+
+
+class ReviewPhoto(Base):
+    """A customer-uploaded photo attached to their own review, stored as
+    bytes in the DB (not the filesystem) so it survives Render's ephemeral
+    disk across deploys/restarts, same durability as the review text itself."""
+    __tablename__ = "review_photos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    review_id = Column(Integer, ForeignKey("reviews.id"), nullable=False, index=True)
+    content_type = Column(String(50), nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    review = relationship("Review", back_populates="photos")
 
 
 class ReviewHelpfulVote(Base):
