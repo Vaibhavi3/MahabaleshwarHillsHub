@@ -9,6 +9,7 @@ import ProductCard from '../components/ProductCard';
 import ZoomableImage from '../components/ZoomableImage';
 import ReviewsSection from '../components/ReviewsSection';
 import OffersList from '../components/OffersList';
+import RecentlyViewed, { recordProductView } from '../components/RecentlyViewed';
 import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -42,6 +43,7 @@ const ProductDetail = () => {
       try {
         const productResponse = await api.getProductById(id);
         setProduct(productResponse.data);
+        recordProductView(productResponse.data.id, token);
 
         const [reviewsResponse, variantsResponse, similarResponse, fbtResponse] = await Promise.all([
           api.getProductReviews(id),
@@ -73,6 +75,7 @@ const ProductDetail = () => {
 
     fetchProductDetails();
     window.scrollTo({ top: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Callback ref (not a plain ref + effect): the buy box only mounts once
@@ -408,6 +411,8 @@ const ProductDetail = () => {
           </div>
         </div>
       )}
+
+      <RecentlyViewed excludeId={product.id} />
 
       <ReviewsSection productId={product.id} reviews={reviews} setReviews={setReviews} />
 

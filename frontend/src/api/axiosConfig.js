@@ -215,6 +215,14 @@ export const api = {
     return client.post('/wishlist/sync', { product_ids: productIds });
   },
 
+  // Recently viewed (account-backed when logged in, browser-local for guests)
+  getRecentlyViewed: (limit = 8, exclude = null) => {
+    return client.get('/recently-viewed', { params: { limit, exclude } });
+  },
+  recordRecentlyViewed: (productId) => {
+    return client.post(`/recently-viewed/${productId}`);
+  },
+
   // Addresses
   getAddresses: () => {
     return client.get('/addresses');

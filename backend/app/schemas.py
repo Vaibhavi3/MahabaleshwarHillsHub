@@ -301,6 +301,15 @@ class WishlistSyncRequest(BaseModel):
     product_ids: List[int] = Field(default_factory=list, max_length=200)
 
 
+class RecentlyViewedResponse(BaseModel):
+    id: int
+    viewed_at: datetime
+    product: ProductResponse
+
+    class Config:
+        from_attributes = True
+
+
 class StockAlertStatus(BaseModel):
     subscribed: bool
 
