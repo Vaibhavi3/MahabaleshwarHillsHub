@@ -296,6 +296,25 @@ class WishlistItem(Base):
     __table_args__ = (UniqueConstraint("user_id", "product_id", name="uq_wishlist_user_product"),)
 
 
+class RecentlyViewed(Base):
+    """A signed-in user's product browsing history, tied to the account the
+    same way wishlist_items is - so the "Recently Viewed" rail follows a
+    shopper across devices, matching Myntra's homepage recently-viewed
+    section. Guests get a recently-viewed rail too, but browser-local only
+    (see frontend RecentlyViewed component) - this table is account-only."""
+    __tablename__ = "recently_viewed"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    viewed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    product = relationship("Product")
+
+    __table_args__ = (UniqueConstraint("user_id", "product_id", name="uq_recently_viewed_user_product"),)
+
+
 class CRMActivity(Base):
     __tablename__ = "crm_activities"
 

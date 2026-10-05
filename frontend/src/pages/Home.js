@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import ProductCard from '../components/ProductCard';
 import { ProductGridSkeleton } from '../components/ProductCardSkeleton';
+import RecentlyViewed from '../components/RecentlyViewed';
 import toast from 'react-hot-toast';
 import { FiTruck, FiRefreshCw, FiShield, FiHeart } from 'react-icons/fi';
 import heroHills from '../assets/hero-hills.jpg';
@@ -147,6 +148,8 @@ const Home = () => {
           ))}
         </div>
       </section>
+
+      <RecentlyViewed />
 
       <section className="bg-surface">
         <div className="container mx-auto px-4 py-12">
