@@ -391,6 +391,36 @@ class CRMActivityResponse(CRMActivityCreate):
     class Config:
         from_attributes = True
 
+class ReturnRequestCreate(BaseModel):
+    request_type: str = Field(..., pattern="^(return|exchange)$")
+    reason: str = Field(..., min_length=1, max_length=255)
+    comment: Optional[str] = None
+    exchange_product_id: Optional[int] = None
+
+class ReturnRequestStatusUpdate(BaseModel):
+    status: str = Field(..., pattern="^(requested|approved|rejected|picked_up|completed)$")
+
+class ReturnRequestResponse(BaseModel):
+    id: int
+    order_item_id: int
+    order_number: Optional[str] = None
+    product_name: Optional[str] = None
+    product_image: Optional[str] = None
+    quantity: Optional[int] = None
+    user_id: int
+    user_email: Optional[str] = None
+    request_type: str
+    reason: str
+    comment: Optional[str] = None
+    exchange_product_id: Optional[int] = None
+    exchange_product_name: Optional[str] = None
+    status: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
 class CRMCustomerSummary(BaseModel):
     id: int
     name: str

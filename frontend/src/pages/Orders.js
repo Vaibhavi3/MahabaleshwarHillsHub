@@ -4,6 +4,8 @@ import api, { getImageUrl } from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import OrderTimeline from '../components/OrderTimeline';
 import CancelOrderModal from '../components/CancelOrderModal';
+import ReturnRequestModal from '../components/ReturnRequestModal';
+import ReturnRequestStatus from '../components/ReturnRequestStatus';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -14,11 +16,33 @@ const STATUS_COLORS = {
 };
 
 const CANCELLABLE_STATUSES = new Set(['pending', 'confirmed']);
+const RETURN_WINDOW_DAYS = 7;
+
+const deliveredAt = (order) => {
+  const entry = (order.status_history || []).find((h) => h.status === 'delivered');
+  return entry ? new Date(entry.created_at) : null;
+};
+
+const withinReturnWindow = (order) => {
+  const delivered = deliveredAt(order);
+  if (!delivered) return false;
+  const daysSince = (Date.now() - delivered.getTime()) / (1000 * 60 * 60 * 24);
+  return daysSince <= RETURN_WINDOW_DAYS;
+};
+
+const returnDeadlineLabel = (order) => {
+  const delivered = deliveredAt(order);
+  if (!delivered) return null;
+  const deadline = new Date(delivered.getTime() + RETURN_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  return deadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+};
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [returnRequests, setReturnRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [returnTarget, setReturnTarget] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -30,9 +54,28 @@ const Orders = () => {
       } finally {
         setLoading(false);
       }
+      try {
+        const rrResponse = await api.getMyReturnRequests();
+        setReturnRequests(rrResponse.data);
+      } catch (error) {
+        // non-critical - the page still works without return status badges
+      }
     };
     load();
   }, []);
+
+  const returnRequestForItem = (itemId) => returnRequests.find((r) => r.order_item_id === itemId);
+
+  const handleReturnSubmit = async (payload) => {
+    try {
+      const response = await api.createReturnRequest(returnTarget.order.id, returnTarget.item.id, payload);
+      setReturnRequests((prev) => [...prev, response.data]);
+      toast.success(payload.request_type === 'exchange' ? 'Exchange requested' : 'Return requested');
+      setReturnTarget(null);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not submit this request');
+    }
+  };
 
   const handleCancelConfirm = async (reason) => {
     try {
@@ -83,19 +126,42 @@ const Orders = () => {
               />
             </div>
             <div className="space-y-3 mb-4">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 text-sm">
-                  <img
-                    src={getImageUrl(item.product_image) || 'https://via.placeholder.com/60'}
-                    alt={item.product_name || 'Product'}
-                    className="w-12 h-12 object-cover rounded"
-                  />
-                  <span className="flex-1 text-gray-700">
-                    {item.product_name || `Product #${item.product_id}`} x {item.quantity}
-                  </span>
-                  <span className="text-gray-700">₹{(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
+              {order.items.map((item) => {
+                const existingRequest = returnRequestForItem(item.id);
+                const eligible = order.status === 'delivered' && withinReturnWindow(order);
+                return (
+                  <div key={item.id} className="text-sm">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={getImageUrl(item.product_image) || 'https://via.placeholder.com/60'}
+                        alt={item.product_name || 'Product'}
+                        className="w-12 h-12 object-cover rounded"
+                      />
+                      <span className="flex-1 text-gray-700">
+                        {item.product_name || `Product #${item.product_id}`} x {item.quantity}
+                      </span>
+                      <span className="text-gray-700">₹{(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                    {existingRequest ? (
+                      <ReturnRequestStatus request={existingRequest} />
+                    ) : (
+                      eligible && (
+                        <div className="mt-2 ml-[60px] flex items-center gap-2">
+                          <button
+                            onClick={() => setReturnTarget({ order, item })}
+                            className="text-xs font-semibold uppercase text-brand hover:underline"
+                          >
+                            Return / Exchange
+                          </button>
+                          <span className="text-xs text-muted">
+                            (by {returnDeadlineLabel(order)})
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <div className="flex justify-between items-center border-t pt-4">
               <span className="text-gray-600">Payment: {order.payment_status}</span>
@@ -121,6 +187,15 @@ const Orders = () => {
           order={cancelTarget}
           onClose={() => setCancelTarget(null)}
           onConfirm={handleCancelConfirm}
+        />
+      )}
+
+      {returnTarget && (
+        <ReturnRequestModal
+          order={returnTarget.order}
+          item={returnTarget.item}
+          onClose={() => setReturnTarget(null)}
+          onSubmitted={handleReturnSubmit}
         />
       )}
     </div>

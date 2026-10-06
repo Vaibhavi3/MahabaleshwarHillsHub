@@ -18,6 +18,7 @@ const EMPTY_FORM = {
 };
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+const RETURN_REQUEST_STATUSES = ['requested', 'approved', 'rejected', 'picked_up', 'completed'];
 
 const EMPTY_COUPON_FORM = {
   id: null,
@@ -38,6 +39,7 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [coupons, setCoupons] = useState([]);
+  const [returnRequests, setReturnRequests] = useState([]);
   const [page, setPage] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [couponForm, setCouponForm] = useState(EMPTY_COUPON_FORM);
@@ -77,12 +79,28 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const loadReturnRequests = useCallback(async () => {
+    try {
+      const response = await api.getAdminReturnRequests();
+      setReturnRequests(response.data);
+    } catch (error) {
+      toast.error('Failed to load return requests');
+    }
+  }, []);
+
   useEffect(() => {
     if (!user?.is_admin) return;
     setLoading(true);
-    const load = tab === 'products' ? loadProducts() : tab === 'orders' ? loadOrders() : loadCoupons();
+    const load =
+      tab === 'products'
+        ? loadProducts()
+        : tab === 'orders'
+        ? loadOrders()
+        : tab === 'returns'
+        ? loadReturnRequests()
+        : loadCoupons();
     load.finally(() => setLoading(false));
-  }, [tab, loadProducts, loadOrders, loadCoupons, user]);
+  }, [tab, loadProducts, loadOrders, loadCoupons, loadReturnRequests, user]);
 
   if (!user?.is_admin) {
     return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Admin access only</div>;
@@ -152,6 +170,16 @@ const AdminDashboard = () => {
       loadOrders();
     } catch (error) {
       toast.error('Update failed');
+    }
+  };
+
+  const handleReturnRequestStatus = async (requestId, status) => {
+    try {
+      await api.updateReturnRequestStatus(requestId, status);
+      toast.success('Request updated');
+      loadReturnRequests();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Update failed');
     }
   };
 
@@ -239,6 +267,12 @@ const AdminDashboard = () => {
           onClick={() => setTab('offers')}
         >
           Offers
+        </button>
+        <button
+          className={`pb-2 font-semibold ${tab === 'returns' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          onClick={() => setTab('returns')}
+        >
+          Returns
         </button>
       </div>
 
@@ -379,6 +413,47 @@ const AdminDashboard = () => {
               </div>
             ))}
             {orders.length === 0 && <div className="text-center text-gray-600">No orders yet</div>}
+          </div>
+        ))}
+
+      {tab === 'returns' &&
+        (loading ? (
+          <div className="text-center text-gray-600">Loading...</div>
+        ) : (
+          <div className="space-y-4">
+            {returnRequests.map((r) => (
+              <div key={r.id} className="bg-white rounded-lg shadow p-6">
+                <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
+                  <div>
+                    <p className="font-semibold">
+                      {r.request_type === 'exchange' ? 'Exchange' : 'Return'} &middot; {r.product_name}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Order {r.order_number} &middot; Qty {r.quantity} &middot; {r.user_email}
+                    </p>
+                    <p className="text-sm text-gray-500">{new Date(r.created_at).toLocaleString()}</p>
+                  </div>
+                  <select
+                    value={r.status}
+                    onChange={(e) => handleReturnRequestStatus(r.id, e.target.value)}
+                    disabled={r.status === 'completed'}
+                    className="border rounded-lg px-3 py-1 disabled:bg-gray-100"
+                  >
+                    {RETURN_REQUEST_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-sm text-gray-600 mb-1">Reason: {r.reason}</p>
+                {r.comment && <p className="text-sm text-gray-600 mb-1">Comment: {r.comment}</p>}
+                {r.request_type === 'exchange' && (
+                  <p className="text-sm text-gray-600">Exchange for: {r.exchange_product_name}</p>
+                )}
+              </div>
+            ))}
+            {returnRequests.length === 0 && <div className="text-center text-gray-600">No return/exchange requests yet</div>}
           </div>
         ))}
 
