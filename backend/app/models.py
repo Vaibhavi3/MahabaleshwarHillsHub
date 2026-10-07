@@ -315,6 +315,58 @@ class RecentlyViewed(Base):
     __table_args__ = (UniqueConstraint("user_id", "product_id", name="uq_recently_viewed_user_product"),)
 
 
+class ReturnRequest(Base):
+    """Self-service return/exchange request against a delivered order
+    item, matching Myntra/Nykaa/Ajio's "Return or Exchange" flow on My
+    Orders. Only honoured within RETURN_WINDOW_DAYS of delivery, which is
+    the "7-day hassle-free returns" promise already shown on the homepage
+    and product page trust badges - not a new policy."""
+    __tablename__ = "return_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_item_id = Column(Integer, ForeignKey("order_items.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    request_type = Column(String(20), nullable=False)  # "return" or "exchange"
+    reason = Column(String(255), nullable=False)
+    comment = Column(Text)
+    exchange_product_id = Column(Integer, ForeignKey("products.id"))
+    status = Column(String(20), default="requested", index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    order_item = relationship("OrderItem")
+    user = relationship("User")
+    exchange_product = relationship("Product", foreign_keys=[exchange_product_id])
+
+    @property
+    def order(self):
+        return self.order_item.order if self.order_item else None
+
+    @property
+    def product_name(self):
+        return self.order_item.product_name if self.order_item else None
+
+    @property
+    def product_image(self):
+        return self.order_item.product_image if self.order_item else None
+
+    @property
+    def quantity(self):
+        return self.order_item.quantity if self.order_item else None
+
+    @property
+    def order_number(self):
+        return self.order.order_number if self.order else None
+
+    @property
+    def user_email(self):
+        return self.user.email if self.user else None
+
+    @property
+    def exchange_product_name(self):
+        return self.exchange_product.name if self.exchange_product else None
+
+
 class CRMActivity(Base):
     __tablename__ = "crm_activities"
 

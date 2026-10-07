@@ -240,6 +240,20 @@ export const api = {
     return client.post(`/addresses/${id}/default`);
   },
 
+  // Returns & exchanges (self-service, within the 7-day return window)
+  createReturnRequest: (orderId, itemId, payload) => {
+    return client.post(`/orders/${orderId}/items/${itemId}/return-request`, payload);
+  },
+  getMyReturnRequests: () => {
+    return client.get('/return-requests');
+  },
+  getAdminReturnRequests: () => {
+    return client.get('/return-requests/admin/all');
+  },
+  updateReturnRequestStatus: (id, status) => {
+    return client.put(`/return-requests/${id}`, { status });
+  },
+
   // CRM
   getCRMOverview: () => client.get('/crm/overview'),
   getCRMCustomers: (params) => client.get('/crm/customers', { params }),
