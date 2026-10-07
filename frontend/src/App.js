@@ -14,6 +14,7 @@ import Wishlist from './pages/Wishlist';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Addresses from './pages/Addresses';
+import Rewards from './pages/Rewards';
 import Auth from './pages/Auth';
 import AdminDashboard from './pages/AdminDashboard';
 import CRM from './pages/CRM';
@@ -80,6 +81,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Addresses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rewards"
+            element={
+              <ProtectedRoute>
+                <Rewards />
               </ProtectedRoute>
             }
           />

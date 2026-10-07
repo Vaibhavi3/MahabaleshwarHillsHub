@@ -254,6 +254,10 @@ export const api = {
     return client.put(`/return-requests/${id}`, { status });
   },
 
+  // Loyalty ("Hills Rewards" points - earn on delivery, redeem at checkout)
+  getLoyaltyBalance: () => client.get('/loyalty/balance'),
+  getLoyaltyTransactions: () => client.get('/loyalty/transactions'),
+
   // CRM
   getCRMOverview: () => client.get('/crm/overview'),
   getCRMCustomers: (params) => client.get('/crm/customers', { params }),

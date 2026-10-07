@@ -4,6 +4,7 @@ from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.routes.coupons import compute_discount
+from app.utils.loyalty import earn_points_for_amount, max_redeemable_points, POINT_VALUE_INR
 import uuid
 
 router = APIRouter()
@@ -54,6 +55,18 @@ def create_order(
             coupon_code = coupon.code
             total_amount = round(subtotal_amount - discount_amount, 2)
 
+        redeem_points = order.redeem_points or 0
+        points_discount_amount = 0.0
+        if redeem_points > 0:
+            max_redeemable = max_redeemable_points(current_user.loyalty_points, total_amount)
+            if redeem_points > max_redeemable:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"You can redeem at most {max_redeemable} Hills Rewards points (₹{max_redeemable * POINT_VALUE_INR}) on this order",
+                )
+            points_discount_amount = round(redeem_points * POINT_VALUE_INR, 2)
+            total_amount = round(total_amount - points_discount_amount, 2)
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         db_order = models.Order(
             user_id=current_user.id,
@@ -62,6 +75,8 @@ def create_order(
             subtotal_amount=subtotal_amount,
             coupon_code=coupon_code,
             discount_amount=discount_amount,
+            points_redeemed=redeem_points,
+            points_discount_amount=points_discount_amount,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,
@@ -87,6 +102,15 @@ def create_order(
 
         if coupon:
             coupon.used_count += 1
+
+        if redeem_points > 0:
+            current_user.loyalty_points -= redeem_points
+            db.add(models.LoyaltyTransaction(
+                user_id=current_user.id,
+                order_id=db_order.id,
+                points=-redeem_points,
+                reason="order_redeemed",
+            ))
 
         db.commit()
     except HTTPException:
@@ -131,6 +155,15 @@ def cancel_order(
         product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
         if product:
             product.stock += item.quantity
+
+    if order.points_redeemed > 0:
+        current_user.loyalty_points += order.points_redeemed
+        db.add(models.LoyaltyTransaction(
+            user_id=current_user.id,
+            order_id=order.id,
+            points=order.points_redeemed,
+            reason="order_redeemed_refund",
+        ))
 
     order.status = "cancelled"
     order.cancellation_reason = reason
@@ -208,6 +241,22 @@ def update_order(
 
     if status_changed:
         db.add(models.OrderStatusHistory(order_id=order.id, status=new_status))
+
+        # Credit Hills Rewards points the first time an order reaches
+        # "delivered" - guarded by points_credited so re-saving the order,
+        # or toggling status back and forth, never double-credits.
+        if new_status == "delivered" and not order.points_credited:
+            earned = earn_points_for_amount(order.total_amount)
+            order.points_earned = earned
+            order.points_credited = True
+            if earned > 0:
+                order.user.loyalty_points += earned
+                db.add(models.LoyaltyTransaction(
+                    user_id=order.user_id,
+                    order_id=order.id,
+                    points=earned,
+                    reason="order_earned",
+                ))
 
     db.commit()
     db.refresh(order)

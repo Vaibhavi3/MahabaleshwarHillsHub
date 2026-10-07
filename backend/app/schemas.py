@@ -26,8 +26,9 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     is_admin: bool
+    loyalty_points: int = 0
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -147,6 +148,7 @@ class OrderCreate(BaseModel):
     payment_method: str
     notes: Optional[str] = None
     coupon_code: Optional[str] = None
+    redeem_points: int = Field(0, ge=0)
 
 class OrderUpdate(BaseModel):
     status: Optional[str] = None
@@ -178,6 +180,9 @@ class OrderResponse(BaseModel):
     payment_method: str
     tracking_number: Optional[str] = None
     cancellation_reason: Optional[str] = None
+    points_redeemed: int = 0
+    points_discount_amount: float = 0
+    points_earned: int = 0
     items: List[OrderItemResponse] = []
     status_history: List[OrderStatusHistoryResponse] = []
     created_at: datetime
@@ -461,3 +466,19 @@ class CRMOverviewResponse(BaseModel):
     open_tasks: int
     recent_orders: List[CRMRecentOrder] = []
     pipeline: dict
+
+class LoyaltyBalanceResponse(BaseModel):
+    points_balance: int
+    points_value_inr: float
+    earn_rate_description: str
+    redeem_rate_description: str
+
+class LoyaltyTransactionResponse(BaseModel):
+    id: int
+    order_id: Optional[int] = None
+    points: int
+    reason: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

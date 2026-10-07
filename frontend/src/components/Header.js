@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage, FiMapPin } from 'react-icons/fi';
+import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage, FiMapPin, FiAward } from 'react-icons/fi';
 import { logout } from '../features/authSlice';
 import { clearWishlist } from '../features/wishlistSlice';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
@@ -102,6 +102,13 @@ const Header = () => {
               </Link>
             )}
 
+            {user && (
+              <Link to="/rewards" className="hidden sm:flex flex-col items-center text-ink hover:text-brand transition-colors">
+                <FiAward className="text-xl" />
+                <span className="text-[11px] font-semibold uppercase mt-0.5">Rewards</span>
+              </Link>
+            )}
+
             <Link to="/wishlist" className="relative flex flex-col items-center text-ink hover:text-brand transition-colors">
               <FiHeart className="text-xl" />
               {wishlistItems.length > 0 && (
@@ -169,6 +176,9 @@ const Header = () => {
                   </Link>
                   <Link to="/addresses" className="nav-link" onClick={() => setIsOpen(false)}>
                     Addresses
+                  </Link>
+                  <Link to="/rewards" className="nav-link" onClick={() => setIsOpen(false)}>
+                    Hills Rewards
                   </Link>
                   <button
                     onClick={() => {

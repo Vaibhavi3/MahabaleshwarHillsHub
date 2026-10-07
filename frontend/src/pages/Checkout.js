@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
-import { FiTruck, FiShield, FiCheck } from 'react-icons/fi';
+import { FiTruck, FiShield, FiCheck, FiAward } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import AddressBook from '../components/AddressBook';
 
@@ -146,9 +146,23 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [submitting, setSubmitting] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [rewardsBalance, setRewardsBalance] = useState(0);
+  const [redeemPoints, setRedeemPoints] = useState(0);
+  const [useRewards, setUseRewards] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const total = Math.max(0, subtotal - discountAmount);
+  const totalBeforeRewards = Math.max(0, subtotal - discountAmount);
+  // Points can never take the payable total below Re 1 - a Rs 0 order isn't
+  // something Stripe/Razorpay can actually charge.
+  const maxRedeemable = Math.max(0, Math.min(rewardsBalance, Math.floor(totalBeforeRewards - 1)));
+  const pointsToRedeem = useRewards ? Math.min(redeemPoints, maxRedeemable) : 0;
+  const total = Math.max(0, totalBeforeRewards - pointsToRedeem);
+
+  useEffect(() => {
+    api.getLoyaltyBalance()
+      .then((response) => setRewardsBalance(response.data.points_balance))
+      .catch(() => {});
+  }, []);
 
   const handleCreateOrder = async (e) => {
     e?.preventDefault();
@@ -171,6 +185,7 @@ const Checkout = () => {
         shipping_address,
         payment_method: paymentMethod,
         coupon_code: couponCode || undefined,
+        redeem_points: pointsToRedeem,
       });
       setOrder(response.data);
       setStep('payment');
@@ -217,6 +232,45 @@ const Checkout = () => {
                 <FiShield className="text-brand shrink-0" /> All payments are processed securely online. Cash on Delivery is not available.
               </p>
 
+              {rewardsBalance > 0 && (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useRewards}
+                      onChange={(e) => {
+                        setUseRewards(e.target.checked);
+                        if (e.target.checked) setRedeemPoints(maxRedeemable);
+                      }}
+                      className="accent-brand w-4 h-4 mt-0.5"
+                    />
+                    <span>
+                      <span className="flex items-center gap-1.5 font-semibold text-ink text-sm">
+                        <FiAward className="text-brand" /> Use Hills Rewards points
+                      </span>
+                      <span className="text-xs text-muted">
+                        You have {rewardsBalance} points (₹{rewardsBalance} value)
+                      </span>
+                    </span>
+                  </label>
+                  {useRewards && maxRedeemable > 0 && (
+                    <div className="mt-3 pl-7 flex items-center gap-3">
+                      <input
+                        type="range"
+                        min="0"
+                        max={maxRedeemable}
+                        value={Math.min(redeemPoints, maxRedeemable)}
+                        onChange={(e) => setRedeemPoints(parseInt(e.target.value, 10))}
+                        className="flex-1 accent-brand"
+                      />
+                      <span className="text-sm font-bold text-ink whitespace-nowrap">
+                        {pointsToRedeem} pts (-₹{pointsToRedeem})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button type="button" onClick={handleCreateOrder} disabled={submitting || !selectedAddress} className="btn-primary w-full disabled:opacity-50">
                 {submitting ? 'Please wait...' : 'Continue to Payment'}
               </button>
@@ -248,16 +302,24 @@ const Checkout = () => {
               </div>
             ))}
           </div>
-          {couponCode && (
+          {(couponCode || pointsToRedeem > 0) && (
             <div className="space-y-1 mb-2 pb-2 border-b">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Subtotal</span>
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm text-emerald-700 font-semibold">
-                <span>Coupon ({couponCode})</span>
-                <span>- ₹{discountAmount.toFixed(2)}</span>
-              </div>
+              {couponCode && (
+                <div className="flex justify-between text-sm text-emerald-700 font-semibold">
+                  <span>Coupon ({couponCode})</span>
+                  <span>- ₹{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              {pointsToRedeem > 0 && (
+                <div className="flex justify-between text-sm text-emerald-700 font-semibold">
+                  <span>Hills Rewards ({pointsToRedeem} pts)</span>
+                  <span>- ₹{pointsToRedeem.toFixed(2)}</span>
+                </div>
+              )}
             </div>
           )}
           <div className="border-t pt-4 flex justify-between font-bold text-lg">

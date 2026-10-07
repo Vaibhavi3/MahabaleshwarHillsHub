@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_password_hash, verify_password, create_access_token, get_current_user
+from app.utils.loyalty import SIGNUP_BONUS_POINTS
 from app.schemas import LoginRequest
 
 router = APIRouter()
@@ -30,12 +31,21 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     )
     
     cart = models.Cart(user=db_user)
-    
+
     db.add(db_user)
     db.add(cart)
+    db.flush()  # assigns db_user.id for the welcome-bonus ledger entry below
+
+    db_user.loyalty_points = SIGNUP_BONUS_POINTS
+    db.add(models.LoyaltyTransaction(
+        user_id=db_user.id,
+        points=SIGNUP_BONUS_POINTS,
+        reason="signup_bonus",
+    ))
+
     db.commit()
     db.refresh(db_user)
-    
+
     return db_user
 
 
