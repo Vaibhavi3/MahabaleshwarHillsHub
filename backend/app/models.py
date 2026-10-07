@@ -29,9 +29,10 @@ class User(Base):
     country = Column(String(50))
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
+    loyalty_points = Column(Integer, default=0, nullable=False, server_default="0")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     cart = relationship("Cart", back_populates="user", uselist=False, cascade="all, delete-orphan")
@@ -127,6 +128,10 @@ class Order(Base):
     tracking_number = Column(String(100))
     notes = Column(Text)
     cancellation_reason = Column(String(255))
+    points_redeemed = Column(Integer, default=0, nullable=False, server_default="0")
+    points_discount_amount = Column(Float, default=0, nullable=False, server_default="0")
+    points_earned = Column(Integer, default=0, nullable=False, server_default="0")
+    points_credited = Column(Boolean, default=False, nullable=False, server_default="false")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -365,6 +370,25 @@ class ReturnRequest(Base):
     @property
     def exchange_product_name(self):
         return self.exchange_product.name if self.exchange_product else None
+
+
+class LoyaltyTransaction(Base):
+    """Ledger entry for "Hills Rewards" points, matching Nykaa Cash/Myntra
+    Insider/Ajio Rewardz: a running points balance earned on delivered
+    orders (and a signup bonus) and spent as a checkout discount. Kept as
+    an append-only ledger (rather than just the running User.loyalty_points
+    total) so a shopper's balance is always explainable from history."""
+    __tablename__ = "loyalty_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=True, index=True)
+    points = Column(Integer, nullable=False)  # positive = credit, negative = redeemed
+    reason = Column(String(30), nullable=False)  # signup_bonus | order_earned | order_redeemed | order_redeemed_refund
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    order = relationship("Order")
 
 
 class CRMActivity(Base):

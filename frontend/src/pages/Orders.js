@@ -6,6 +6,7 @@ import OrderTimeline from '../components/OrderTimeline';
 import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
+import { FiAward } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -167,6 +168,16 @@ const Orders = () => {
               <span className="text-gray-600">Payment: {order.payment_status}</span>
               <span className="font-bold text-lg">₹{order.total_amount.toFixed(2)}</span>
             </div>
+            {order.status === 'delivered' && order.points_earned > 0 && (
+              <p className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold mt-2">
+                <FiAward /> You earned {order.points_earned} Hills Rewards points on this order
+              </p>
+            )}
+            {order.points_redeemed > 0 && (
+              <p className="text-xs text-muted mt-1">
+                {order.points_redeemed} Hills Rewards points were redeemed for ₹{order.points_discount_amount.toFixed(0)} off this order
+              </p>
+            )}
             {order.status === 'cancelled' && order.cancellation_reason && (
               <p className="text-xs text-muted mt-2">Cancellation reason: {order.cancellation_reason}</p>
             )}
