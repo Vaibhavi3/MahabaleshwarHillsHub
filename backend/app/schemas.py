@@ -11,6 +11,7 @@ class UserBase(BaseModel):
     
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
+    referral_code: Optional[str] = Field(None, max_length=20)
     
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -482,3 +483,21 @@ class LoyaltyTransactionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ReferralItemResponse(BaseModel):
+    id: int
+    referred_name: str
+    status: str
+    reward_points: int
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+class ReferralSummaryResponse(BaseModel):
+    referral_code: Optional[str] = None
+    referee_bonus_points: int
+    referrer_bonus_points: int
+    total_referrals: int = 0
+    completed_referrals: int = 0
+    pending_referrals: int = 0
+    points_earned_from_referrals: int = 0
+    referrals: List[ReferralItemResponse] = []

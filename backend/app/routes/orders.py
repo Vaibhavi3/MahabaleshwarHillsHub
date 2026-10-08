@@ -4,7 +4,8 @@ from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.routes.coupons import compute_discount
-from app.utils.loyalty import earn_points_for_amount, max_redeemable_points, POINT_VALUE_INR
+from app.utils.loyalty import earn_points_for_amount, max_redeemable_points, POINT_VALUE_INR, REFERRAL_REFERRER_BONUS_POINTS
+from datetime import datetime, timezone
 import uuid
 
 router = APIRouter()
@@ -257,6 +258,38 @@ def update_order(
                     points=earned,
                     reason="order_earned",
                 ))
+
+            # "Invite & Earn": the referrer's bonus is tied to the referred
+            # friend's FIRST delivered order (like Ajio's "referrer earns
+            # after the new user's qualifying order" rule), not every
+            # order, so a repeat customer doesn't keep paying out the
+            # same referrer.
+            referral = (
+                db.query(models.Referral)
+                .filter(models.Referral.referred_user_id == order.user_id, models.Referral.status == "pending")
+                .first()
+            )
+            if referral:
+                earlier_delivered = (
+                    db.query(models.Order)
+                    .filter(
+                        models.Order.user_id == order.user_id,
+                        models.Order.status == "delivered",
+                        models.Order.id != order.id,
+                    )
+                    .first()
+                )
+                if not earlier_delivered:
+                    referral.status = "completed"
+                    referral.completed_at = datetime.now(timezone.utc)
+                    referral.reward_points = REFERRAL_REFERRER_BONUS_POINTS
+                    if referral.referrer:
+                        referral.referrer.loyalty_points += REFERRAL_REFERRER_BONUS_POINTS
+                        db.add(models.LoyaltyTransaction(
+                            user_id=referral.referrer_id,
+                            points=REFERRAL_REFERRER_BONUS_POINTS,
+                            reason="referral_bonus",
+                        ))
 
     db.commit()
     db.refresh(order)

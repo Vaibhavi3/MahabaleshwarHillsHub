@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_password_hash, verify_password, create_access_token, get_current_user
-from app.utils.loyalty import SIGNUP_BONUS_POINTS
+from app.utils.loyalty import SIGNUP_BONUS_POINTS, REFERRAL_REFEREE_BONUS_POINTS
+from app.utils.referral import generate_referral_code
 from app.schemas import LoginRequest
 
 router = APIRouter()
@@ -19,7 +20,17 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already taken")
-    
+
+    referrer = None
+    if user.referral_code and user.referral_code.strip():
+        referrer = (
+            db.query(models.User)
+            .filter(models.User.referral_code == user.referral_code.strip().upper())
+            .first()
+        )
+        if not referrer:
+            raise HTTPException(status_code=400, detail="Invalid referral code")
+
     hashed_password = get_password_hash(user.password)
     db_user = models.User(
         username=user.username,
@@ -29,19 +40,29 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         last_name=user.last_name,
         phone=user.phone
     )
-    
+
     cart = models.Cart(user=db_user)
 
     db.add(db_user)
     db.add(cart)
     db.flush()  # assigns db_user.id for the welcome-bonus ledger entry below
 
+    db_user.referral_code = generate_referral_code(db, user.username)
     db_user.loyalty_points = SIGNUP_BONUS_POINTS
     db.add(models.LoyaltyTransaction(
         user_id=db_user.id,
         points=SIGNUP_BONUS_POINTS,
         reason="signup_bonus",
     ))
+
+    if referrer:
+        db_user.loyalty_points += REFERRAL_REFEREE_BONUS_POINTS
+        db.add(models.LoyaltyTransaction(
+            user_id=db_user.id,
+            points=REFERRAL_REFEREE_BONUS_POINTS,
+            reason="referral_welcome_bonus",
+        ))
+        db.add(models.Referral(referrer_id=referrer.id, referred_user_id=db_user.id, status="pending"))
 
     db.commit()
     db.refresh(db_user)

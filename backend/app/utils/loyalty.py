@@ -15,6 +15,13 @@ POINT_VALUE_INR = 1  # redeem rate: 1 point = Re 1 off at checkout
 SIGNUP_BONUS_POINTS = 50  # one-time welcome bonus on registration (Rs 50)
 MIN_PAYABLE_INR = 1  # points can never take the payable total below this
 
+# "Invite & Earn" referral bonuses, modelled on Ajio's Invite & Earn (a new
+# shopper gets a signup bonus for using a friend's code, the friend earns a
+# bonus once that shopper's first order is delivered) - paid in this
+# store's own Hills Rewards points rather than AJIO SuperCash.
+REFERRAL_REFEREE_BONUS_POINTS = 25  # extra points for a new shopper who signs up with a referral code
+REFERRAL_REFERRER_BONUS_POINTS = 100  # points for the referrer once their friend's first order is delivered
+
 
 def earn_points_for_amount(amount_inr: float) -> int:
     """Points earned on a delivered order, based on what was actually paid."""
