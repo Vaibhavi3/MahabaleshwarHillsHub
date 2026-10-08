@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import api from '../api/axiosConfig';
 import { setUser } from '../features/authSlice';
 import toast from 'react-hot-toast';
 
 const Auth = () => {
-  const [mode, setMode] = useState('login');
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState(searchParams.get('ref') ? 'register' : 'login');
   const [form, setForm] = useState({
     username: '',
     email: '',
@@ -14,6 +15,7 @@ const Auth = () => {
     first_name: '',
     last_name: '',
     phone: '',
+    referral_code: searchParams.get('ref') || '',
   });
   const [submitting, setSubmitting] = useState(false);
   const dispatch = useDispatch();
@@ -34,6 +36,7 @@ const Auth = () => {
           first_name: form.first_name,
           last_name: form.last_name,
           phone: form.phone,
+          referral_code: form.referral_code.trim() || undefined,
         });
       }
       const loginResponse = await api.login({ username: form.username, password: form.password });
@@ -117,6 +120,22 @@ const Auth = () => {
                   onChange={handleChange}
                   className="w-full border rounded-lg px-4 py-2"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Referral Code (optional)</label>
+                <input
+                  name="referral_code"
+                  value={form.referral_code}
+                  onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
+                  placeholder="Got a code from a friend?"
+                  className="w-full border rounded-lg px-4 py-2 uppercase"
+                />
+                {form.referral_code && (
+                  <p className="text-xs text-muted mt-1">
+                    You'll get bonus Hills Rewards points right away, and your friend earns extra points once
+                    your first order is delivered.
+                  </p>
+                )}
               </div>
             </>
           )}

@@ -2,29 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
-import { FiAward, FiArrowUpRight, FiArrowDownRight, FiGift } from 'react-icons/fi';
+import { FiAward, FiArrowUpRight, FiArrowDownRight, FiGift, FiCopy, FiCheck, FiUsers } from 'react-icons/fi';
+import { FaWhatsapp } from 'react-icons/fa';
 
 const REASON_LABELS = {
   signup_bonus: 'Welcome bonus',
   order_earned: 'Earned on delivered order',
   order_redeemed: 'Redeemed at checkout',
   order_redeemed_refund: 'Refunded (order cancelled)',
+  referral_welcome_bonus: 'Welcome bonus (referred by a friend)',
+  referral_bonus: "Bonus - friend's first order delivered",
 };
 
 const Rewards = () => {
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [referrals, setReferrals] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [balanceResponse, txResponse] = await Promise.all([
+        const [balanceResponse, txResponse, referralsResponse] = await Promise.all([
           api.getLoyaltyBalance(),
           api.getLoyaltyTransactions(),
+          api.getMyReferrals(),
         ]);
         setBalance(balanceResponse.data);
         setTransactions(txResponse.data);
+        setReferrals(referralsResponse.data);
       } catch (error) {
         toast.error('Failed to load Hills Rewards');
       } finally {
@@ -33,6 +40,26 @@ const Rewards = () => {
     };
     load();
   }, []);
+
+  const referralLink = referrals?.referral_code
+    ? `${window.location.origin}/auth?ref=${referrals.referral_code}`
+    : '';
+
+  const copyReferralLink = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+      toast.success('Link copied');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Could not copy link - please copy it manually');
+    }
+  };
+
+  const shareOnWhatsApp = () => {
+    const text = `Shop handmade socks, slidders & bags at Mahabaleshwar Hills Hub! Use my code ${referrals.referral_code} when you sign up: ${referralLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  };
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8 text-center text-muted">Loading...</div>;
@@ -71,6 +98,78 @@ const Rewards = () => {
           </div>
         </div>
       </div>
+
+      {referrals && (
+        <div className="border border-brand/20 rounded-lg p-6 mb-10">
+          <div className="flex items-center gap-2 mb-2">
+            <FiUsers className="text-brand" size={20} />
+            <h2 className="text-lg font-bold text-ink">Invite & Earn</h2>
+          </div>
+          <p className="text-sm text-muted mb-5">
+            Share your code - your friend gets {referrals.referee_bonus_points} bonus points the moment they sign
+            up, and you get {referrals.referrer_bonus_points} points once their first order is delivered.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
+            <div className="flex-1 bg-surface rounded-lg px-4 py-2.5 font-mono font-bold text-ink tracking-wide text-center sm:text-left">
+              {referrals.referral_code}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={copyReferralLink}
+                className="btn-secondary px-4 py-2.5 flex items-center gap-2 whitespace-nowrap"
+              >
+                {copied ? <FiCheck className="text-emerald-600" /> : <FiCopy />}
+                {copied ? 'Copied' : 'Copy Link'}
+              </button>
+              <button
+                onClick={shareOnWhatsApp}
+                className="px-4 py-2.5 rounded bg-emerald-600 text-white font-bold text-sm uppercase tracking-wide flex items-center gap-2 whitespace-nowrap hover:bg-emerald-700"
+              >
+                <FaWhatsapp size={16} />
+                Share
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mb-5 text-center">
+            <div className="bg-surface rounded-lg py-3">
+              <p className="text-xl font-extrabold text-ink">{referrals.total_referrals}</p>
+              <p className="text-xs text-muted uppercase tracking-wide">Invited</p>
+            </div>
+            <div className="bg-surface rounded-lg py-3">
+              <p className="text-xl font-extrabold text-ink">{referrals.pending_referrals}</p>
+              <p className="text-xs text-muted uppercase tracking-wide">Pending</p>
+            </div>
+            <div className="bg-surface rounded-lg py-3">
+              <p className="text-xl font-extrabold text-ink">{referrals.points_earned_from_referrals}</p>
+              <p className="text-xs text-muted uppercase tracking-wide">Points Earned</p>
+            </div>
+          </div>
+
+          {referrals.referrals.length > 0 && (
+            <div className="space-y-2">
+              {referrals.referrals.map((ref) => (
+                <div key={ref.id} className="flex items-center justify-between border-t border-gray-100 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{ref.referred_name}</p>
+                    <p className="text-xs text-muted">
+                      Joined {new Date(ref.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  {ref.status === 'completed' ? (
+                    <span className="text-sm font-bold text-emerald-600">+{ref.reward_points} pts</span>
+                  ) : (
+                    <span className="text-xs font-bold uppercase tracking-wide text-amber-600 bg-amber-50 px-2.5 py-1 rounded">
+                      Pending first order
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <h2 className="text-lg font-bold text-ink mb-4">Points history</h2>
       {transactions.length === 0 ? (

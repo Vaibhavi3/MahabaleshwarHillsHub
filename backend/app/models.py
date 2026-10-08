@@ -30,6 +30,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     loyalty_points = Column(Integer, default=0, nullable=False, server_default="0")
+    referral_code = Column(String(20), unique=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -389,6 +390,27 @@ class LoyaltyTransaction(Base):
 
     user = relationship("User")
     order = relationship("Order")
+
+
+class Referral(Base):
+    """"Invite & Earn" record: one row per successful signup via a friend's
+    referral code, matching Ajio's Invite & Earn pattern (the new shopper
+    gets a welcome bonus for using a code, the referrer earns a bonus once
+    that friend's first order is delivered) - adapted to this store's own
+    Hills Rewards points instead of AJIO SuperCash. A referred user can
+    only ever have one referrer, so referred_user_id is unique."""
+    __tablename__ = "referrals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    referrer_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    referred_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    status = Column(String(20), default="pending", nullable=False, index=True)  # pending | completed
+    reward_points = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True))
+
+    referrer = relationship("User", foreign_keys=[referrer_id])
+    referred_user = relationship("User", foreign_keys=[referred_user_id])
 
 
 class CRMActivity(Base):

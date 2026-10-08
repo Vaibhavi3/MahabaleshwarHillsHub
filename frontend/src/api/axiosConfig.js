@@ -258,6 +258,9 @@ export const api = {
   getLoyaltyBalance: () => client.get('/loyalty/balance'),
   getLoyaltyTransactions: () => client.get('/loyalty/transactions'),
 
+  // Referrals ("Invite & Earn" - share a code, earn points when a referred friend's first order is delivered)
+  getMyReferrals: () => client.get('/referrals/me'),
+
   // CRM
   getCRMOverview: () => client.get('/crm/overview'),
   getCRMCustomers: (params) => client.get('/crm/customers', { params }),
