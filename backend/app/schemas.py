@@ -150,6 +150,7 @@ class OrderCreate(BaseModel):
     notes: Optional[str] = None
     coupon_code: Optional[str] = None
     redeem_points: int = Field(0, ge=0)
+    gift_card_code: Optional[str] = None
 
 class OrderUpdate(BaseModel):
     status: Optional[str] = None
@@ -184,6 +185,8 @@ class OrderResponse(BaseModel):
     points_redeemed: int = 0
     points_discount_amount: float = 0
     points_earned: int = 0
+    gift_card_code: Optional[str] = None
+    gift_card_amount: float = 0
     items: List[OrderItemResponse] = []
     status_history: List[OrderStatusHistoryResponse] = []
     created_at: datetime
@@ -501,3 +504,37 @@ class ReferralSummaryResponse(BaseModel):
     pending_referrals: int = 0
     points_earned_from_referrals: int = 0
     referrals: List[ReferralItemResponse] = []
+
+
+class GiftCardCreate(BaseModel):
+    amount: float = Field(..., gt=0)
+    recipient_name: str = Field(..., min_length=1, max_length=100)
+    recipient_email: EmailStr
+    sender_name: Optional[str] = Field(None, max_length=100)
+    message: Optional[str] = Field(None, max_length=500)
+
+
+class GiftCardResponse(BaseModel):
+    id: int
+    code: Optional[str] = None
+    initial_value: float
+    balance: float
+    status: str
+    recipient_name: str
+    recipient_email: str
+    sender_name: Optional[str] = None
+    message: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class GiftCardValidateRequest(BaseModel):
+    code: str
+
+
+class GiftCardValidateResponse(BaseModel):
+    valid: bool
+    message: str
+    balance: float = 0

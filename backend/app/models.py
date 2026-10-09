@@ -133,6 +133,8 @@ class Order(Base):
     points_discount_amount = Column(Float, default=0, nullable=False, server_default="0")
     points_earned = Column(Integer, default=0, nullable=False, server_default="0")
     points_credited = Column(Boolean, default=False, nullable=False, server_default="false")
+    gift_card_code = Column(String(20))
+    gift_card_amount = Column(Float, default=0, nullable=False, server_default="0")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -239,6 +241,32 @@ class Coupon(Base):
     is_active = Column(Boolean, default=True)
     expires_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class GiftCard(Base):
+    """A prepaid e-gift card, matching Nykaa/Myntra/Ajio's "Gift Card"
+    pattern: bought by one shopper (optionally for a friend), paid for
+    through the same Stripe/Razorpay flow as a normal order, then
+    redeemable for its balance at checkout on future orders - including
+    by guests who were just emailed a code, not only the purchaser. The
+    code is only generated once payment succeeds, so a card that was
+    never paid for never becomes spendable."""
+    __tablename__ = "gift_cards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(20), unique=True, index=True)
+    initial_value = Column(Float, nullable=False)
+    balance = Column(Float, nullable=False)
+    status = Column(String(20), default="pending_payment", nullable=False, index=True)  # pending_payment | active | redeemed
+    purchaser_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    recipient_name = Column(String(100), nullable=False)
+    recipient_email = Column(String(150), nullable=False)
+    sender_name = Column(String(100))
+    message = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    activated_at = Column(DateTime(timezone=True))
+
+    purchaser = relationship("User")
 
 
 class Payment(Base):

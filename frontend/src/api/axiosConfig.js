@@ -261,6 +261,17 @@ export const api = {
   // Referrals ("Invite & Earn" - share a code, earn points when a referred friend's first order is delivered)
   getMyReferrals: () => client.get('/referrals/me'),
 
+  // Gift Cards (buy one for yourself or a friend, redeem the balance at checkout)
+  purchaseGiftCard: (payload) => client.post('/gift-cards', payload),
+  createGiftCardPaymentIntent: (giftCardId) => client.post(`/gift-cards/${giftCardId}/stripe/create-intent`),
+  confirmGiftCardStripePayment: (giftCardId, paymentIntentId) =>
+    client.post(`/gift-cards/${giftCardId}/stripe/confirm`, null, { params: { payment_intent_id: paymentIntentId } }),
+  createGiftCardRazorpayOrder: (giftCardId) => client.post(`/gift-cards/${giftCardId}/razorpay/create-order`),
+  verifyGiftCardRazorpayPayment: (giftCardId, params) =>
+    client.post(`/gift-cards/${giftCardId}/razorpay/verify`, null, { params }),
+  validateGiftCard: (code) => client.post('/gift-cards/validate', { code }),
+  getMyGiftCards: () => client.get('/gift-cards/mine'),
+
   // CRM
   getCRMOverview: () => client.get('/crm/overview'),
   getCRMCustomers: (params) => client.get('/crm/customers', { params }),

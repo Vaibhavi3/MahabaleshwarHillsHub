@@ -178,6 +178,11 @@ const Orders = () => {
                 {order.points_redeemed} Hills Rewards points were redeemed for ₹{order.points_discount_amount.toFixed(0)} off this order
               </p>
             )}
+            {order.gift_card_amount > 0 && (
+              <p className="text-xs text-muted mt-1">
+                Gift card {order.gift_card_code} covered ₹{order.gift_card_amount.toFixed(0)} of this order
+              </p>
+            )}
             {order.status === 'cancelled' && order.cancellation_reason && (
               <p className="text-xs text-muted mt-2">Cancellation reason: {order.cancellation_reason}</p>
             )}
