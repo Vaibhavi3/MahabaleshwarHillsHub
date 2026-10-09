@@ -5,7 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
-import { FiTruck, FiShield, FiCheck, FiAward } from 'react-icons/fi';
+import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import AddressBook from '../components/AddressBook';
 
@@ -149,6 +149,9 @@ const Checkout = () => {
   const [rewardsBalance, setRewardsBalance] = useState(0);
   const [redeemPoints, setRedeemPoints] = useState(0);
   const [useRewards, setUseRewards] = useState(false);
+  const [giftCardInput, setGiftCardInput] = useState('');
+  const [appliedGiftCard, setAppliedGiftCard] = useState(null);
+  const [applyingGiftCard, setApplyingGiftCard] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const totalBeforeRewards = Math.max(0, subtotal - discountAmount);
@@ -156,13 +159,39 @@ const Checkout = () => {
   // something Stripe/Razorpay can actually charge.
   const maxRedeemable = Math.max(0, Math.min(rewardsBalance, Math.floor(totalBeforeRewards - 1)));
   const pointsToRedeem = useRewards ? Math.min(redeemPoints, maxRedeemable) : 0;
-  const total = Math.max(0, totalBeforeRewards - pointsToRedeem);
+  const totalBeforeGiftCard = Math.max(0, totalBeforeRewards - pointsToRedeem);
+  // Same Re 1 floor applies to a gift card - any amount beyond that stays
+  // on the card for a future order instead of zeroing this one out.
+  const giftCardAmount = appliedGiftCard
+    ? Math.max(0, Math.min(appliedGiftCard.balance, totalBeforeGiftCard - 1))
+    : 0;
+  const total = Math.max(0, totalBeforeGiftCard - giftCardAmount);
 
   useEffect(() => {
     api.getLoyaltyBalance()
       .then((response) => setRewardsBalance(response.data.points_balance))
       .catch(() => {});
   }, []);
+
+  const handleApplyGiftCard = async (e) => {
+    e.preventDefault();
+    if (!giftCardInput.trim()) return;
+    setApplyingGiftCard(true);
+    try {
+      const { data } = await api.validateGiftCard(giftCardInput.trim());
+      if (data.valid) {
+        setAppliedGiftCard({ code: giftCardInput.trim().toUpperCase(), balance: data.balance });
+        toast.success(`Gift card applied - ₹${data.balance.toFixed(0)} available`);
+        setGiftCardInput('');
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not apply gift card');
+    } finally {
+      setApplyingGiftCard(false);
+    }
+  };
 
   const handleCreateOrder = async (e) => {
     e?.preventDefault();
@@ -186,6 +215,7 @@ const Checkout = () => {
         payment_method: paymentMethod,
         coupon_code: couponCode || undefined,
         redeem_points: pointsToRedeem,
+        gift_card_code: appliedGiftCard?.code || undefined,
       });
       setOrder(response.data);
       setStep('payment');
@@ -271,6 +301,39 @@ const Checkout = () => {
                 </div>
               )}
 
+              <div className="border border-gray-200 rounded-lg p-4">
+                <p className="flex items-center gap-1.5 font-semibold text-ink text-sm mb-2">
+                  <FiGift className="text-brand" /> Have a Gift Card?
+                </p>
+                {appliedGiftCard ? (
+                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5">
+                    <span className="text-emerald-700 font-semibold text-sm">
+                      {appliedGiftCard.code} - ₹{appliedGiftCard.balance.toFixed(0)} available
+                    </span>
+                    <button type="button" onClick={() => setAppliedGiftCard(null)} className="text-emerald-700 hover:text-emerald-900">
+                      <FiX />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={giftCardInput}
+                      onChange={(e) => setGiftCardInput(e.target.value)}
+                      placeholder="Enter gift card code"
+                      className="flex-1 border rounded-lg px-4 py-2 text-sm uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyGiftCard}
+                      disabled={applyingGiftCard}
+                      className="btn-secondary disabled:opacity-50"
+                    >
+                      {applyingGiftCard ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <button type="button" onClick={handleCreateOrder} disabled={submitting || !selectedAddress} className="btn-primary w-full disabled:opacity-50">
                 {submitting ? 'Please wait...' : 'Continue to Payment'}
               </button>
@@ -302,7 +365,7 @@ const Checkout = () => {
               </div>
             ))}
           </div>
-          {(couponCode || pointsToRedeem > 0) && (
+          {(couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (
             <div className="space-y-1 mb-2 pb-2 border-b">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Subtotal</span>
@@ -318,6 +381,12 @@ const Checkout = () => {
                 <div className="flex justify-between text-sm text-emerald-700 font-semibold">
                   <span>Hills Rewards ({pointsToRedeem} pts)</span>
                   <span>- ₹{pointsToRedeem.toFixed(2)}</span>
+                </div>
+              )}
+              {giftCardAmount > 0 && (
+                <div className="flex justify-between text-sm text-emerald-700 font-semibold">
+                  <span>Gift Card ({appliedGiftCard.code})</span>
+                  <span>- ₹{giftCardAmount.toFixed(2)}</span>
                 </div>
               )}
             </div>
