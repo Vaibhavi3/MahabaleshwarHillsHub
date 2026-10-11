@@ -6,6 +6,7 @@ import { addToCart } from '../features/cartSlice';
 import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
+import FrequentlyBoughtTogether from '../components/FrequentlyBoughtTogether';
 import ZoomableImage from '../components/ZoomableImage';
 import ReviewsSection from '../components/ReviewsSection';
 import OffersList from '../components/OffersList';
@@ -390,15 +391,7 @@ const ProductDetail = () => {
       </div>
 
       {frequentlyBought.length > 0 && (
-        <div className="mt-16">
-          <h2 className="text-xl font-extrabold text-ink mb-1">Frequently Bought Together</h2>
-          <p className="text-sm text-muted mb-6">Based on what other customers purchased alongside this</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
-            {frequentlyBought.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </div>
+        <FrequentlyBoughtTogether baseProduct={product} items={frequentlyBought} />
       )}
 
       {similar.length > 0 && (
