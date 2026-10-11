@@ -68,6 +68,25 @@ def create_order(
             points_discount_amount = round(redeem_points * POINT_VALUE_INR, 2)
             total_amount = round(total_amount - points_discount_amount, 2)
 
+        gift_card = None
+        gift_card_amount = 0.0
+        if order.gift_card_code:
+            gift_card = (
+                db.query(models.GiftCard)
+                .filter(models.GiftCard.code == order.gift_card_code.strip().upper())
+                .first()
+            )
+            if not gift_card or gift_card.status not in ("active", "redeemed") or gift_card.balance <= 0:
+                raise HTTPException(status_code=400, detail="Invalid or empty gift card code")
+            # Same invariant as Hills Rewards points: never let a discount
+            # take the payable total below Re 1, since Stripe/Razorpay
+            # can't charge a Rs 0 order - any leftover balance just stays
+            # on the card for next time, matching Nykaa/Ajio's own rule.
+            gift_card_amount = round(min(gift_card.balance, max(total_amount - 1, 0)), 2)
+            if gift_card_amount <= 0:
+                raise HTTPException(status_code=400, detail="This gift card can't be applied to this order")
+            total_amount = round(total_amount - gift_card_amount, 2)
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         db_order = models.Order(
             user_id=current_user.id,
@@ -78,6 +97,8 @@ def create_order(
             discount_amount=discount_amount,
             points_redeemed=redeem_points,
             points_discount_amount=points_discount_amount,
+            gift_card_code=gift_card.code if gift_card else None,
+            gift_card_amount=gift_card_amount,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,
@@ -112,6 +133,11 @@ def create_order(
                 points=-redeem_points,
                 reason="order_redeemed",
             ))
+
+        if gift_card:
+            gift_card.balance = round(gift_card.balance - gift_card_amount, 2)
+            if gift_card.balance <= 0:
+                gift_card.status = "redeemed"
 
         db.commit()
     except HTTPException:
@@ -165,6 +191,12 @@ def cancel_order(
             points=order.points_redeemed,
             reason="order_redeemed_refund",
         ))
+
+    if order.gift_card_amount > 0 and order.gift_card_code:
+        gift_card = db.query(models.GiftCard).filter(models.GiftCard.code == order.gift_card_code).first()
+        if gift_card:
+            gift_card.balance = round(gift_card.balance + order.gift_card_amount, 2)
+            gift_card.status = "active"
 
     order.status = "cancelled"
     order.cancellation_reason = reason

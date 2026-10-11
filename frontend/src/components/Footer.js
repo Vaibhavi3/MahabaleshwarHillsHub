@@ -10,6 +10,7 @@ const COLUMNS = [
       { label: 'Home Slidders', to: '/products?category=slidders' },
       { label: 'Handmade Bags', to: '/products?category=bags' },
       { label: 'New Arrivals', to: '/products' },
+      { label: 'Gift Cards', to: '/gift-cards' },
     ],
   },
   {

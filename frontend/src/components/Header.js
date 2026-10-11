@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { to: '/products?category=slidders', label: 'Home Slidders' },
   { to: '/products?category=bags', label: 'Handmade Bags' },
   { to: '/products', label: 'New Arrivals' },
+  { to: '/gift-cards', label: 'Gift Cards' },
 ];
 
 const Header = () => {
