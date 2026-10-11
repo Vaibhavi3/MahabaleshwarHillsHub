@@ -13,6 +13,7 @@ const mapWishlistResponse = (data) =>
     price: entry.product.price,
     image_url: entry.product.image_url,
     stock: entry.product.stock,
+    priceAtAdd: entry.price_at_add,
   }));
 
 const wishlistSlice = createSlice({

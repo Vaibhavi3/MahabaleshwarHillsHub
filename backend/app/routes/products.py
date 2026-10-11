@@ -180,6 +180,7 @@ def update_product(
         raise HTTPException(status_code=404, detail="Product not found")
 
     was_out_of_stock = db_product.stock <= 0
+    old_price = db_product.price
 
     update_data = product_update.dict(exclude_unset=True)
     for key, value in update_data.items():
@@ -190,6 +191,9 @@ def update_product(
 
     if was_out_of_stock and db_product.stock > 0:
         _notify_back_in_stock(db, db_product)
+
+    if "price" in update_data and db_product.price < old_price:
+        _notify_price_drop(db, db_product)
 
     return db_product
 
@@ -222,6 +226,43 @@ def _notify_back_in_stock(db: Session, product: models.Product) -> None:
         )
         alert.notified = True
         alert.notified_at = func.now()
+
+    db.commit()
+
+
+def _notify_price_drop(db: Session, product: models.Product) -> None:
+    """Email everyone who wishlisted this product while its price was
+    higher than it is now, then mark them notified so the same drop
+    doesn't re-email on a later unrelated edit. Mirrors
+    _notify_back_in_stock above - same best-effort send_email, same
+    one-time-per-event guard pattern as stock_alerts.notified."""
+    dropped_for = (
+        db.query(models.WishlistItem)
+        .filter(
+            models.WishlistItem.product_id == product.id,
+            models.WishlistItem.price_drop_notified.is_(False),
+            models.WishlistItem.price_at_add.isnot(None),
+            models.WishlistItem.price_at_add > product.price,
+        )
+        .all()
+    )
+    if not dropped_for:
+        return
+
+    for item in dropped_for:
+        user = db.query(models.User).filter(models.User.id == item.user_id).first()
+        if user:
+            send_email(
+                user.email,
+                f"Price drop: {product.name}",
+                (
+                    f"Good news - an item on your wishlist just got cheaper.\n\n"
+                    f"{product.name} is now ₹{product.price:.0f} "
+                    f"(was ₹{item.price_at_add:.0f}) at Mahabaleshwar Hills Hub.\n\n"
+                    f"https://mahabaleshwar-hills-hub-pi.vercel.app/products/{product.id}"
+                ),
+            )
+        item.price_drop_notified = True
 
     db.commit()
 
