@@ -317,11 +317,21 @@ class StockAlert(Base):
 
 
 class WishlistItem(Base):
+    """`price_at_add` snapshots the product's price the moment it was
+    wishlisted, so the Wishlist page can show a "Price Dropped" badge by
+    comparing it to the product's current price - extending this store's
+    existing back-in-stock "Notify Me" alert pattern (see StockAlert) from
+    stock to price. `price_drop_notified` guards the one-time email sent
+    when the price first drops below that snapshot (see products.py's
+    _notify_price_drop), so a customer isn't emailed again for the same
+    drop on every later price tweak."""
     __tablename__ = "wishlist_items"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    price_at_add = Column(Float)
+    price_drop_notified = Column(Boolean, default=False, nullable=False, server_default="false")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")

@@ -50,13 +50,21 @@ def sync_wishlist(
                 models.WishlistItem.user_id == current_user.id
             )
         }
-        valid_product_ids = {
-            row[0]
-            for row in db.query(models.Product.id).filter(models.Product.id.in_(payload.product_ids))
+        valid_products = {
+            row[0]: row[1]
+            for row in db.query(models.Product.id, models.Product.price).filter(
+                models.Product.id.in_(payload.product_ids)
+            )
         }
-        new_ids = valid_product_ids - existing_ids
+        new_ids = set(valid_products.keys()) - existing_ids
         for product_id in new_ids:
-            db.add(models.WishlistItem(user_id=current_user.id, product_id=product_id))
+            db.add(
+                models.WishlistItem(
+                    user_id=current_user.id,
+                    product_id=product_id,
+                    price_at_add=valid_products[product_id],
+                )
+            )
         if new_ids:
             db.commit()
 
@@ -82,7 +90,13 @@ def add_to_wishlist(
         .first()
     )
     if not existing:
-        db.add(models.WishlistItem(user_id=current_user.id, product_id=product_id))
+        db.add(
+            models.WishlistItem(
+                user_id=current_user.id,
+                product_id=product_id,
+                price_at_add=product.price,
+            )
+        )
         db.commit()
 
     return _get_wishlist_items(db, current_user.id)

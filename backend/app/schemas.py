@@ -300,6 +300,7 @@ class PaymentResponse(BaseModel):
 class WishlistItemResponse(BaseModel):
     id: int
     created_at: datetime
+    price_at_add: Optional[float] = None
     product: ProductResponse
 
     class Config:

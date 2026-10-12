@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { addToCart } from '../features/cartSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
-import { FiTrash2, FiShoppingBag } from 'react-icons/fi';
+import { FiTrash2, FiShoppingBag, FiTrendingDown } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const Wishlist = () => {
@@ -44,7 +44,10 @@ const Wishlist = () => {
         My Wishlist <span className="text-muted font-normal text-base">({items.length})</span>
       </h1>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 items-start">
-        {items.map((item) => (
+        {items.map((item) => {
+          const droppedBy =
+            item.priceAtAdd && item.priceAtAdd > item.price ? item.priceAtAdd - item.price : 0;
+          return (
           <div key={item.id} className="bg-white">
             <Link to={`/products/${item.id}`} className="block relative bg-surface overflow-hidden mb-3">
               <img
@@ -52,9 +55,22 @@ const Wishlist = () => {
                 alt={item.name}
                 className="w-full h-auto block"
               />
+              {droppedBy > 0 && (
+                <span className="absolute top-2 left-2 flex items-center gap-1 bg-emerald-700 text-white text-[11px] font-bold px-2 py-0.5 rounded">
+                  <FiTrendingDown size={12} /> Price Dropped
+                </span>
+              )}
             </Link>
             <p className="text-sm text-ink font-semibold truncate mb-1">{item.name}</p>
-            <p className="text-sm font-bold text-ink mb-3">₹{item.price}</p>
+            {droppedBy > 0 ? (
+              <p className="text-sm mb-3">
+                <span className="font-bold text-emerald-700">₹{item.price}</span>{' '}
+                <span className="text-muted line-through">₹{item.priceAtAdd}</span>{' '}
+                <span className="text-emerald-700 font-semibold">(save ₹{droppedBy})</span>
+              </p>
+            ) : (
+              <p className="text-sm font-bold text-ink mb-3">₹{item.price}</p>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={() => handleMoveToBag(item)}
@@ -71,7 +87,8 @@ const Wishlist = () => {
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
