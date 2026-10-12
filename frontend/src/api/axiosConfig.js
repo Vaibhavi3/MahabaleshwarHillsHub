@@ -86,6 +86,12 @@ export const api = {
   getCurrentUser: () => {
     return client.get('/auth/me');
   },
+  updateProfile: (userId, payload) => {
+    return client.put(`/users/${userId}`, payload);
+  },
+  changePassword: (payload) => {
+    return client.put('/users/me/password', payload);
+  },
 
   // Cart
   getCart: () => {
