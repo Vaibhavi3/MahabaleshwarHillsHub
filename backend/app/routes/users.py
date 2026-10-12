@@ -113,14 +113,38 @@ def update_user(
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     update_data = user_update.dict(exclude_unset=True)
+
+    if "email" in update_data and update_data["email"] != db_user.email:
+        existing = db.query(models.User).filter(models.User.email == update_data["email"]).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
     for key, value in update_data.items():
         setattr(db_user, key, value)
-    
+
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+@router.put("/users/me/password")
+def change_password(
+    payload: schemas.PasswordChangeRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Change the signed-in user's own password, matching Myntra/Nykaa/
+    Ajio's "My Profile" change-password flow. Requires the current
+    password so a hijacked session token alone can't lock the real owner
+    out of their account."""
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    db.commit()
+    return {"message": "Password updated"}
 
 
 @router.get("/users/{user_id}", response_model=schemas.UserResponse)

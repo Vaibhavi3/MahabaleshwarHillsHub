@@ -72,10 +72,10 @@ const Header = () => {
           <div className="flex items-center gap-5 ml-auto shrink-0">
             {user ? (
               <div className="hidden sm:flex items-center gap-4">
-                <div className="flex flex-col items-center text-ink">
+                <Link to="/account" className="flex flex-col items-center text-ink hover:text-brand transition-colors">
                   <FiUser className="text-xl" />
                   <span className="text-[11px] font-semibold uppercase mt-0.5">{user.username}</span>
-                </div>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="flex flex-col items-center text-ink hover:text-brand transition-colors"
@@ -172,6 +172,9 @@ const Header = () => {
                   <p className="text-sm text-muted">
                     Signed in as <span className="font-semibold text-ink">{user.username}</span>
                   </p>
+                  <Link to="/account" className="nav-link" onClick={() => setIsOpen(false)}>
+                    My Account
+                  </Link>
                   <Link to="/orders" className="nav-link" onClick={() => setIsOpen(false)}>
                     Orders
                   </Link>
