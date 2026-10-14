@@ -6,8 +6,10 @@ import api, { getImageUrl } from '../api/axiosConfig';
 import { addToCart } from '../features/cartSlice';
 import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
-import { FiX, FiHeart } from 'react-icons/fi';
+import { FiX, FiHeart, FiMaximize } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import SizeGuideModal from './SizeGuideModal';
+import { parseProductSize } from '../utils/sizeGuide';
 
 const BRAND = 'Ancles Home Socks';
 
@@ -20,6 +22,16 @@ const BRAND = 'Ancles Home Socks';
 const QuickViewModal = ({ product, onClose }) => {
   const [variants, setVariants] = useState([]);
   const [quantity, setQuantity] = useState(1);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const sizeInfo = parseProductSize(product);
+  const sizeDisplay =
+    sizeInfo.kind === 'footwear' && sizeInfo.tokens.length > 0
+      ? `${sizeInfo.tokens.join(', ')} (EU)`
+      : sizeInfo.kind === 'kids' && sizeInfo.tokens.length > 0
+      ? `${sizeInfo.tokens.join(', ')} yrs`
+      : sizeInfo.kind === 'sock' && sizeInfo.tokens.length > 0
+      ? `One Size (~${sizeInfo.tokens.join('cm, ~')}cm)`
+      : product.size || 'One Size';
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -173,8 +185,15 @@ const QuickViewModal = ({ product, onClose }) => {
             </div>
           )}
 
-          <p className="text-xs font-bold text-ink uppercase mb-4">
-            Size: <span className="font-normal normal-case text-muted">{product.size || 'One Size'}</span>
+          <p className="text-xs font-bold text-ink uppercase mb-4 flex items-center gap-3">
+            Size: <span className="font-normal normal-case text-muted">{sizeDisplay}</span>
+            <button
+              type="button"
+              onClick={() => setSizeGuideOpen(true)}
+              className="flex items-center gap-1 text-brand text-xs font-bold normal-case hover:underline"
+            >
+              <FiMaximize size={12} /> Size Guide
+            </button>
           </p>
 
           {product.description && (
@@ -222,6 +241,8 @@ const QuickViewModal = ({ product, onClose }) => {
           </Link>
         </div>
       </div>
+
+      {sizeGuideOpen && <SizeGuideModal product={product} onClose={() => setSizeGuideOpen(false)} />}
     </div>,
     document.body
   );

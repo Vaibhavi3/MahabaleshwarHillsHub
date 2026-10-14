@@ -11,7 +11,9 @@ import ZoomableImage from '../components/ZoomableImage';
 import ReviewsSection from '../components/ReviewsSection';
 import OffersList from '../components/OffersList';
 import RecentlyViewed, { recordProductView } from '../components/RecentlyViewed';
-import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck } from 'react-icons/fi';
+import SizeGuideModal from '../components/SizeGuideModal';
+import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck, FiMaximize } from 'react-icons/fi';
+import { parseProductSize } from '../utils/sizeGuide';
 import toast from 'react-hot-toast';
 
 const BRAND = 'Ancles Home Socks';
@@ -30,6 +32,7 @@ const ProductDetail = () => {
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [notifySubscribed, setNotifySubscribed] = useState(false);
   const [notifyBusy, setNotifyBusy] = useState(false);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const buyBoxObserverRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -193,6 +196,15 @@ const ProductDetail = () => {
   const thumbs = [product, ...variants];
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
+  const sizeInfo = parseProductSize(product);
+  const sizeDisplay =
+    sizeInfo.kind === 'footwear' && sizeInfo.tokens.length > 0
+      ? `${sizeInfo.tokens.join(', ')} (EU)`
+      : sizeInfo.kind === 'kids' && sizeInfo.tokens.length > 0
+      ? `${sizeInfo.tokens.join(', ')} yrs`
+      : sizeInfo.kind === 'sock' && sizeInfo.tokens.length > 0
+      ? `One Size (~${sizeInfo.tokens.join('cm, ~')}cm)`
+      : product.size || 'One Size';
 
   return (
     <div className={`container mx-auto px-4 py-8 ${showStickyBar ? 'pb-24 md:pb-8' : ''}`}>
@@ -284,8 +296,15 @@ const ProductDetail = () => {
             </div>
           )}
 
-          <div className="mb-6 flex items-center gap-6 text-sm text-ink">
-            <span className="font-bold uppercase">Size: <span className="font-normal">{product.size || 'One Size'}</span></span>
+          <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink">
+            <span className="font-bold uppercase">Size: <span className="font-normal">{sizeDisplay}</span></span>
+            <button
+              type="button"
+              onClick={() => setSizeGuideOpen(true)}
+              className="flex items-center gap-1 text-brand text-xs font-bold uppercase hover:underline"
+            >
+              <FiMaximize size={14} /> Size Guide
+            </button>
             <div className="flex items-center gap-2">
               <span className="font-bold uppercase">Qty:</span>
               <input
@@ -408,6 +427,8 @@ const ProductDetail = () => {
       <RecentlyViewed excludeId={product.id} />
 
       <ReviewsSection productId={product.id} reviews={reviews} setReviews={setReviews} />
+
+      {sizeGuideOpen && <SizeGuideModal product={product} onClose={() => setSizeGuideOpen(false)} />}
 
       {showStickyBar && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(40,44,63,0.1)] px-4 py-3 flex items-center gap-3">
