@@ -4,7 +4,13 @@ from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.routes.coupons import compute_discount
-from app.utils.loyalty import earn_points_for_amount, max_redeemable_points, POINT_VALUE_INR, REFERRAL_REFERRER_BONUS_POINTS
+from app.utils.loyalty import (
+    earn_points_for_amount,
+    max_redeemable_points,
+    get_tier_for_spend,
+    POINT_VALUE_INR,
+    REFERRAL_REFERRER_BONUS_POINTS,
+)
 from datetime import datetime, timezone
 import uuid
 
@@ -279,7 +285,12 @@ def update_order(
         # "delivered" - guarded by points_credited so re-saving the order,
         # or toggling status back and forth, never double-credits.
         if new_status == "delivered" and not order.points_credited:
-            earned = earn_points_for_amount(order.total_amount)
+            # This order's own value counts toward the tier that decides
+            # its bonus, same as Myntra Insider crediting the order that
+            # pushes a shopper into their next tier at the new rate.
+            order.user.lifetime_spend = (order.user.lifetime_spend or 0) + order.total_amount
+            tier = get_tier_for_spend(order.user.lifetime_spend)
+            earned = earn_points_for_amount(order.total_amount, tier["earn_multiplier"])
             order.points_earned = earned
             order.points_credited = True
             if earned > 0:

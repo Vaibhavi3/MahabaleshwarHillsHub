@@ -483,6 +483,12 @@ class LoyaltyBalanceResponse(BaseModel):
     points_value_inr: float
     earn_rate_description: str
     redeem_rate_description: str
+    tier_name: str
+    tier_earn_multiplier: float
+    lifetime_spend: float
+    next_tier_name: Optional[str] = None
+    amount_to_next_tier: Optional[float] = None
+    tier_progress_pct: float
 
 class LoyaltyTransactionResponse(BaseModel):
     id: int

@@ -14,6 +14,51 @@ const REASON_LABELS = {
   referral_bonus: "Bonus - friend's first order delivered",
 };
 
+// Tier styling for Hills Rewards' Myntra-Insider-style tier ladder -
+// Bronze/Silver/Gold, unlocked by lifetime delivered-order spend.
+const TIER_STYLES = {
+  Bronze: 'from-amber-700 to-amber-900',
+  Silver: 'from-slate-400 to-slate-600',
+  Gold: 'from-amber-400 to-brand-dark',
+};
+
+const TierProgress = ({ balance }) => (
+  <div className="border border-gray-200 rounded-lg p-5 mb-10">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <span
+          className={`text-xs font-extrabold uppercase tracking-wide text-white px-3 py-1 rounded-full bg-gradient-to-r ${
+            TIER_STYLES[balance.tier_name] || TIER_STYLES.Bronze
+          }`}
+        >
+          {balance.tier_name} Tier
+        </span>
+        <span className="text-xs text-muted">Lifetime spend ₹{balance.lifetime_spend.toFixed(0)}</span>
+      </div>
+      <span className="text-xs font-bold text-brand">{balance.tier_earn_multiplier}x points</span>
+    </div>
+
+    {balance.next_tier_name ? (
+      <>
+        <div className="h-2 bg-surface rounded-full overflow-hidden mb-2">
+          <div
+            className="h-full bg-brand rounded-full transition-all"
+            style={{ width: `${balance.tier_progress_pct}%` }}
+          />
+        </div>
+        <p className="text-xs text-muted">
+          Spend ₹{balance.amount_to_next_tier.toFixed(0)} more on delivered orders to reach{' '}
+          <span className="font-semibold text-ink">{balance.next_tier_name}</span> and earn even faster.
+        </p>
+      </>
+    ) : (
+      <p className="text-xs text-muted">
+        You&apos;ve reached our highest tier - thank you for shopping handmade with us.
+      </p>
+    )}
+  </div>
+);
+
 const Rewards = () => {
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -81,6 +126,8 @@ const Rewards = () => {
         <p className="text-4xl font-extrabold mb-1">{balance.points_balance} pts</p>
         <p className="text-sm opacity-90">Worth ₹{balance.points_value_inr.toFixed(0)} off your next order</p>
       </div>
+
+      <TierProgress balance={balance} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
         <div className="bg-surface rounded-lg p-4 flex gap-3 items-start">
