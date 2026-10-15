@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.routes.coupons import compute_discount
+from app.utils.invoice import generate_invoice_pdf
 from app.utils.loyalty import (
     earn_points_for_amount,
     max_redeemable_points,
@@ -254,6 +255,30 @@ def get_order(
         raise HTTPException(status_code=403, detail="Not authorized")
     
     return order
+
+
+@router.get("/orders/{order_id}/invoice")
+def download_invoice(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Download a PDF receipt for an order, matching Myntra/Ajio/Nykaa's
+    "Download Invoice" on order details. Built entirely from this order's
+    own stored data - no tax/GST line, no invented delivery date."""
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    pdf_bytes = generate_invoice_pdf(order)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="invoice-{order.order_number}.pdf"'},
+    )
 
 
 @router.put("/orders/{order_id}", response_model=schemas.OrderResponse)

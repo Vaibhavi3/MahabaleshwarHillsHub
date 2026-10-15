@@ -6,7 +6,7 @@ import OrderTimeline from '../components/OrderTimeline';
 import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
-import { FiAward } from 'react-icons/fi';
+import { FiAward, FiDownload } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -78,6 +78,22 @@ const Orders = () => {
     }
   };
 
+  const handleDownloadInvoice = async (order) => {
+    try {
+      const response = await api.downloadInvoice(order.id);
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice-${order.order_number}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error('Could not download the invoice right now');
+    }
+  };
+
   const handleCancelConfirm = async (reason) => {
     try {
       const response = await api.cancelOrder(cancelTarget.id, reason);
@@ -115,9 +131,19 @@ const Orders = () => {
                 <p className="font-semibold">{order.order_number}</p>
                 <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'}`}>
-                {order.status}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'}`}>
+                  {order.status}
+                </span>
+                {order.payment_status === 'completed' && (
+                  <button
+                    onClick={() => handleDownloadInvoice(order)}
+                    className="flex items-center gap-1 text-xs font-semibold uppercase text-brand hover:underline"
+                  >
+                    <FiDownload /> Invoice
+                  </button>
+                )}
+              </div>
             </div>
             <div className="border-y py-3 mb-4">
               <OrderTimeline

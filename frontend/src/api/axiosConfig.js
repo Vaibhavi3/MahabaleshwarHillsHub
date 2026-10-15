@@ -129,6 +129,9 @@ export const api = {
   getAllOrders: (skip = 0, limit = 100) => {
     return client.get('/orders/admin/all', { params: { skip, limit } });
   },
+  downloadInvoice: (id) => {
+    return client.get(`/orders/${id}/invoice`, { responseType: 'blob' });
+  },
 
   // Reviews
   getProductReviews: (productId) => {
