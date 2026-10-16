@@ -57,6 +57,9 @@ export const api = {
   getCategories: () => {
     return client.get('/categories');
   },
+  getCategoryMenu: () => {
+    return client.get('/categories/menu');
+  },
   getProductVariants: (id) => {
     return client.get(`/products/${id}/variants`);
   },
