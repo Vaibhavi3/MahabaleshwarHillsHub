@@ -149,6 +149,23 @@ export const api = {
     return client.post(`/reviews/${reviewId}/photos`, formData);
   },
 
+  // Product Q&A
+  getProductQuestions: (productId) => {
+    return client.get(`/products/${productId}/questions`);
+  },
+  askQuestion: (productId, question) => {
+    return client.post('/questions', { product_id: productId, question });
+  },
+  answerQuestion: (questionId, answer) => {
+    return client.post(`/questions/${questionId}/answers`, { answer });
+  },
+  deleteQuestion: (questionId) => {
+    return client.delete(`/questions/${questionId}`);
+  },
+  deleteAnswer: (answerId) => {
+    return client.delete(`/answers/${answerId}`);
+  },
+
   // Payments - Stripe
   createPaymentIntent: (orderId) => {
     return client.post('/payments/create-payment-intent', null, { params: { order_id: orderId } });
