@@ -227,6 +227,39 @@ class ReviewHelpfulVote(Base):
     __table_args__ = (UniqueConstraint("review_id", "user_id", name="uq_review_helpful_vote"),)
 
 
+class ProductQuestion(Base):
+    """A customer-asked question on a product page, inspired by Nykaa's
+    product Q&A. Any logged-in customer can answer (see ProductAnswer),
+    same as the community-answered pattern on Nykaa."""
+    __tablename__ = "product_questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    question = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    product = relationship("Product", backref="questions")
+    user = relationship("User")
+    answers = relationship(
+        "ProductAnswer", back_populates="question", cascade="all, delete-orphan", order_by="ProductAnswer.created_at"
+    )
+
+
+class ProductAnswer(Base):
+    __tablename__ = "product_answers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    question_id = Column(Integer, ForeignKey("product_questions.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    answer = Column(Text, nullable=False)
+    is_seller_answer = Column(Boolean, default=False, nullable=False, server_default="false")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    question = relationship("ProductQuestion", back_populates="answers")
+    user = relationship("User")
+
+
 class Coupon(Base):
     __tablename__ = "coupons"
 

@@ -287,6 +287,37 @@ class ReviewHelpfulResponse(BaseModel):
     helpful_count: int
     voted_helpful: bool
 
+class QuestionCreate(BaseModel):
+    product_id: int
+    question: str = Field(..., min_length=3, max_length=500)
+
+class AnswerCreate(BaseModel):
+    answer: str = Field(..., min_length=1, max_length=1000)
+
+class AnswerResponse(BaseModel):
+    id: int
+    question_id: int
+    user_id: int
+    answer: str
+    is_seller_answer: bool
+    answerer_name: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class QuestionResponse(BaseModel):
+    id: int
+    product_id: int
+    user_id: int
+    question: str
+    asker_name: str
+    answers: list[AnswerResponse]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class PaymentCreate(BaseModel):
     order_id: int
     amount: float
