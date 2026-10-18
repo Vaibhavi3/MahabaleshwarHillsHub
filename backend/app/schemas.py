@@ -200,6 +200,26 @@ class OrderResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class ReorderSkippedItem(BaseModel):
+    product_id: int
+    product_name: str
+    reason: str
+
+
+class ReorderAvailableItem(BaseModel):
+    product_id: int
+    name: str
+    price: float
+    image_url: Optional[str] = None
+    stock: int
+    quantity: int
+
+
+class ReorderResponse(BaseModel):
+    available: List[ReorderAvailableItem] = []
+    skipped: List[ReorderSkippedItem] = []
+
 class CouponBase(BaseModel):
     code: str = Field(..., min_length=3, max_length=50)
     description: Optional[str] = None

@@ -214,6 +214,67 @@ def cancel_order(
     return order
 
 
+@router.get("/orders/{order_id}/reorder", response_model=schemas.ReorderResponse)
+def reorder(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """"Buy It Again" - resolve a past order's items against today's catalog
+    so the frontend can drop them straight into the bag, matching
+    Flipkart/Myntra/Nykaa's one-tap reorder on My Orders. Read-only: the
+    bag itself lives client-side (see cartSlice), so this just tells the
+    frontend what's still biddable. A discontinued product or one that's
+    now out of stock is reported back as skipped rather than silently
+    failing, and quantity is capped at whatever stock remains today - the
+    same stock-aware rule manual add-to-cart already enforces."""
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    available = []
+    skipped = []
+
+    for item in order.items:
+        product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
+        if not product:
+            skipped.append(schemas.ReorderSkippedItem(
+                product_id=item.product_id,
+                product_name=item.product_name or f"Product #{item.product_id}",
+                reason="No longer available",
+            ))
+            continue
+
+        if product.stock <= 0:
+            skipped.append(schemas.ReorderSkippedItem(
+                product_id=product.id,
+                product_name=product.name,
+                reason="Out of stock",
+            ))
+            continue
+
+        quantity = min(item.quantity, product.stock)
+        available.append(schemas.ReorderAvailableItem(
+            product_id=product.id,
+            name=product.name,
+            price=product.price,
+            image_url=product.image_url,
+            stock=product.stock,
+            quantity=quantity,
+        ))
+        if quantity < item.quantity:
+            skipped.append(schemas.ReorderSkippedItem(
+                product_id=product.id,
+                product_name=product.name,
+                reason=f"Only {quantity} of {item.quantity} added - limited stock left",
+            ))
+
+    return schemas.ReorderResponse(available=available, skipped=skipped)
+
+
 @router.get("/orders", response_model=list[schemas.OrderResponse])
 def get_user_orders(
     db: Session = Depends(get_db),
