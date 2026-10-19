@@ -551,3 +551,39 @@ class GiftCardValidateResponse(BaseModel):
     valid: bool
     message: str
     balance: float = 0
+
+
+class QuestionCreate(BaseModel):
+    product_id: int
+    question: str = Field(..., min_length=3, max_length=500)
+
+
+class AnswerCreate(BaseModel):
+    answer: str = Field(..., min_length=1, max_length=1000)
+
+
+class AnswerResponse(BaseModel):
+    id: int
+    question_id: int
+    user_id: int
+    answer: str
+    responder_name: str
+    is_seller: bool
+    verified_purchase: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class QuestionResponse(BaseModel):
+    id: int
+    product_id: int
+    user_id: int
+    question: str
+    asker_name: str
+    created_at: datetime
+    answers: list[AnswerResponse]
+
+    class Config:
+        from_attributes = True

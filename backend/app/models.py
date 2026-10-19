@@ -466,3 +466,43 @@ class CRMActivity(Base):
     completed = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class ProductQuestion(Base):
+    """A real customer's question on a product page, inspired by
+    Myntra/Nykaa/Ajio's "Customer Questions & Answers" - distinct from
+    star reviews, this is pre-purchase Q&A ("does this fit true to size?",
+    "is this machine washable?"). Answers live in ProductAnswer below;
+    there is no seeded or fabricated content here, only what real
+    customers and the store owner post."""
+    __tablename__ = "product_questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    question = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    product = relationship("Product")
+    user = relationship("User")
+    answers = relationship(
+        "ProductAnswer", back_populates="question", cascade="all, delete-orphan", order_by="ProductAnswer.id"
+    )
+
+
+class ProductAnswer(Base):
+    """An answer to a ProductQuestion, from either the store owner (flagged
+    is_seller via the answering user's is_admin flag at creation time) or
+    another customer, the same community-plus-seller mix Flipkart/Amazon/
+    Myntra show on their Q&A."""
+    __tablename__ = "product_answers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    question_id = Column(Integer, ForeignKey("product_questions.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    answer = Column(Text, nullable=False)
+    is_seller = Column(Boolean, default=False, nullable=False, server_default="false")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    question = relationship("ProductQuestion", back_populates="answers")
+    user = relationship("User")
