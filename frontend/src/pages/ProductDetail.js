@@ -7,6 +7,7 @@ import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
 import FrequentlyBoughtTogether from '../components/FrequentlyBoughtTogether';
+import CompleteTheLook from '../components/CompleteTheLook';
 import ZoomableImage from '../components/ZoomableImage';
 import ReviewsSection from '../components/ReviewsSection';
 import OffersList from '../components/OffersList';
@@ -25,6 +26,7 @@ const ProductDetail = () => {
   const [variants, setVariants] = useState([]);
   const [similar, setSimilar] = useState([]);
   const [frequentlyBought, setFrequentlyBought] = useState([]);
+  const [completeTheLook, setCompleteTheLook] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState('');
@@ -49,16 +51,18 @@ const ProductDetail = () => {
         setProduct(productResponse.data);
         recordProductView(productResponse.data.id, token);
 
-        const [reviewsResponse, variantsResponse, similarResponse, fbtResponse] = await Promise.all([
+        const [reviewsResponse, variantsResponse, similarResponse, fbtResponse, lookResponse] = await Promise.all([
           api.getProductReviews(id),
           api.getProductVariants(id),
           api.getSimilarProducts(id),
           api.getFrequentlyBoughtTogether(id),
+          api.getCompleteTheLook(id),
         ]);
         setReviews(reviewsResponse.data);
         setVariants(variantsResponse.data);
         setSimilar(similarResponse.data);
         setFrequentlyBought(fbtResponse.data);
+        setCompleteTheLook(lookResponse.data);
 
         if (productResponse.data.stock <= 0) {
           try {
@@ -408,6 +412,8 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      <CompleteTheLook items={completeTheLook} />
 
       {frequentlyBought.length > 0 && (
         <FrequentlyBoughtTogether baseProduct={product} items={frequentlyBought} />

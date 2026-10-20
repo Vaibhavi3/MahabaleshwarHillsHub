@@ -66,6 +66,9 @@ export const api = {
   getFrequentlyBoughtTogether: (id, limit = 4) => {
     return client.get(`/products/${id}/frequently-bought-together`, { params: { limit } });
   },
+  getCompleteTheLook: (id, limit = 6) => {
+    return client.get(`/products/${id}/complete-the-look`, { params: { limit } });
+  },
   createProduct: (product) => {
     return client.post('/products', product);
   },
