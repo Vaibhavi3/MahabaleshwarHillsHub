@@ -51,18 +51,27 @@ const ProductDetail = () => {
         setProduct(productResponse.data);
         recordProductView(productResponse.data.id, token);
 
-        const [reviewsResponse, variantsResponse, similarResponse, fbtResponse, lookResponse] = await Promise.all([
+        const [reviewsResponse, variantsResponse, similarResponse, fbtResponse] = await Promise.all([
           api.getProductReviews(id),
           api.getProductVariants(id),
           api.getSimilarProducts(id),
           api.getFrequentlyBoughtTogether(id),
-          api.getCompleteTheLook(id),
         ]);
         setReviews(reviewsResponse.data);
         setVariants(variantsResponse.data);
         setSimilar(similarResponse.data);
         setFrequentlyBought(fbtResponse.data);
-        setCompleteTheLook(lookResponse.data);
+
+        // Kept outside the Promise.all above: this is a new endpoint, so
+        // while the API deploy is still catching up to this frontend build
+        // (e.g. a PR preview running against the live backend), a 404 here
+        // should only skip this one section, not fail the whole product page.
+        try {
+          const lookResponse = await api.getCompleteTheLook(id);
+          setCompleteTheLook(lookResponse.data);
+        } catch {
+          setCompleteTheLook([]);
+        }
 
         if (productResponse.data.stock <= 0) {
           try {
