@@ -499,3 +499,44 @@ class CRMActivity(Base):
     completed = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class SupportTicket(Base):
+    """A customer-raised Help Center ticket, inspired by Myntra/Nykaa/Ajio's
+    "Need Help?" flow: pick a category (optionally against one of your own
+    orders), describe the issue, and track its status until the store
+    replies. This is the "contact support" channel several existing flows
+    (order cancellation past the shipped cutoff, return requests past the
+    window) already point customers to, but which never actually
+    existed."""
+    __tablename__ = "support_tickets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=True, index=True)
+    category = Column(String(30), nullable=False)
+    subject = Column(String(150), nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String(20), default="open", nullable=False, index=True)
+    admin_reply = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    resolved_at = Column(DateTime(timezone=True))
+
+    user = relationship("User")
+    order = relationship("Order")
+
+    @property
+    def order_number(self):
+        return self.order.order_number if self.order else None
+
+    @property
+    def user_email(self):
+        return self.user.email if self.user else None
+
+    @property
+    def user_name(self):
+        if not self.user:
+            return None
+        name = " ".join(part for part in [self.user.first_name, self.user.last_name] if part).strip()
+        return name or self.user.username

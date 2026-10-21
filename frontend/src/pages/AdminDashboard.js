@@ -19,6 +19,14 @@ const EMPTY_FORM = {
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 const RETURN_REQUEST_STATUSES = ['requested', 'approved', 'rejected', 'picked_up', 'completed'];
+const TICKET_STATUSES = ['open', 'in_progress', 'resolved'];
+const TICKET_CATEGORY_LABELS = {
+  order: 'Order related',
+  payment: 'Payment related',
+  product: 'Product related',
+  account: 'Account related',
+  other: 'Something else',
+};
 
 const EMPTY_COUPON_FORM = {
   id: null,
@@ -40,6 +48,8 @@ const AdminDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [coupons, setCoupons] = useState([]);
   const [returnRequests, setReturnRequests] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [replyDrafts, setReplyDrafts] = useState({});
   const [page, setPage] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [couponForm, setCouponForm] = useState(EMPTY_COUPON_FORM);
@@ -88,6 +98,15 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const loadTickets = useCallback(async () => {
+    try {
+      const response = await api.getAdminTickets();
+      setTickets(response.data);
+    } catch (error) {
+      toast.error('Failed to load support tickets');
+    }
+  }, []);
+
   useEffect(() => {
     if (!user?.is_admin) return;
     setLoading(true);
@@ -98,9 +117,11 @@ const AdminDashboard = () => {
         ? loadOrders()
         : tab === 'returns'
         ? loadReturnRequests()
+        : tab === 'support'
+        ? loadTickets()
         : loadCoupons();
     load.finally(() => setLoading(false));
-  }, [tab, loadProducts, loadOrders, loadCoupons, loadReturnRequests, user]);
+  }, [tab, loadProducts, loadOrders, loadCoupons, loadReturnRequests, loadTickets, user]);
 
   if (!user?.is_admin) {
     return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Admin access only</div>;
@@ -180,6 +201,32 @@ const AdminDashboard = () => {
       loadReturnRequests();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Update failed');
+    }
+  };
+
+  const handleTicketStatus = async (ticketId, status) => {
+    try {
+      await api.updateSupportTicket(ticketId, { status });
+      toast.success('Ticket updated');
+      loadTickets();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Update failed');
+    }
+  };
+
+  const handleTicketReply = async (ticketId) => {
+    const reply = (replyDrafts[ticketId] || '').trim();
+    if (!reply) {
+      toast.error('Write a reply first');
+      return;
+    }
+    try {
+      await api.updateSupportTicket(ticketId, { admin_reply: reply, status: 'resolved' });
+      toast.success('Reply sent');
+      setReplyDrafts((d) => ({ ...d, [ticketId]: '' }));
+      loadTickets();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not send reply');
     }
   };
 
@@ -273,6 +320,12 @@ const AdminDashboard = () => {
           onClick={() => setTab('returns')}
         >
           Returns
+        </button>
+        <button
+          className={`pb-2 font-semibold ${tab === 'support' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          onClick={() => setTab('support')}
+        >
+          Support
         </button>
       </div>
 
@@ -454,6 +507,59 @@ const AdminDashboard = () => {
               </div>
             ))}
             {returnRequests.length === 0 && <div className="text-center text-gray-600">No return/exchange requests yet</div>}
+          </div>
+        ))}
+
+      {tab === 'support' &&
+        (loading ? (
+          <div className="text-center text-gray-600">Loading...</div>
+        ) : (
+          <div className="space-y-4">
+            {tickets.map((t) => (
+              <div key={t.id} className="bg-white rounded-lg shadow p-6">
+                <div className="flex flex-wrap justify-between items-start gap-2 mb-3">
+                  <div>
+                    <p className="font-semibold">{t.subject}</p>
+                    <p className="text-sm text-gray-500">
+                      {TICKET_CATEGORY_LABELS[t.category] || t.category} &middot; {t.user_email}
+                      {t.order_number && <> &middot; Order {t.order_number}</>}
+                    </p>
+                    <p className="text-sm text-gray-500">{new Date(t.created_at).toLocaleString()}</p>
+                  </div>
+                  <select
+                    value={t.status}
+                    onChange={(e) => handleTicketStatus(t.id, e.target.value)}
+                    className="border rounded-lg px-3 py-1"
+                  >
+                    {TICKET_STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">{t.message}</p>
+                {t.admin_reply && (
+                  <p className="text-sm bg-gray-50 rounded-lg p-3 mb-3">
+                    <span className="font-semibold">Our reply: </span>
+                    {t.admin_reply}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <textarea
+                    value={replyDrafts[t.id] || ''}
+                    onChange={(e) => setReplyDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
+                    placeholder="Write a reply..."
+                    rows={2}
+                    className="border rounded-lg px-3 py-2 flex-1 min-w-[200px]"
+                  />
+                  <button onClick={() => handleTicketReply(t.id)} className="btn-primary self-start">
+                    Send Reply
+                  </button>
+                </div>
+              </div>
+            ))}
+            {tickets.length === 0 && <div className="text-center text-gray-600">No support tickets yet</div>}
           </div>
         ))}
 

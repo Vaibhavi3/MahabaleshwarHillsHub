@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { FiUser, FiLock, FiPackage, FiMapPin, FiHeart, FiAward, FiGift } from 'react-icons/fi';
+import { FiUser, FiLock, FiPackage, FiMapPin, FiHeart, FiAward, FiGift, FiLifeBuoy } from 'react-icons/fi';
 import api from '../api/axiosConfig';
 import { updateUserInfo } from '../features/authSlice';
 
@@ -12,6 +12,7 @@ const QUICK_LINKS = [
   { to: '/wishlist', label: 'Wishlist', icon: FiHeart },
   { to: '/rewards', label: 'Hills Rewards', icon: FiAward },
   { to: '/gift-cards', label: 'Gift Cards', icon: FiGift },
+  { to: '/help', label: 'Help & Support', icon: FiLifeBuoy },
 ];
 
 const Account = () => {

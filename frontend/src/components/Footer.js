@@ -16,10 +16,10 @@ const COLUMNS = [
   {
     title: 'Customer Policies',
     links: [
-      { label: 'Contact Us', to: '#' },
-      { label: 'FAQ', to: '#' },
-      { label: 'Shipping Info', to: '#' },
-      { label: 'Returns & Exchange', to: '#' },
+      { label: 'Contact Us', to: '/help' },
+      { label: 'FAQ', to: '/help' },
+      { label: 'Shipping Info', to: '/help' },
+      { label: 'Returns & Exchange', to: '/help' },
     ],
   },
   {
