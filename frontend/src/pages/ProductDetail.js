@@ -9,6 +9,7 @@ import ProductCard from '../components/ProductCard';
 import FrequentlyBoughtTogether from '../components/FrequentlyBoughtTogether';
 import ZoomableImage from '../components/ZoomableImage';
 import ReviewsSection from '../components/ReviewsSection';
+import QnASection from '../components/QnASection';
 import OffersList from '../components/OffersList';
 import RecentlyViewed, { recordProductView } from '../components/RecentlyViewed';
 import SizeGuideModal from '../components/SizeGuideModal';
@@ -22,6 +23,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [questions, setQuestions] = useState([]);
   const [variants, setVariants] = useState([]);
   const [similar, setSimilar] = useState([]);
   const [frequentlyBought, setFrequentlyBought] = useState([]);
@@ -49,16 +51,18 @@ const ProductDetail = () => {
         setProduct(productResponse.data);
         recordProductView(productResponse.data.id, token);
 
-        const [reviewsResponse, variantsResponse, similarResponse, fbtResponse] = await Promise.all([
+        const [reviewsResponse, variantsResponse, similarResponse, fbtResponse, questionsResponse] = await Promise.all([
           api.getProductReviews(id),
           api.getProductVariants(id),
           api.getSimilarProducts(id),
           api.getFrequentlyBoughtTogether(id),
+          api.getProductQuestions(id),
         ]);
         setReviews(reviewsResponse.data);
         setVariants(variantsResponse.data);
         setSimilar(similarResponse.data);
         setFrequentlyBought(fbtResponse.data);
+        setQuestions(questionsResponse.data);
 
         if (productResponse.data.stock <= 0) {
           try {
@@ -427,6 +431,8 @@ const ProductDetail = () => {
       <RecentlyViewed excludeId={product.id} />
 
       <ReviewsSection productId={product.id} reviews={reviews} setReviews={setReviews} />
+
+      <QnASection productId={product.id} questions={questions} setQuestions={setQuestions} />
 
       {sizeGuideOpen && <SizeGuideModal product={product} onClose={() => setSizeGuideOpen(false)} />}
 
