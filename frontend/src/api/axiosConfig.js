@@ -135,6 +135,9 @@ export const api = {
   downloadInvoice: (id) => {
     return client.get(`/orders/${id}/invoice`, { responseType: 'blob' });
   },
+  reorder: (id) => {
+    return client.get(`/orders/${id}/reorder`);
+  },
 
   // Reviews
   getProductReviews: (productId) => {
