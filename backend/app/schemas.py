@@ -602,3 +602,35 @@ class GiftCardValidateResponse(BaseModel):
     valid: bool
     message: str
     balance: float = 0
+
+
+class SupportTicketCreate(BaseModel):
+    category: str = Field(..., pattern="^(order|payment|product|account|other)$")
+    subject: str = Field(..., min_length=1, max_length=150)
+    message: str = Field(..., min_length=1, max_length=2000)
+    order_id: Optional[int] = None
+
+
+class SupportTicketAdminUpdate(BaseModel):
+    status: Optional[str] = Field(None, pattern="^(open|in_progress|resolved)$")
+    admin_reply: Optional[str] = Field(None, max_length=2000)
+
+
+class SupportTicketResponse(BaseModel):
+    id: int
+    user_id: int
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
+    order_id: Optional[int] = None
+    order_number: Optional[str] = None
+    category: str
+    subject: str
+    message: str
+    status: str
+    admin_reply: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

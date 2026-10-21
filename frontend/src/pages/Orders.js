@@ -8,7 +8,7 @@ import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -196,6 +196,12 @@ const Orders = () => {
                   <FiRefreshCw className={reorderingId === order.id ? 'animate-spin' : ''} />
                   {reorderingId === order.id ? 'Adding...' : 'Buy Again'}
                 </button>
+                <Link
+                  to={`/help?order=${order.id}`}
+                  className="flex items-center gap-1 text-xs font-semibold uppercase text-brand hover:underline"
+                >
+                  <FiLifeBuoy /> Need Help?
+                </Link>
               </div>
             </div>
             <div className="border-y py-3 mb-4">
@@ -223,7 +229,7 @@ const Orders = () => {
                       <span className="text-gray-700">₹{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                     {existingRequest ? (
-                      <ReturnRequestStatus request={existingRequest} />
+                      <ReturnRequestStatus request={existingRequest} orderId={order.id} />
                     ) : (
                       eligible && (
                         <div className="mt-2 ml-[60px] flex items-center gap-2">

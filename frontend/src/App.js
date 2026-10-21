@@ -17,6 +17,7 @@ import Account from './pages/Account';
 import Addresses from './pages/Addresses';
 import Rewards from './pages/Rewards';
 import GiftCards from './pages/GiftCards';
+import Help from './pages/Help';
 import Auth from './pages/Auth';
 import AdminDashboard from './pages/AdminDashboard';
 import CRM from './pages/CRM';
@@ -62,6 +63,7 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/gift-cards" element={<GiftCards />} />
+          <Route path="/help" element={<Help />} />
           <Route path="/auth" element={<Auth />} />
           <Route
             path="/checkout"

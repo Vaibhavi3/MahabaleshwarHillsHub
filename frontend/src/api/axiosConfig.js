@@ -289,6 +289,12 @@ export const api = {
     return client.put(`/return-requests/${id}`, { status });
   },
 
+  // Help Center support tickets ("Need Help?" self-service flow)
+  createSupportTicket: (payload) => client.post('/support/tickets', payload),
+  getMyTickets: () => client.get('/support/tickets'),
+  getAdminTickets: (status) => client.get('/support/tickets/admin/all', { params: status ? { status } : {} }),
+  updateSupportTicket: (id, payload) => client.put(`/support/tickets/${id}`, payload),
+
   // Loyalty ("Hills Rewards" points - earn on delivery, redeem at checkout)
   getLoyaltyBalance: () => client.get('/loyalty/balance'),
   getLoyaltyTransactions: () => client.get('/loyalty/transactions'),

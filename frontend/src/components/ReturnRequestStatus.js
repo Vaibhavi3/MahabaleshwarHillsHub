@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const STATUS_STYLES = {
   requested: 'bg-yellow-100 text-yellow-800',
@@ -22,13 +23,18 @@ const label = (request) => {
   return STATUS_LABELS[request.status] || request.status;
 };
 
-const ReturnRequestStatus = ({ request }) => (
+const ReturnRequestStatus = ({ request, orderId }) => (
   <div className="mt-3 flex items-center gap-2 flex-wrap">
     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_STYLES[request.status] || 'bg-gray-100 text-gray-800'}`}>
       {request.request_type === 'exchange' ? 'Exchange' : 'Return'}: {label(request)}
     </span>
     {request.status === 'rejected' && (
-      <span className="text-xs text-muted">Please contact support if you have questions.</span>
+      <span className="text-xs text-muted">
+        Questions?{' '}
+        <Link to={orderId ? `/help?order=${orderId}` : '/help'} className="text-brand font-semibold hover:underline">
+          Contact support
+        </Link>
+      </span>
     )}
   </div>
 );
