@@ -288,3 +288,56 @@ def get_categories(db: Session = Depends(get_db)):
     """Get all unique product categories"""
     categories = db.query(models.Product.category).distinct().all()
     return {"categories": [cat[0] for cat in categories if cat[0]]}
+
+
+@router.get("/categories/menu")
+def get_category_menu(db: Session = Depends(get_db)):
+    """Aggregated category/subcategory data for the header mega menu: a
+    product count and one representative thumbnail per category and per
+    subcategory, picked from an in-stock product where possible (falling
+    back to any product so a sold-out category still gets a thumbnail).
+    One query for the whole header, rather than the per-category N+1
+    requests Home.js makes for its own category tiles."""
+    rows = (
+        db.query(
+            models.Product.category,
+            models.Product.subcategory,
+            models.Product.image_url,
+            models.Product.stock,
+            models.Product.rating,
+        )
+        .filter(models.Product.category.isnot(None))
+        .all()
+    )
+
+    def best_thumbnail(candidates):
+        in_stock = [r for r in candidates if r.stock and r.stock > 0]
+        pool = in_stock or candidates
+        if not pool:
+            return None
+        return max(pool, key=lambda r: (r.rating or 0)).image_url
+
+    categories = {}
+    for row in rows:
+        entry = categories.setdefault(
+            row.category, {"rows": [], "subcategories": {}}
+        )
+        entry["rows"].append(row)
+        if row.subcategory:
+            entry["subcategories"].setdefault(row.subcategory, []).append(row)
+
+    result = {}
+    for category, data in categories.items():
+        result[category] = {
+            "product_count": len(data["rows"]),
+            "image_url": best_thumbnail(data["rows"]),
+            "subcategories": {
+                sub: {
+                    "product_count": len(sub_rows),
+                    "image_url": best_thumbnail(sub_rows),
+                }
+                for sub, sub_rows in data["subcategories"].items()
+            },
+        }
+
+    return {"categories": result}
