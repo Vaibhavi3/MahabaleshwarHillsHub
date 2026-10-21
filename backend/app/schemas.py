@@ -200,6 +200,26 @@ class OrderResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class ReorderSkippedItem(BaseModel):
+    product_id: int
+    product_name: str
+    reason: str
+
+
+class ReorderAvailableItem(BaseModel):
+    product_id: int
+    name: str
+    price: float
+    image_url: Optional[str] = None
+    stock: int
+    quantity: int
+
+
+class ReorderResponse(BaseModel):
+    available: List[ReorderAvailableItem] = []
+    skipped: List[ReorderSkippedItem] = []
+
 class CouponBase(BaseModel):
     code: str = Field(..., min_length=3, max_length=50)
     description: Optional[str] = None
@@ -286,6 +306,37 @@ class ReviewResponse(BaseModel):
 class ReviewHelpfulResponse(BaseModel):
     helpful_count: int
     voted_helpful: bool
+
+class QuestionCreate(BaseModel):
+    product_id: int
+    question: str = Field(..., min_length=3, max_length=500)
+
+class AnswerCreate(BaseModel):
+    answer: str = Field(..., min_length=1, max_length=1000)
+
+class AnswerResponse(BaseModel):
+    id: int
+    question_id: int
+    user_id: int
+    answer: str
+    is_seller_answer: bool
+    answerer_name: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class QuestionResponse(BaseModel):
+    id: int
+    product_id: int
+    user_id: int
+    question: str
+    asker_name: str
+    answers: list[AnswerResponse]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class PaymentCreate(BaseModel):
     order_id: int
@@ -551,39 +602,3 @@ class GiftCardValidateResponse(BaseModel):
     valid: bool
     message: str
     balance: float = 0
-
-
-class QuestionCreate(BaseModel):
-    product_id: int
-    question: str = Field(..., min_length=3, max_length=500)
-
-
-class AnswerCreate(BaseModel):
-    answer: str = Field(..., min_length=1, max_length=1000)
-
-
-class AnswerResponse(BaseModel):
-    id: int
-    question_id: int
-    user_id: int
-    answer: str
-    responder_name: str
-    is_seller: bool
-    verified_purchase: bool
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class QuestionResponse(BaseModel):
-    id: int
-    product_id: int
-    user_id: int
-    question: str
-    asker_name: str
-    created_at: datetime
-    answers: list[AnswerResponse]
-
-    class Config:
-        from_attributes = True

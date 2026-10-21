@@ -57,6 +57,9 @@ export const api = {
   getCategories: () => {
     return client.get('/categories');
   },
+  getCategoryMenu: () => {
+    return client.get('/categories/menu');
+  },
   getProductVariants: (id) => {
     return client.get(`/products/${id}/variants`);
   },
@@ -132,6 +135,9 @@ export const api = {
   downloadInvoice: (id) => {
     return client.get(`/orders/${id}/invoice`, { responseType: 'blob' });
   },
+  reorder: (id) => {
+    return client.get(`/orders/${id}/reorder`);
+  },
 
   // Reviews
   getProductReviews: (productId) => {
@@ -149,21 +155,21 @@ export const api = {
     return client.post(`/reviews/${reviewId}/photos`, formData);
   },
 
-  // Customer Questions & Answers (pre-purchase Q&A, separate from reviews)
+  // Product Q&A
   getProductQuestions: (productId) => {
     return client.get(`/products/${productId}/questions`);
   },
-  askProductQuestion: (productId, question) => {
+  askQuestion: (productId, question) => {
     return client.post('/questions', { product_id: productId, question });
   },
-  answerProductQuestion: (questionId, answer) => {
+  answerQuestion: (questionId, answer) => {
     return client.post(`/questions/${questionId}/answers`, { answer });
   },
-  deleteProductQuestion: (questionId) => {
+  deleteQuestion: (questionId) => {
     return client.delete(`/questions/${questionId}`);
   },
-  deleteProductAnswer: (answerId) => {
-    return client.delete(`/questions/answers/${answerId}`);
+  deleteAnswer: (answerId) => {
+    return client.delete(`/answers/${answerId}`);
   },
 
   // Payments - Stripe

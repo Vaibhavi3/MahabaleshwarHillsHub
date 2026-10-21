@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage, FiMapPin, FiAward } from 'react-icons/fi';
@@ -6,21 +6,35 @@ import { logout } from '../features/authSlice';
 import { clearWishlist } from '../features/wishlistSlice';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 import SearchBox from './SearchBox';
+import MegaMenu from './MegaMenu';
+import api from '../api/axiosConfig';
 
 const NAV_LINKS = [
-  { to: '/products?category=socks', label: 'Home Socks', subcategories: SOCK_SUBCATEGORIES },
-  { to: '/products?category=slidders', label: 'Home Slidders' },
-  { to: '/products?category=bags', label: 'Handmade Bags' },
+  { to: '/products?category=socks', label: 'Home Socks', categorySlug: 'socks', subcategories: SOCK_SUBCATEGORIES },
+  { to: '/products?category=slidders', label: 'Home Slidders', categorySlug: 'slidders' },
+  { to: '/products?category=bags', label: 'Handmade Bags', categorySlug: 'bags' },
   { to: '/products', label: 'New Arrivals' },
   { to: '/gift-cards', label: 'Gift Cards' },
 ];
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [menu, setMenu] = useState(null);
+  const [menuStatus, setMenuStatus] = useState('loading');
   const { user } = useSelector((state) => state.auth);
   const { items } = useSelector((state) => state.cart);
   const { items: wishlistItems } = useSelector((state) => state.wishlist);
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    api
+      .getCategoryMenu()
+      .then((res) => {
+        setMenu(res.data.categories);
+        setMenuStatus('ready');
+      })
+      .catch(() => setMenuStatus('error'));
+  }, []);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -42,22 +56,19 @@ const Header = () => {
 
           <nav className="hidden lg:flex items-center gap-6 shrink-0">
             {NAV_LINKS.map((link) =>
-              link.subcategories ? (
+              link.categorySlug ? (
                 <div key={link.label} className="relative group py-3 -my-3">
                   <Link to={link.to} className="nav-link whitespace-nowrap">
                     {link.label}
                   </Link>
-                  <div className="hidden group-hover:block absolute top-full left-0 bg-white border border-gray-200 rounded shadow-lg py-2 min-w-[160px] z-50">
-                    {link.subcategories.map((sub) => (
-                      <Link
-                        key={sub.slug}
-                        to={`/products?category=socks&subcategory=${sub.slug}`}
-                        className="block px-4 py-2 text-sm text-ink hover:bg-surface hover:text-brand whitespace-nowrap"
-                      >
-                        {sub.label}
-                      </Link>
-                    ))}
-                  </div>
+                  <MegaMenu
+                    categorySlug={link.categorySlug}
+                    categoryLabel={link.label}
+                    categoryTo={link.to}
+                    subcategories={link.subcategories}
+                    menu={menu}
+                    status={menuStatus}
+                  />
                 </div>
               ) : (
                 <Link key={link.label} to={link.to} className="nav-link whitespace-nowrap">
@@ -152,16 +163,22 @@ const Header = () => {
                 </Link>
                 {link.subcategories && (
                   <div className="flex flex-col gap-2 pl-4 mt-2">
-                    {link.subcategories.map((sub) => (
-                      <Link
-                        key={sub.slug}
-                        to={`/products?category=socks&subcategory=${sub.slug}`}
-                        className="text-sm text-muted hover:text-brand"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        {sub.label}
-                      </Link>
-                    ))}
+                    {link.subcategories.map((sub) => {
+                      const subCount = menu?.[link.categorySlug]?.subcategories?.[sub.slug]?.product_count || 0;
+                      return (
+                        <Link
+                          key={sub.slug}
+                          to={`/products?category=socks&subcategory=${sub.slug}`}
+                          className="text-sm text-muted hover:text-brand flex items-center justify-between"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <span>{sub.label}</span>
+                          {menuStatus === 'ready' && (
+                            <span className="text-xs">{subCount > 0 ? subCount : 'Soon'}</span>
+                          )}
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </div>

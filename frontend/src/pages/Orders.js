@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import api, { getImageUrl } from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import OrderTimeline from '../components/OrderTimeline';
 import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
-import { FiAward, FiDownload } from 'react-icons/fi';
+import { addToCart } from '../features/cartSlice';
+import { FiAward, FiDownload, FiRefreshCw } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -44,6 +46,9 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [returnTarget, setReturnTarget] = useState(null);
+  const [reorderingId, setReorderingId] = useState(null);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const load = async () => {
@@ -91,6 +96,46 @@ const Orders = () => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       toast.error('Could not download the invoice right now');
+    }
+  };
+
+  const handleBuyAgain = async (order) => {
+    setReorderingId(order.id);
+    try {
+      const { data } = await api.reorder(order.id);
+      data.available.forEach((item) => {
+        dispatch(
+          addToCart({
+            id: item.product_id,
+            name: item.name,
+            price: item.price,
+            image_url: item.image_url,
+            stock: item.stock,
+            quantity: item.quantity,
+          })
+        );
+      });
+
+      if (data.available.length === 0) {
+        toast.error("None of this order's items are available right now");
+      } else {
+        toast.success(
+          `${data.available.length} item${data.available.length > 1 ? 's' : ''} added to your bag`
+        );
+      }
+      if (data.skipped.length > 0) {
+        toast(
+          data.skipped.map((s) => `${s.product_name}: ${s.reason}`).join('\n'),
+          { icon: '⚠️', duration: 5000 }
+        );
+      }
+      if (data.available.length > 0) {
+        navigate('/cart');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not add these items to your bag');
+    } finally {
+      setReorderingId(null);
     }
   };
 
@@ -143,6 +188,14 @@ const Orders = () => {
                     <FiDownload /> Invoice
                   </button>
                 )}
+                <button
+                  onClick={() => handleBuyAgain(order)}
+                  disabled={reorderingId === order.id}
+                  className="flex items-center gap-1 text-xs font-semibold uppercase text-brand hover:underline disabled:opacity-50"
+                >
+                  <FiRefreshCw className={reorderingId === order.id ? 'animate-spin' : ''} />
+                  {reorderingId === order.id ? 'Adding...' : 'Buy Again'}
+                </button>
               </div>
             </div>
             <div className="border-y py-3 mb-4">
