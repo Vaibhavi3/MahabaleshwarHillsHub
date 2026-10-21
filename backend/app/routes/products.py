@@ -153,6 +153,72 @@ def get_frequently_bought_together(
     return products
 
 
+@router.get("/products/{product_id}/complete-the-look", response_model=list[schemas.ProductResponse])
+def get_complete_the_look(
+    product_id: int,
+    limit: int = Query(6, ge=1, le=12),
+    db: Session = Depends(get_db)
+):
+    """Cross-category styling pick, inspired by Myntra's "Complete the Look"
+    / My Stylist: /similar and frequently-bought-together both stay inside
+    this product's own category, so a sock shopper never sees anything but
+    more socks. This rounds out a small handmade gift set with the store's
+    best-rated, in-stock pieces from the OTHER categories instead - e.g. a
+    pair of socks surfaces a top slipper and a bag to complete a cozy set."""
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    other_categories = [
+        row[0]
+        for row in (
+            db.query(models.Product.category)
+            .filter(models.Product.category != product.category, models.Product.stock > 0)
+            .distinct()
+            .all()
+        )
+    ]
+    if not other_categories:
+        return []
+
+    per_category = max(1, limit // len(other_categories))
+    picks = []
+    seen_ids = set()
+    for category in other_categories:
+        rows = (
+            db.query(models.Product)
+            .filter(models.Product.category == category, models.Product.stock > 0)
+            .order_by(models.Product.rating.desc(), models.Product.created_at.desc())
+            .limit(per_category + 2)
+            .all()
+        )
+        added = 0
+        for p in rows:
+            if p.id in seen_ids:
+                continue
+            picks.append(p)
+            seen_ids.add(p.id)
+            added += 1
+            if added >= per_category:
+                break
+
+    if len(picks) < limit:
+        leftovers = (
+            db.query(models.Product)
+            .filter(
+                models.Product.category.in_(other_categories),
+                models.Product.stock > 0,
+                models.Product.id.notin_(seen_ids),
+            )
+            .order_by(models.Product.rating.desc())
+            .limit(limit - len(picks))
+            .all()
+        )
+        picks.extend(leftovers)
+
+    return picks[:limit]
+
+
 @router.post("/products", response_model=schemas.ProductResponse)
 def create_product(
     product: schemas.ProductCreate,

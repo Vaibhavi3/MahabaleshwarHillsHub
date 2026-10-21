@@ -7,6 +7,7 @@ import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
 import FrequentlyBoughtTogether from '../components/FrequentlyBoughtTogether';
+import CompleteTheLook from '../components/CompleteTheLook';
 import ZoomableImage from '../components/ZoomableImage';
 import ReviewsSection from '../components/ReviewsSection';
 import QnASection from '../components/QnASection';
@@ -27,6 +28,7 @@ const ProductDetail = () => {
   const [variants, setVariants] = useState([]);
   const [similar, setSimilar] = useState([]);
   const [frequentlyBought, setFrequentlyBought] = useState([]);
+  const [completeTheLook, setCompleteTheLook] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState('');
@@ -63,6 +65,17 @@ const ProductDetail = () => {
         setSimilar(similarResponse.data);
         setFrequentlyBought(fbtResponse.data);
         setQuestions(questionsResponse.data);
+
+        // Kept outside the Promise.all above: this is a new endpoint, so
+        // while the API deploy is still catching up to this frontend build
+        // (e.g. a PR preview running against the live backend), a 404 here
+        // should only skip this one section, not fail the whole product page.
+        try {
+          const lookResponse = await api.getCompleteTheLook(id);
+          setCompleteTheLook(lookResponse.data);
+        } catch {
+          setCompleteTheLook([]);
+        }
 
         if (productResponse.data.stock <= 0) {
           try {
@@ -412,6 +425,8 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+
+      <CompleteTheLook items={completeTheLook} />
 
       {frequentlyBought.length > 0 && (
         <FrequentlyBoughtTogether baseProduct={product} items={frequentlyBought} />
