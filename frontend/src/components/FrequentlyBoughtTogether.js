@@ -3,8 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getImageUrl } from '../api/axiosConfig';
 import { addToCart } from '../features/cartSlice';
+import { openCartDrawer } from '../features/uiSlice';
 import { requireAuth } from '../utils/requireAuth';
-import toast from 'react-hot-toast';
 
 /**
  * Myntra/Amazon-style "Frequently Bought Together" bundle picker: each item
@@ -57,7 +57,7 @@ const FrequentlyBoughtTogether = ({ baseProduct, items }) => {
         })
       );
     });
-    toast.success(`Added ${selectedItems.length} item${selectedItems.length > 1 ? 's' : ''} to bag`);
+    dispatch(openCartDrawer());
   };
 
   return (

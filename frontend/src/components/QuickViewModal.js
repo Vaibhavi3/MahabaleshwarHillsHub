@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { addToCart } from '../features/cartSlice';
+import { openCartDrawer } from '../features/uiSlice';
 import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import { FiX, FiHeart, FiMaximize } from 'react-icons/fi';
@@ -84,7 +85,7 @@ const QuickViewModal = ({ product, onClose }) => {
         quantity: parseInt(quantity, 10) || 1,
       })
     );
-    toast.success('Added to bag');
+    dispatch(openCartDrawer());
     onClose();
   };
 

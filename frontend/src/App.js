@@ -6,6 +6,7 @@ import { logout, setUser } from './features/authSlice';
 import { setWishlistItems, clearWishlist, mapWishlistResponse } from './features/wishlistSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import CartDrawer from './components/CartDrawer';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
@@ -125,6 +126,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
+      <CartDrawer />
     </div>
   );
 }

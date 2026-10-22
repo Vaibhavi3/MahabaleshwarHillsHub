@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../features/cartSlice';
+import { openCartDrawer } from '../features/uiSlice';
 import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { requireAuth } from '../utils/requireAuth';
 import ProductCard from '../components/ProductCard';
@@ -132,7 +133,7 @@ const ProductDetail = () => {
           quantity: parseInt(quantity),
         })
       );
-      toast.success('Added to bag');
+      dispatch(openCartDrawer());
     }
   };
 
