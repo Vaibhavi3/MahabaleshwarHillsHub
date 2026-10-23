@@ -4,6 +4,7 @@ from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.routes.coupons import compute_discount
+from app.utils.multibuy import compute_multibuy_discount
 from app.utils.invoice import generate_invoice_pdf
 from app.utils.loyalty import (
     earn_points_for_amount,
@@ -52,16 +53,28 @@ def create_order(
             total_amount += product.price * item.quantity
 
         subtotal_amount = total_amount
+
+        # Automatic "Mix & Match Socks" multi-buy discount - no code needed,
+        # applies as soon as the cart holds enough eligible items. Computed
+        # here from the authoritative server-side cart, never trusted from
+        # the client, then layered under the coupon discount below.
+        multibuy = compute_multibuy_discount(
+            (products_by_id[item.product_id].category, products_by_id[item.product_id].price, item.quantity)
+            for item in cart_items
+        )
+        multibuy_discount_amount = multibuy.discount_amount
+        total_amount = round(total_amount - multibuy_discount_amount, 2)
+
         discount_amount = 0
         coupon_code = None
         coupon = None
         if order.coupon_code:
             coupon = db.query(models.Coupon).filter(models.Coupon.code.ilike(order.coupon_code.strip())).first()
-            valid, message, discount_amount = compute_discount(coupon, subtotal_amount)
+            valid, message, discount_amount = compute_discount(coupon, total_amount)
             if not valid:
                 raise HTTPException(status_code=400, detail=message)
             coupon_code = coupon.code
-            total_amount = round(subtotal_amount - discount_amount, 2)
+            total_amount = round(total_amount - discount_amount, 2)
 
         redeem_points = order.redeem_points or 0
         points_discount_amount = 0.0
@@ -102,6 +115,7 @@ def create_order(
             subtotal_amount=subtotal_amount,
             coupon_code=coupon_code,
             discount_amount=discount_amount,
+            multibuy_discount_amount=multibuy_discount_amount,
             points_redeemed=redeem_points,
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
@@ -264,6 +278,7 @@ def reorder(
             image_url=product.image_url,
             stock=product.stock,
             quantity=quantity,
+            category=product.category,
         ))
         if quantity < item.quantity:
             skipped.append(schemas.ReorderSkippedItem(

@@ -123,6 +123,7 @@ class Order(Base):
     subtotal_amount = Column(Float)
     coupon_code = Column(String(50))
     discount_amount = Column(Float, default=0)
+    multibuy_discount_amount = Column(Float, default=0, nullable=False, server_default="0")
     status = Column(String(20), default="pending")
     payment_status = Column(String(20), default="pending")
     payment_method = Column(String(50))
