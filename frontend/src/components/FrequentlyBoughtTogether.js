@@ -53,6 +53,7 @@ const FrequentlyBoughtTogether = ({ baseProduct, items }) => {
           price: p.price,
           image_url: p.image_url,
           stock: p.stock,
+          category: p.category,
           quantity: 1,
         })
       );

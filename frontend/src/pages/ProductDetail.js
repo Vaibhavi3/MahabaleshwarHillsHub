@@ -130,6 +130,7 @@ const ProductDetail = () => {
           price: product.price,
           image_url: product.image_url,
           stock: product.stock,
+          category: product.category,
           quantity: parseInt(quantity),
         })
       );

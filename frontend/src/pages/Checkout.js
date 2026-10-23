@@ -5,9 +5,10 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
-import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX } from 'react-icons/fi';
+import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX, FiPackage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import AddressBook from '../components/AddressBook';
+import { computeMultibuyDiscount } from '../utils/multibuy';
 
 const CHECKOUT_STEPS = [
   { key: 'address', label: 'Shipping' },
@@ -154,7 +155,9 @@ const Checkout = () => {
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totalBeforeRewards = Math.max(0, subtotal - discountAmount);
+  const multibuy = computeMultibuyDiscount(items);
+  const subtotalAfterMultibuy = Math.max(0, subtotal - multibuy.amount);
+  const totalBeforeRewards = Math.max(0, subtotalAfterMultibuy - discountAmount);
   // Points can never take the payable total below Re 1 - a Rs 0 order isn't
   // something Stripe/Razorpay can actually charge.
   const maxRedeemable = Math.max(0, Math.min(rewardsBalance, Math.floor(totalBeforeRewards - 1)));
@@ -365,12 +368,23 @@ const Checkout = () => {
               </div>
             ))}
           </div>
-          {(couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (
+          {multibuy.amount > 0 && (
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 mb-3">
+              <FiPackage className="shrink-0" /> Mix &amp; Match Socks: {multibuy.percent}% off {multibuy.eligibleQuantity} Home Socks applied
+            </p>
+          )}
+          {(multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (
             <div className="space-y-1 mb-2 pb-2 border-b">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Subtotal</span>
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
+              {multibuy.amount > 0 && (
+                <div className="flex justify-between text-sm text-emerald-700 font-semibold">
+                  <span>Mix &amp; Match Socks ({multibuy.percent}%)</span>
+                  <span>- ₹{multibuy.amount.toFixed(2)}</span>
+                </div>
+              )}
               {couponCode && (
                 <div className="flex justify-between text-sm text-emerald-700 font-semibold">
                   <span>Coupon ({couponCode})</span>

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import ProductCard from '../components/ProductCard';
 import { ProductGridSkeleton } from '../components/ProductCardSkeleton';
-import { FiFilter, FiX, FiChevronDown, FiSearch } from 'react-icons/fi';
+import { FiFilter, FiX, FiChevronDown, FiSearch, FiPackage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 
@@ -255,6 +255,16 @@ const Products = () => {
             : 'All Products'}
         </h1>
       </div>
+
+      {selectedCategory === 'socks' && !searchQuery && (
+        <div className="flex items-center gap-2.5 bg-brand-light/20 border border-brand-light rounded-lg px-4 py-3 mb-6">
+          <FiPackage className="text-brand shrink-0" />
+          <p className="text-sm text-ink">
+            <span className="font-bold">Mix &amp; Match Socks:</span> buy any 2+ for 10% off, or 4+ for 15%
+            off - discount applies automatically in your cart, no code needed.
+          </p>
+        </div>
+      )}
 
       <div className="flex items-center justify-between border-y border-gray-200 py-3 mb-6">
         <button

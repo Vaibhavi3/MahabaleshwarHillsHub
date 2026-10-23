@@ -111,6 +111,7 @@ const Orders = () => {
             price: item.price,
             image_url: item.image_url,
             stock: item.stock,
+            category: item.category,
             quantity: item.quantity,
           })
         );
@@ -256,6 +257,11 @@ const Orders = () => {
             {order.status === 'delivered' && order.points_earned > 0 && (
               <p className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold mt-2">
                 <FiAward /> You earned {order.points_earned} Hills Rewards points on this order
+              </p>
+            )}
+            {order.multibuy_discount_amount > 0 && (
+              <p className="text-xs text-muted mt-1">
+                Mix &amp; Match Socks discount saved ₹{order.multibuy_discount_amount.toFixed(0)} on this order
               </p>
             )}
             {order.points_redeemed > 0 && (

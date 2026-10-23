@@ -4,8 +4,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon } from '../features/cartSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
 import OffersList from '../components/OffersList';
-import { FiTrash2, FiTag, FiX, FiTruck, FiShield } from 'react-icons/fi';
+import { FiTrash2, FiTag, FiX, FiTruck, FiShield, FiPackage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { computeMultibuyDiscount } from '../utils/multibuy';
 
 const Cart = () => {
   const { items, couponCode, discountAmount } = useSelector((state) => state.cart);
@@ -16,14 +17,16 @@ const Cart = () => {
   const [applyingCode, setApplyingCode] = useState(null);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const total = Math.max(0, subtotal - discountAmount);
+  const multibuy = computeMultibuyDiscount(items);
+  const subtotalAfterMultibuy = Math.max(0, subtotal - multibuy.amount);
+  const total = Math.max(0, subtotalAfterMultibuy - discountAmount);
 
   // Re-validate the applied coupon whenever the cart total changes (e.g. a
   // quantity edit could drop it below the coupon's minimum order value).
   useEffect(() => {
     if (!couponCode || items.length === 0) return;
     api
-      .validateCoupon(couponCode, subtotal)
+      .validateCoupon(couponCode, subtotalAfterMultibuy)
       .then(({ data }) => {
         if (data.valid) {
           dispatch(applyCoupon({ couponCode, discountAmount: data.discount_amount }));
@@ -34,14 +37,14 @@ const Cart = () => {
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subtotal]);
+  }, [subtotalAfterMultibuy]);
 
   const applyCouponCode = async (code) => {
     if (!code.trim()) return;
     setApplying(true);
     setApplyingCode(code);
     try {
-      const { data } = await api.validateCoupon(code.trim(), subtotal);
+      const { data } = await api.validateCoupon(code.trim(), subtotalAfterMultibuy);
       if (data.valid) {
         dispatch(applyCoupon({ couponCode: code.trim().toUpperCase(), discountAmount: data.discount_amount }));
         toast.success(`Coupon applied - you saved ₹${data.discount_amount.toFixed(2)}`);
@@ -114,6 +117,23 @@ const Cart = () => {
         ))}
       </div>
 
+      {(multibuy.eligibleQuantity > 0 || multibuy.amount > 0) && (
+        <div className="max-w-md ml-auto mb-4 flex items-start gap-2.5 bg-brand-light/20 border border-brand-light rounded-lg px-4 py-3">
+          <FiPackage className="text-brand shrink-0 mt-0.5" />
+          {multibuy.amount > 0 ? (
+            <p className="text-sm text-ink">
+              <span className="font-bold">Mix &amp; Match Socks: {multibuy.percent}% off applied!</span> You're
+              saving ₹{multibuy.amount.toFixed(2)} on {multibuy.eligibleQuantity} Home Socks.
+            </p>
+          ) : (
+            <p className="text-sm text-ink">
+              Add {multibuy.itemsUntilNextTier} more Home Sock{multibuy.itemsUntilNextTier > 1 ? 's' : ''} to unlock{' '}
+              <span className="font-bold">{multibuy.nextTier}% off</span> with Mix &amp; Match Socks.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow p-6 max-w-md ml-auto">
         {!couponCode && <OffersList onApply={applyCouponCode} applyingCode={applyingCode} />}
         <form onSubmit={handleApplyCoupon} className="mb-4">
@@ -146,6 +166,12 @@ const Cart = () => {
             <span>Subtotal</span>
             <span>₹{subtotal.toFixed(2)}</span>
           </div>
+          {multibuy.amount > 0 && (
+            <div className="flex justify-between text-emerald-700 font-semibold">
+              <span>Mix &amp; Match Socks ({multibuy.percent}%)</span>
+              <span>- ₹{multibuy.amount.toFixed(2)}</span>
+            </div>
+          )}
           {discountAmount > 0 && (
             <div className="flex justify-between text-emerald-700 font-semibold">
               <span>Coupon Discount</span>

@@ -183,6 +183,7 @@ class OrderResponse(BaseModel):
     subtotal_amount: Optional[float] = None
     coupon_code: Optional[str] = None
     discount_amount: float = 0
+    multibuy_discount_amount: float = 0
     status: str
     payment_status: str
     payment_method: str
@@ -214,6 +215,7 @@ class ReorderAvailableItem(BaseModel):
     image_url: Optional[str] = None
     stock: int
     quantity: int
+    category: Optional[str] = None
 
 
 class ReorderResponse(BaseModel):

@@ -102,6 +102,8 @@ def generate_invoice_pdf(order: "models.Order") -> bytes:
 
     subtotal = order.subtotal_amount if order.subtotal_amount is not None else order.total_amount
     totals_row("Subtotal", _fmt_amount(subtotal))
+    if getattr(order, "multibuy_discount_amount", 0):
+        totals_row("Mix & Match Socks discount", f"- {_fmt_amount(order.multibuy_discount_amount)}")
     if order.discount_amount:
         label = f"Coupon ({order.coupon_code})" if order.coupon_code else "Discount"
         totals_row(label, f"- {_fmt_amount(order.discount_amount)}")

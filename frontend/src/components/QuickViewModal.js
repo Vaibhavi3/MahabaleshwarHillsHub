@@ -82,6 +82,7 @@ const QuickViewModal = ({ product, onClose }) => {
         price: product.price,
         image_url: product.image_url,
         stock: product.stock,
+        category: product.category,
         quantity: parseInt(quantity, 10) || 1,
       })
     );
