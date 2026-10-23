@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { setWishlistItems, mapWishlistResponse } from '../features/wishlistSlice';
 import { addToCart } from '../features/cartSlice';
+import { openCartDrawer } from '../features/uiSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { FiTrash2, FiShoppingBag, FiTrendingDown } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -23,7 +24,7 @@ const Wishlist = () => {
   const handleMoveToBag = (item) => {
     dispatch(addToCart({ ...item, quantity: 1 }));
     handleRemove(item.id);
-    toast.success('Moved to bag');
+    dispatch(openCartDrawer());
   };
 
   if (items.length === 0) {
