@@ -229,5 +229,7 @@ def get_payment_status(
         "status": payment.status,
         "amount": payment.amount,
         "transaction_id": payment.transaction_id,
+        "refunded_amount": payment.refunded_amount,
+        "refund_status": payment.refund_status,
         "created_at": payment.created_at
     }

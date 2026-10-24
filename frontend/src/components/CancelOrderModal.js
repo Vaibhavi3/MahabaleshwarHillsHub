@@ -42,6 +42,12 @@ const CancelOrderModal = ({ order, onClose, onConfirm }) => {
           Order <span className="font-semibold text-ink">{order.order_number}</span> hasn&rsquo;t shipped yet, so
           it can be cancelled. Help us improve by telling us why.
         </p>
+        {order.payment_status === 'completed' && (
+          <p className="text-sm text-muted mb-4 bg-brand-light/20 border border-brand-light rounded-lg px-3 py-2">
+            You&rsquo;ve already paid ₹{order.total_amount.toFixed(2)} for this order - cancelling refunds it to
+            your original payment method automatically.
+          </p>
+        )}
         <div className="space-y-2 mb-6">
           {CANCEL_REASONS.map((r) => (
             <label key={r} className="flex items-center gap-2 text-sm cursor-pointer">
