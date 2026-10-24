@@ -194,6 +194,7 @@ class OrderResponse(BaseModel):
     points_earned: int = 0
     gift_card_code: Optional[str] = None
     gift_card_amount: float = 0
+    refunded_amount: float = 0
     items: List[OrderItemResponse] = []
     status_history: List[OrderStatusHistoryResponse] = []
     created_at: datetime
@@ -351,8 +352,10 @@ class PaymentResponse(BaseModel):
     amount: float
     status: str
     transaction_id: Optional[str]
+    refunded_amount: float = 0
+    refund_status: str = "none"
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -484,6 +487,8 @@ class ReturnRequestResponse(BaseModel):
     exchange_product_id: Optional[int] = None
     exchange_product_name: Optional[str] = None
     status: str
+    refund_amount: float = 0
+    refund_status: str = "none"
     created_at: datetime
     updated_at: Optional[datetime] = None
 

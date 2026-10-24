@@ -18,7 +18,8 @@ const STATUS_LABELS = {
 
 const label = (request) => {
   if (request.status === 'completed') {
-    return request.request_type === 'exchange' ? 'Exchanged' : 'Refunded';
+    if (request.request_type === 'exchange') return 'Exchanged';
+    return request.refund_status === 'refunded' ? 'Refunded' : 'Completed';
   }
   return STATUS_LABELS[request.status] || request.status;
 };
@@ -28,6 +29,20 @@ const ReturnRequestStatus = ({ request, orderId }) => (
     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_STYLES[request.status] || 'bg-gray-100 text-gray-800'}`}>
       {request.request_type === 'exchange' ? 'Exchange' : 'Return'}: {label(request)}
     </span>
+    {request.status === 'completed' && request.request_type === 'return' && (
+      request.refund_status === 'refunded' ? (
+        <span className="text-xs text-emerald-700 font-semibold">
+          ₹{request.refund_amount.toFixed(0)} refunded to your original payment method
+        </span>
+      ) : request.refund_status === 'failed' ? (
+        <span className="text-xs text-muted">
+          Refund hit an issue -{' '}
+          <Link to={orderId ? `/help?order=${orderId}` : '/help'} className="text-brand font-semibold hover:underline">
+            contact support
+          </Link>
+        </span>
+      ) : null
+    )}
     {request.status === 'rejected' && (
       <span className="text-xs text-muted">
         Questions?{' '}
