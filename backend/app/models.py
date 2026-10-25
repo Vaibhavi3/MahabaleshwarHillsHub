@@ -541,3 +541,20 @@ class SupportTicket(Base):
             return None
         name = " ".join(part for part in [self.user.first_name, self.user.last_name] if part).strip()
         return name or self.user.username
+
+
+class SearchQuery(Base):
+    """One real shopper search, logged when a search actually lands on the
+    results page (not on every keystroke of the header's live-suggestion
+    dropdown). Powers "Trending Searches" on the empty search panel,
+    inspired by Myntra/Ajio/Nykaa's search landing experience - real,
+    aggregated search terms, never a fabricated/seeded list. user_id is
+    nullable so guest searches still count toward trending."""
+    __tablename__ = "search_queries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    term = Column(String(100), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

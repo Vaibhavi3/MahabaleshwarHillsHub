@@ -55,6 +55,11 @@ const Products = () => {
         let productsResponse;
         if (searchQuery) {
           productsResponse = await api.searchProducts(searchQuery);
+          // Log the search once it actually lands on a results page (not on
+          // every keystroke of the header's live-suggestion dropdown), so
+          // "Trending Searches" reflects real, submitted searches. Never
+          // lets a logging failure affect the results the shopper sees.
+          api.logSearchQuery(searchQuery).catch(() => {});
         } else {
           productsResponse = await api.getProducts(0, 500, selectedCategory || null, selectedSubcategory || null);
         }
