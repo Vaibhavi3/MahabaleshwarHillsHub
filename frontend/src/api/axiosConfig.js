@@ -54,6 +54,12 @@ export const api = {
   searchProducts: (query) => {
     return client.get('/products/search', { params: { q: query } });
   },
+  logSearchQuery: (term) => {
+    return client.post('/search/log', { term });
+  },
+  getTrendingSearches: (limit = 8) => {
+    return client.get('/search/trending', { params: { limit } });
+  },
   getCategories: () => {
     return client.get('/categories');
   },
