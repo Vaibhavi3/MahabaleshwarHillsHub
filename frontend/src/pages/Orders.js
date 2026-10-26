@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import api, { getImageUrl } from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 import OrderTimeline from '../components/OrderTimeline';
@@ -8,7 +8,7 @@ import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiLink } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -58,6 +58,16 @@ const Orders = () => {
   const [reorderingId, setReorderingId] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
+
+  const handleCopyTrackingLink = (order) => {
+    if (!user?.email) return;
+    const url = `${window.location.origin}/track-order?order=${encodeURIComponent(order.order_number)}&email=${encodeURIComponent(user.email)}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => toast.success('Tracking link copied - works without logging in'))
+      .catch(() => toast.error('Could not copy link'));
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -212,6 +222,12 @@ const Orders = () => {
                 >
                   <FiLifeBuoy /> Need Help?
                 </Link>
+                <button
+                  onClick={() => handleCopyTrackingLink(order)}
+                  className="flex items-center gap-1 text-xs font-semibold uppercase text-brand hover:underline"
+                >
+                  <FiLink /> Copy Tracking Link
+                </button>
               </div>
             </div>
             <div className="border-y py-3 mb-4">

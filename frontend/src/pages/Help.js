@@ -20,7 +20,7 @@ const FAQ_GROUPS = [
       },
       {
         q: 'Which areas do you deliver to?',
-        a: 'We ship across India. Once your order is placed, you can follow its progress under Your Orders, which shows each status update (confirmed, shipped, delivered) as it happens.',
+        a: 'We ship across India. Once your order is placed, you can follow its progress under Your Orders, which shows each status update (confirmed, shipped, delivered) as it happens. You can also use Track Your Order in the footer with just your order number and email - no login needed.',
       },
     ],
   },
