@@ -21,6 +21,15 @@ const STATUS_COLORS = {
 const CANCELLABLE_STATUSES = new Set(['pending', 'confirmed']);
 const RETURN_WINDOW_DAYS = 7;
 
+const PAYMENT_STATUS_LABELS = {
+  pending: 'Pending',
+  completed: 'Paid',
+  failed: 'Failed',
+  refunded: 'Refunded',
+  partially_refunded: 'Partially refunded',
+  refund_failed: 'Paid (refund pending)',
+};
+
 const deliveredAt = (order) => {
   const entry = (order.status_history || []).find((h) => h.status === 'delivered');
   return entry ? new Date(entry.created_at) : null;
@@ -251,9 +260,25 @@ const Orders = () => {
               })}
             </div>
             <div className="flex justify-between items-center border-t pt-4">
-              <span className="text-gray-600">Payment: {order.payment_status}</span>
+              <span className="text-gray-600">
+                Payment: {PAYMENT_STATUS_LABELS[order.payment_status] || order.payment_status}
+              </span>
               <span className="font-bold text-lg">₹{order.total_amount.toFixed(2)}</span>
             </div>
+            {order.refunded_amount > 0 && (
+              <p className="text-xs text-emerald-700 font-semibold mt-2">
+                ₹{order.refunded_amount.toFixed(0)} refunded to your original payment method
+              </p>
+            )}
+            {order.payment_status === 'refund_failed' && (
+              <p className="text-xs text-muted mt-2">
+                We hit an issue refunding this order automatically.{' '}
+                <Link to={`/help?order=${order.id}`} className="text-brand font-semibold hover:underline">
+                  Contact support
+                </Link>{' '}
+                and we'll sort it out.
+              </p>
+            )}
             {order.status === 'delivered' && order.points_earned > 0 && (
               <p className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold mt-2">
                 <FiAward /> You earned {order.points_earned} Hills Rewards points on this order

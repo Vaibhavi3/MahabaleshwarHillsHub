@@ -149,6 +149,11 @@ class Order(Base):
         order_by="OrderStatusHistory.created_at",
     )
 
+    @property
+    def refunded_amount(self):
+        payment = max(self.payments, key=lambda p: p.id, default=None) if self.payments else None
+        return payment.refunded_amount if payment else 0.0
+
 
 class OrderStatusHistory(Base):
     __tablename__ = "order_status_history"
@@ -306,7 +311,7 @@ class GiftCard(Base):
 
 class Payment(Base):
     __tablename__ = "payments"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     amount = Column(Float, nullable=False)
@@ -315,8 +320,17 @@ class Payment(Base):
     transaction_id = Column(String(100), unique=True)
     status = Column(String(20), default="pending")
     response_data = Column(Text)
+    # Real gateway refunds (Stripe/Razorpay), issued on order cancellation
+    # or a completed return - see app/utils/refunds.py. refund_status is
+    # "none" | "partial" | "full" | "failed".
+    refunded_amount = Column(Float, default=0, nullable=False, server_default="0")
+    refund_status = Column(String(20), default="none", nullable=False, server_default="none")
+    refund_transaction_id = Column(String(100))
+    refunded_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    order = relationship("Order", backref="payments")
 
 class CRMLead(Base):
     __tablename__ = "crm_leads"
@@ -410,6 +424,12 @@ class ReturnRequest(Base):
     comment = Column(Text)
     exchange_product_id = Column(Integer, ForeignKey("products.id"))
     status = Column(String(20), default="requested", index=True)
+    # Set when an admin marks a "return" request completed - a real
+    # gateway refund for this item's paid price is issued at that point
+    # (see app/utils/refunds.py). Stays "none" for exchanges, which swap
+    # stock rather than return money. refund_status is "none" | "refunded" | "failed".
+    refund_amount = Column(Float, default=0, nullable=False, server_default="0")
+    refund_status = Column(String(20), default="none", nullable=False, server_default="none")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

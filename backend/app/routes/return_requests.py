@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
+from app.utils.refunds import issue_refund
 
 router = APIRouter()
 
@@ -146,6 +147,16 @@ def update_return_request_status(
         if request.request_type == "return":
             if item and item.product:
                 item.product.stock += item.quantity
+            # A return hands money back; an exchange only swaps stock, so
+            # only "return" triggers a real gateway refund for what this
+            # item was actually paid - never a fabricated one.
+            if item and item.order:
+                result = issue_refund(db, item.order, item.price * item.quantity, "return_completed")
+                request.refund_amount = result["amount_refunded"]
+                request.refund_status = (
+                    "refunded" if result["amount_refunded"] > 0
+                    else ("failed" if result["status"] == "failed" else "none")
+                )
         else:
             if item and item.product:
                 item.product.stock += item.quantity

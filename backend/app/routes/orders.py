@@ -6,6 +6,7 @@ from app.utils.auth import get_current_user, get_current_admin_user
 from app.routes.coupons import compute_discount
 from app.utils.multibuy import compute_multibuy_discount
 from app.utils.invoice import generate_invoice_pdf
+from app.utils.refunds import issue_refund
 from app.utils.loyalty import (
     earn_points_for_amount,
     max_redeemable_points,
@@ -224,6 +225,14 @@ def cancel_order(
     db.add(models.OrderStatusHistory(order_id=order.id, status="cancelled"))
 
     db.commit()
+
+    # Refund whatever was actually charged via Stripe/Razorpay - the
+    # loyalty-point and gift-card amounts above are this store's own
+    # ledgers and get restored directly, but real money only comes back
+    # through the gateway it was paid through.
+    if order.payment_status == "completed":
+        issue_refund(db, order, order.total_amount, "order_cancelled")
+
     db.refresh(order)
     return order
 

@@ -463,6 +463,16 @@ const AdminDashboard = () => {
                   </span>
                   <span className="font-bold">₹{order.total_amount.toFixed(2)}</span>
                 </div>
+                {order.refunded_amount > 0 && (
+                  <p className="text-xs text-emerald-700 font-semibold mt-1">
+                    ₹{order.refunded_amount.toFixed(2)} refunded via {order.payment_method}
+                  </p>
+                )}
+                {order.payment_status === 'refund_failed' && (
+                  <p className="text-xs text-red-600 font-semibold mt-1">
+                    Automatic refund failed - refund this order manually via the {order.payment_method} dashboard
+                  </p>
+                )}
               </div>
             ))}
             {orders.length === 0 && <div className="text-center text-gray-600">No orders yet</div>}
@@ -503,6 +513,14 @@ const AdminDashboard = () => {
                 {r.comment && <p className="text-sm text-gray-600 mb-1">Comment: {r.comment}</p>}
                 {r.request_type === 'exchange' && (
                   <p className="text-sm text-gray-600">Exchange for: {r.exchange_product_name}</p>
+                )}
+                {r.request_type === 'return' && r.refund_status === 'refunded' && (
+                  <p className="text-sm text-emerald-700 font-semibold">₹{r.refund_amount.toFixed(2)} refunded</p>
+                )}
+                {r.request_type === 'return' && r.refund_status === 'failed' && (
+                  <p className="text-sm text-red-600 font-semibold">
+                    Automatic refund failed - refund this item manually with the customer
+                  </p>
                 )}
               </div>
             ))}
