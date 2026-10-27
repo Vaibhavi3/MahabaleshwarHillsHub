@@ -34,13 +34,12 @@ def seed_products(db):
         ).first()
 
         description = f"{r['material']} - {r['size']}" if r.get("size") else r["material"]
-        if r.get("compare_at_price") and r["compare_at_price"] > r["price"]:
-            description += f" (MRP Rs.{r['compare_at_price']})"
 
         fields = dict(
             name=r["name"],
             description=description,
             price=r["price"],
+            compare_at_price=r.get("compare_at_price") if r.get("compare_at_price", 0) > r["price"] else None,
             stock=r["stock"],
             category=r["category"],
             image_url=r["image_url"],

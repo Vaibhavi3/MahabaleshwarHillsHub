@@ -39,6 +39,7 @@ const ProductCard = ({ product }) => {
         id: product.id,
         name: product.name,
         price: product.price,
+        compare_at_price: product.compare_at_price,
         image_url: product.image_url,
         stock: product.stock,
         category: product.category,
@@ -111,8 +112,14 @@ const ProductCard = ({ product }) => {
       <div className="pt-3 pb-4 px-0.5">
         <h4 className="font-bold text-sm text-ink truncate">{BRAND}</h4>
         <p className="text-sm text-muted truncate mb-1.5">{product.name}</p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-bold text-ink">₹{product.price}</span>
+          {product.compare_at_price > product.price && (
+            <>
+              <span className="text-xs text-muted line-through">₹{product.compare_at_price}</span>
+              <span className="text-xs font-bold text-emerald-700">{product.discount_percent}% OFF</span>
+            </>
+          )}
           {rating > 0 && (
             <span className="flex items-center gap-1 bg-emerald-700 text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
               {rating.toFixed(1)} ★

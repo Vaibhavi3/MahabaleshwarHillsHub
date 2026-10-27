@@ -52,7 +52,8 @@ class ProductCreate(ProductBase):
     color: Optional[str] = None
     size: Optional[str] = None
     material: Optional[str] = None
-    
+    compare_at_price: Optional[float] = Field(None, ge=0)
+
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -65,6 +66,7 @@ class ProductUpdate(BaseModel):
     size: Optional[str] = None
     material: Optional[str] = None
     is_featured: Optional[bool] = None
+    compare_at_price: Optional[float] = Field(None, ge=0)
 
 class ProductResponse(ProductBase):
     id: int
@@ -74,8 +76,10 @@ class ProductResponse(ProductBase):
     material: Optional[str]
     rating: float
     is_featured: bool
+    compare_at_price: Optional[float] = None
+    discount_percent: Optional[int] = None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 

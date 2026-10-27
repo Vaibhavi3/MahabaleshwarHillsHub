@@ -50,6 +50,12 @@ class Product(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text)
     price = Column(Float, nullable=False)
+    # The original MRP before the handmade-pricing discount, shown as a
+    # struck-through price + "X% OFF" badge on the grid/PDP, matching
+    # Nykaa/Myntra/Ajio's pricing pattern. Only set for products that
+    # actually carry a real original price (see scripts/migrate_add_compare_at_price.py) -
+    # never fabricated for the rest of the catalog.
+    compare_at_price = Column(Float)
     stock = Column(Integer, default=0)
     category = Column(String(50), index=True)
     subcategory = Column(String(50), index=True)
@@ -61,9 +67,15 @@ class Product(Base):
     is_featured = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan")
     order_items = relationship("OrderItem", back_populates="product", cascade="all, delete-orphan")
+
+    @property
+    def discount_percent(self):
+        if self.compare_at_price and self.compare_at_price > self.price:
+            return round((1 - self.price / self.compare_at_price) * 100)
+        return None
 
 
 class Address(Base):
