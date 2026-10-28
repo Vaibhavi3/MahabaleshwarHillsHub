@@ -95,6 +95,12 @@ export const api = {
   login: (credentials) => {
     return client.post('/auth/login', credentials);
   },
+  phoneVerify: (idToken) => {
+    return client.post('/auth/phone/verify', { id_token: idToken });
+  },
+  phoneRegister: (payload) => {
+    return client.post('/auth/phone/register', payload);
+  },
   getCurrentUser: () => {
     return client.get('/auth/me');
   },

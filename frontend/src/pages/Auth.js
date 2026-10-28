@@ -3,6 +3,8 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import api from '../api/axiosConfig';
 import { setUser } from '../features/authSlice';
+import PhoneOtpLogin from '../components/PhoneOtpLogin';
+import { phoneAuthEnabled } from '../utils/phoneAuth';
 import toast from 'react-hot-toast';
 
 const Auth = () => {
@@ -18,9 +20,33 @@ const Auth = () => {
     referral_code: searchParams.get('ref') || '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [method, setMethod] = useState(phoneAuthEnabled ? 'otp' : 'password');
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handlePhoneLoggedIn = (user, token, isNew) => {
+    dispatch(setUser({ user, token }));
+    toast.success(isNew ? 'Account created!' : 'Welcome back!');
+    navigate(location.state?.from || '/');
+  };
+
+  if (method === 'otp') {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-md">
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <h1 className="text-xl font-extrabold text-ink mb-1">Login or Sign up</h1>
+          <p className="text-sm text-muted mb-6">Use your mobile number - no password needed.</p>
+          <PhoneOtpLogin onLoggedIn={handlePhoneLoggedIn} referralCode={searchParams.get('ref') || ''} />
+          <div className="border-t mt-6 pt-4 text-center">
+            <button type="button" onClick={() => setMethod('password')} className="text-sm text-brand font-bold hover:underline">
+              Login with username &amp; password instead
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -155,6 +181,13 @@ const Auth = () => {
             {submitting ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
           </button>
         </form>
+        {phoneAuthEnabled && (
+          <div className="border-t mt-6 pt-4 text-center">
+            <button type="button" onClick={() => setMethod('otp')} className="text-sm text-brand font-bold hover:underline">
+              Login with mobile number &amp; OTP
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
