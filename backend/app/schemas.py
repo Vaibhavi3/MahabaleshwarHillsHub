@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field
+import json
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
 from typing import Optional, List
 
@@ -49,6 +50,9 @@ class ProductBase(BaseModel):
 
 class ProductCreate(ProductBase):
     image_url: Optional[str] = None
+    sku: Optional[str] = None
+    parent_sku: Optional[str] = None
+    mrp: Optional[float] = Field(None, ge=0)
     color: Optional[str] = None
     size: Optional[str] = None
     material: Optional[str] = None
@@ -61,6 +65,9 @@ class ProductUpdate(BaseModel):
     category: Optional[str] = None
     subcategory: Optional[str] = None
     image_url: Optional[str] = None
+    sku: Optional[str] = None
+    parent_sku: Optional[str] = None
+    mrp: Optional[float] = Field(None, ge=0)
     color: Optional[str] = None
     size: Optional[str] = None
     material: Optional[str] = None
@@ -69,13 +76,30 @@ class ProductUpdate(BaseModel):
 class ProductResponse(ProductBase):
     id: int
     image_url: Optional[str]
+    images: List[str] = []
+    sku: Optional[str] = None
+    parent_sku: Optional[str] = None
+    mrp: Optional[float] = None
     color: Optional[str]
     size: Optional[str]
     material: Optional[str]
     rating: float
     is_featured: bool
     created_at: datetime
-    
+
+    @field_validator("images", mode="before")
+    @classmethod
+    def _parse_images(cls, v):
+        if not v:
+            return []
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+            except ValueError:
+                return []
+            return parsed if isinstance(parsed, list) else []
+        return v
+
     class Config:
         from_attributes = True
 

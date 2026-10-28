@@ -143,8 +143,25 @@ const Products = () => {
         break;
     }
 
-    return list;
+    // One card per product family (parent SKU): the first variant that
+    // matches the active filters represents it, so a colour filter shows
+    // that colour's photo.
+    const seen = new Set();
+    return list.filter((p) => {
+      const key = p.parent_sku || `id-${p.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }, [allProducts, selectedPriceBuckets, selectedColors, sortBy]);
+
+  const colourCounts = useMemo(() => {
+    const counts = {};
+    allProducts.forEach((p) => {
+      if (p.parent_sku) counts[p.parent_sku] = (counts[p.parent_sku] || 0) + 1;
+    });
+    return counts;
+  }, [allProducts]);
 
   const clearFilters = () => {
     setSelectedPriceBuckets([]);
@@ -345,7 +362,7 @@ const Products = () => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 items-start">
               {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} colourCount={colourCounts[product.parent_sku] || 0} />
               ))}
             </div>
           )}

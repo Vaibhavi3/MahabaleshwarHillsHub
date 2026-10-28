@@ -12,7 +12,7 @@ import QuickViewModal from './QuickViewModal';
 
 const BRAND = 'Ancles Home Socks';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, colourCount = 0 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,6 +22,8 @@ const ProductCard = ({ product }) => {
   const rating = product.rating || 0;
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
+  const discountPct =
+    product.mrp && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
   const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   const handleQuickView = (e) => {
@@ -111,14 +113,21 @@ const ProductCard = ({ product }) => {
       <div className="pt-3 pb-4 px-0.5">
         <h4 className="font-bold text-sm text-ink truncate">{BRAND}</h4>
         <p className="text-sm text-muted truncate mb-1.5">{product.name}</p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-bold text-ink">₹{product.price}</span>
+          {discountPct > 0 && (
+            <>
+              <span className="text-xs text-muted line-through">₹{product.mrp}</span>
+              <span className="text-xs font-bold text-orange-500">({discountPct}% OFF)</span>
+            </>
+          )}
           {rating > 0 && (
             <span className="flex items-center gap-1 bg-emerald-700 text-white text-[11px] font-bold px-1.5 py-0.5 rounded">
               {rating.toFixed(1)} ★
             </span>
           )}
         </div>
+        {colourCount > 1 && <p className="text-xs text-muted mt-1">{colourCount} colours</p>}
         {lowStock && (
           <p className="text-xs font-semibold text-brand mt-1">Only {product.stock} left!</p>
         )}
