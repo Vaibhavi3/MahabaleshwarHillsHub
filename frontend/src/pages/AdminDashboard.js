@@ -441,7 +441,14 @@ const AdminDashboard = () => {
               <div key={order.id} className="bg-white rounded-lg shadow p-6">
                 <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                   <div>
-                    <p className="font-semibold">{order.order_number}</p>
+                    <p className="font-semibold flex items-center gap-1.5">
+                      {order.order_number}
+                      {order.is_gift && (
+                        <span className="bg-brand-light/30 text-brand-dark text-[11px] font-bold uppercase px-2 py-0.5 rounded-full">
+                          Gift
+                        </span>
+                      )}
+                    </p>
                     <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleString()}</p>
                   </div>
                   <select
@@ -457,6 +464,12 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{order.shipping_address}</p>
+                {order.is_gift && (
+                  <p className="text-sm bg-brand-light/20 border border-brand-light rounded-lg px-3 py-2 mb-2">
+                    <span className="font-bold text-ink">Gift note for packing:</span>{' '}
+                    {order.gift_message ? `"${order.gift_message}"` : '(no message added - please pack as a gift)'}
+                  </p>
+                )}
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-gray-600">
                     Payment: {order.payment_status} ({order.payment_method})

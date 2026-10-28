@@ -109,6 +109,7 @@ def create_order(
             total_amount = round(total_amount - gift_card_amount, 2)
 
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+        gift_message = order.gift_message.strip() if order.is_gift and order.gift_message else None
         db_order = models.Order(
             user_id=current_user.id,
             order_number=order_number,
@@ -121,6 +122,8 @@ def create_order(
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
             gift_card_amount=gift_card_amount,
+            is_gift=order.is_gift,
+            gift_message=gift_message,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,
