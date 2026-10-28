@@ -20,7 +20,7 @@ class FirebaseTokenError(Exception):
 
 
 def project_id() -> str:
-    return os.getenv("FIREBASE_PROJECT_ID", "")
+    return os.getenv("FIREBASE_PROJECT_ID", "mahabaleshwar-hills-hub")
 
 
 def _certs() -> dict:

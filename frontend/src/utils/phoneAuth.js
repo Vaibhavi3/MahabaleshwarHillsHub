@@ -2,10 +2,10 @@
 // ID token that the backend verifies. The web config below is public by
 // design (it identifies the Firebase project, it is not a secret).
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || 'AIzaSyCJJw73lDsHAV_RubgSKgMete-EldlcWBk',
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || 'mahabaleshwar-hills-hub.firebaseapp.com',
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || 'mahabaleshwar-hills-hub',
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || '1:920137162415:web:21648abbf8d11961e8fe5a',
 };
 
 export const phoneAuthEnabled = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
