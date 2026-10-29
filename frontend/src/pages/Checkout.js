@@ -153,6 +153,10 @@ const Checkout = () => {
   const [giftCardInput, setGiftCardInput] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState(null);
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
+  const [isGift, setIsGift] = useState(false);
+  const [giftRecipientName, setGiftRecipientName] = useState('');
+  const [giftMessage, setGiftMessage] = useState('');
+  const GIFT_MESSAGE_MAX = 300;
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const multibuy = computeMultibuyDiscount(items);
@@ -219,6 +223,9 @@ const Checkout = () => {
         coupon_code: couponCode || undefined,
         redeem_points: pointsToRedeem,
         gift_card_code: appliedGiftCard?.code || undefined,
+        is_gift: isGift,
+        gift_recipient_name: isGift ? giftRecipientName.trim() || undefined : undefined,
+        gift_message: isGift ? giftMessage.trim() || undefined : undefined,
       });
       setOrder(response.data);
       setStep('payment');
@@ -303,6 +310,47 @@ const Checkout = () => {
                   )}
                 </div>
               )}
+
+              <div className="border border-gray-200 rounded-lg p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isGift}
+                    onChange={(e) => setIsGift(e.target.checked)}
+                    className="accent-brand w-4 h-4 mt-0.5"
+                  />
+                  <span>
+                    <span className="flex items-center gap-1.5 font-semibold text-ink text-sm">
+                      <FiGift className="text-brand" /> Sending this as a gift?
+                    </span>
+                    <span className="text-xs text-muted">
+                      Add a recipient name and a message - we'll pack it in with your order.
+                    </span>
+                  </span>
+                </label>
+                {isGift && (
+                  <div className="mt-3 pl-7 space-y-2">
+                    <input
+                      value={giftRecipientName}
+                      onChange={(e) => setGiftRecipientName(e.target.value)}
+                      placeholder="Recipient's name (optional)"
+                      maxLength={100}
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                    />
+                    <textarea
+                      value={giftMessage}
+                      onChange={(e) => setGiftMessage(e.target.value.slice(0, GIFT_MESSAGE_MAX))}
+                      placeholder="Write a short gift message (optional)"
+                      rows={3}
+                      maxLength={GIFT_MESSAGE_MAX}
+                      className="w-full border rounded-lg px-3 py-2 text-sm resize-none"
+                    />
+                    <p className="text-xs text-muted text-right">
+                      {giftMessage.length}/{GIFT_MESSAGE_MAX}
+                    </p>
+                  </div>
+                )}
+              </div>
 
               <div className="border border-gray-200 rounded-lg p-4">
                 <p className="flex items-center gap-1.5 font-semibold text-ink text-sm mb-2">
@@ -404,6 +452,12 @@ const Checkout = () => {
                 </div>
               )}
             </div>
+          )}
+          {isGift && (
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-brand mb-3">
+              <FiGift className="shrink-0" />
+              Marked as a gift{giftRecipientName.trim() ? ` for ${giftRecipientName.trim()}` : ''}
+            </p>
           )}
           <div className="border-t pt-4 flex justify-between font-bold text-lg">
             <span>Total</span>

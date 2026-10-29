@@ -143,6 +143,13 @@ class Order(Base):
     points_credited = Column(Boolean, default=False, nullable=False, server_default="false")
     gift_card_code = Column(String(20))
     gift_card_amount = Column(Float, default=0, nullable=False, server_default="0")
+    # "Sending this as a gift?" at checkout, matching Myntra's "Giftings
+    # and Personalizations" step - just a recipient name + handwritten-note
+    # message surfaced to whoever packs the order, never a priced
+    # "gift wrap" add-on since this store hasn't set a price for one.
+    is_gift = Column(Boolean, default=False, nullable=False, server_default="false")
+    gift_recipient_name = Column(String(100))
+    gift_message = Column(String(300))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

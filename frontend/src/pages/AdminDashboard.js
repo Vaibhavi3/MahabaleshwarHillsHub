@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import toast from 'react-hot-toast';
+import { FiGift } from 'react-icons/fi';
 
 const EMPTY_FORM = {
   id: null,
@@ -457,6 +458,19 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{order.shipping_address}</p>
+                {order.is_gift && (
+                  <div className="flex items-start gap-2 bg-pink-50 border border-brand-light rounded-lg px-3 py-2 mb-2 text-sm">
+                    <FiGift className="text-brand mt-0.5 shrink-0" />
+                    <span>
+                      <span className="font-semibold text-ink">
+                        Gift{order.gift_recipient_name ? ` for ${order.gift_recipient_name}` : ' order'} - include a note when packing
+                      </span>
+                      {order.gift_message && (
+                        <span className="block text-gray-600 italic mt-0.5">"{order.gift_message}"</span>
+                      )}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-gray-600">
                     Payment: {order.payment_status} ({order.payment_method})

@@ -108,6 +108,13 @@ def create_order(
                 raise HTTPException(status_code=400, detail="This gift card can't be applied to this order")
             total_amount = round(total_amount - gift_card_amount, 2)
 
+        # Only keep the recipient name / message when "send as a gift" is
+        # actually switched on, so an order never ends up with stray gift
+        # text left over from a toggle the shopper unchecked before paying.
+        is_gift = bool(order.is_gift)
+        gift_recipient_name = (order.gift_recipient_name or "").strip() or None if is_gift else None
+        gift_message = (order.gift_message or "").strip() or None if is_gift else None
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         db_order = models.Order(
             user_id=current_user.id,
@@ -121,6 +128,9 @@ def create_order(
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
             gift_card_amount=gift_card_amount,
+            is_gift=is_gift,
+            gift_recipient_name=gift_recipient_name,
+            gift_message=gift_message,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,
