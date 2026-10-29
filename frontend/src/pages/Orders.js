@@ -8,7 +8,7 @@ import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -221,6 +221,19 @@ const Orders = () => {
                 createdAt={order.created_at}
               />
             </div>
+            {order.is_gift && (
+              <div className="flex items-start gap-2 bg-brand-light/20 border border-brand-light rounded-lg px-4 py-2.5 mb-4 text-sm">
+                <FiGift className="text-brand mt-0.5 shrink-0" />
+                <span>
+                  <span className="font-semibold text-ink">
+                    Sent as a gift{order.gift_recipient_name ? ` for ${order.gift_recipient_name}` : ''}
+                  </span>
+                  {order.gift_message && (
+                    <span className="block text-muted italic mt-0.5">"{order.gift_message}"</span>
+                  )}
+                </span>
+              </div>
+            )}
             <div className="space-y-3 mb-4">
               {order.items.map((item) => {
                 const existingRequest = returnRequestForItem(item.id);
