@@ -457,6 +457,14 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{order.shipping_address}</p>
+                {order.is_gift && order.gift_message && (
+                  <div className="bg-brand/5 border border-brand/20 rounded-lg px-4 py-3 mb-2 text-sm">
+                    <p className="font-semibold text-brand mb-1">
+                      🎁 Gift order{order.gift_recipient_name ? ` for ${order.gift_recipient_name}` : ''} - include a note when packing
+                    </p>
+                    <p className="text-gray-700 italic">&ldquo;{order.gift_message}&rdquo;</p>
+                  </div>
+                )}
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-gray-600">
                     Payment: {order.payment_status} ({order.payment_method})

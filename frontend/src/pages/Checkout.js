@@ -153,6 +153,9 @@ const Checkout = () => {
   const [giftCardInput, setGiftCardInput] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState(null);
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
+  const [isGift, setIsGift] = useState(false);
+  const [giftRecipientName, setGiftRecipientName] = useState('');
+  const [giftMessage, setGiftMessage] = useState('');
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const multibuy = computeMultibuyDiscount(items);
@@ -202,6 +205,10 @@ const Checkout = () => {
       toast.error('Please add or select a delivery address');
       return;
     }
+    if (isGift && !giftMessage.trim()) {
+      toast.error("Please add a short gift message, or turn off 'Send as a Gift'");
+      return;
+    }
     setSubmitting(true);
     try {
       // Backend orders are built from the server-side cart, so mirror the
@@ -219,6 +226,9 @@ const Checkout = () => {
         coupon_code: couponCode || undefined,
         redeem_points: pointsToRedeem,
         gift_card_code: appliedGiftCard?.code || undefined,
+        is_gift: isGift,
+        gift_recipient_name: isGift ? giftRecipientName.trim() || undefined : undefined,
+        gift_message: isGift ? giftMessage.trim() : undefined,
       });
       setOrder(response.data);
       setStep('payment');
@@ -337,6 +347,47 @@ const Checkout = () => {
                 )}
               </div>
 
+              <div className="border border-gray-200 rounded-lg p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isGift}
+                    onChange={(e) => setIsGift(e.target.checked)}
+                    className="accent-brand w-4 h-4 mt-0.5"
+                  />
+                  <span>
+                    <span className="flex items-center gap-1.5 font-semibold text-ink text-sm">
+                      <FiGift className="text-brand" /> Send as a Gift
+                    </span>
+                    <span className="text-xs text-muted">
+                      Free - add a short note and we'll pass it along with your order
+                    </span>
+                  </span>
+                </label>
+                {isGift && (
+                  <div className="mt-3 pl-7 space-y-3">
+                    <input
+                      value={giftRecipientName}
+                      onChange={(e) => setGiftRecipientName(e.target.value)}
+                      placeholder="Recipient's name (optional)"
+                      maxLength={100}
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                    />
+                    <div>
+                      <textarea
+                        value={giftMessage}
+                        onChange={(e) => setGiftMessage(e.target.value.slice(0, 300))}
+                        placeholder="Write a short gift message..."
+                        maxLength={300}
+                        rows={3}
+                        className="w-full border rounded-lg px-3 py-2 text-sm resize-none"
+                      />
+                      <p className="text-xs text-muted text-right mt-1">{giftMessage.length}/300</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button type="button" onClick={handleCreateOrder} disabled={submitting || !selectedAddress} className="btn-primary w-full disabled:opacity-50">
                 {submitting ? 'Please wait...' : 'Continue to Payment'}
               </button>
@@ -371,6 +422,11 @@ const Checkout = () => {
           {multibuy.amount > 0 && (
             <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 mb-3">
               <FiPackage className="shrink-0" /> Mix &amp; Match Socks: {multibuy.percent}% off {multibuy.eligibleQuantity} Home Socks applied
+            </p>
+          )}
+          {isGift && giftMessage.trim() && (
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-brand mb-3">
+              <FiGift className="shrink-0" /> This order includes a gift note{giftRecipientName.trim() ? ` for ${giftRecipientName.trim()}` : ''}
             </p>
           )}
           {(multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (

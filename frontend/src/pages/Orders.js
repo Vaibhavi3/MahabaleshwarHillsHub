@@ -237,6 +237,14 @@ const Orders = () => {
                 createdAt={order.created_at}
               />
             </div>
+            {order.is_gift && order.gift_message && (
+              <div className="bg-brand/5 border border-brand/20 rounded-lg px-4 py-3 mb-4 text-sm">
+                <p className="font-semibold text-brand mb-1">
+                  🎁 Gift note{order.gift_recipient_name ? ` for ${order.gift_recipient_name}` : ''}
+                </p>
+                <p className="text-ink italic">&ldquo;{order.gift_message}&rdquo;</p>
+              </div>
+            )}
             <div className="space-y-3 mb-4">
               {order.items.map((item) => {
                 const existingRequest = returnRequestForItem(item.id);
