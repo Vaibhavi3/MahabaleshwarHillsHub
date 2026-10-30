@@ -217,6 +217,8 @@ const ProductDetail = () => {
   const avgRating = product.rating || 0;
   const gallery = product.images && product.images.length > 0 ? product.images : [product.image_url];
   const shownImage = gallery[Math.min(activeImage, gallery.length - 1)];
+  const discountPct =
+    product.mrp && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
   const sizeInfo = parseProductSize(product);
