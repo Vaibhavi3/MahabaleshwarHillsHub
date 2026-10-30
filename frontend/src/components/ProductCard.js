@@ -22,8 +22,6 @@ const ProductCard = ({ product, colourCount = 0 }) => {
   const rating = product.rating || 0;
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
-  const discountPct =
-    product.mrp && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
   const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   const handleQuickView = (e) => {
