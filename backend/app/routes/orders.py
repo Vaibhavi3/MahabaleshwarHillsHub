@@ -176,6 +176,30 @@ def create_order(
     return db_order
 
 
+@router.post("/orders/track", response_model=schemas.OrderTrackingResponse)
+def track_order(
+    payload: schemas.OrderTrackingRequest,
+    db: Session = Depends(get_db),
+):
+    """Public order tracking, matching Myntra/Nykaa/Ajio's "Track Order" by
+    order number + email - no login needed, so a tracking link in an order
+    email still works from a different device or after a session expires.
+    Requires both the order number and the email on the account to match,
+    and returns the same generic error either way so this can't be used to
+    enumerate order numbers or confirm an email is registered."""
+    order_number = payload.order_number.strip().upper()
+    order = db.query(models.Order).filter(models.Order.order_number == order_number).first()
+
+    not_found = HTTPException(
+        status_code=404,
+        detail="No order found matching that order number and email. Please double-check and try again.",
+    )
+    if not order or not order.user or order.user.email.strip().lower() != payload.email.strip().lower():
+        raise not_found
+
+    return order
+
+
 @router.post("/orders/{order_id}/cancel", response_model=schemas.OrderResponse)
 def cancel_order(
     order_id: int,

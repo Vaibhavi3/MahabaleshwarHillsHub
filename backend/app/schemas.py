@@ -251,6 +251,39 @@ class ReorderResponse(BaseModel):
     available: List[ReorderAvailableItem] = []
     skipped: List[ReorderSkippedItem] = []
 
+
+class OrderTrackingRequest(BaseModel):
+    order_number: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr
+
+
+class TrackedOrderItem(BaseModel):
+    product_name: Optional[str] = None
+    product_image: Optional[str] = None
+    quantity: int
+    price: float
+
+    class Config:
+        from_attributes = True
+
+
+class OrderTrackingResponse(BaseModel):
+    """Deliberately narrower than OrderResponse - no shipping address, no
+    coupon/gift-card/points breakdown, no internal user id - since this is
+    reachable without logging in once the order number + email match."""
+    order_number: str
+    status: str
+    payment_status: str
+    tracking_number: Optional[str] = None
+    total_amount: float
+    created_at: datetime
+    items: List[TrackedOrderItem] = []
+    status_history: List[OrderStatusHistoryResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
 class CouponBase(BaseModel):
     code: str = Field(..., min_length=3, max_length=50)
     description: Optional[str] = None

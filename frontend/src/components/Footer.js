@@ -20,6 +20,7 @@ const COLUMNS = [
       { label: 'FAQ', to: '/help' },
       { label: 'Shipping Info', to: '/help' },
       { label: 'Returns & Exchange', to: '/help' },
+      { label: 'Track Your Order', to: '/track-order' },
     ],
   },
   {
