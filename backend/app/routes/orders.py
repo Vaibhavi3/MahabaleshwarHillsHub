@@ -108,6 +108,21 @@ def create_order(
                 raise HTTPException(status_code=400, detail="This gift card can't be applied to this order")
             total_amount = round(total_amount - gift_card_amount, 2)
 
+        # "Send as a Gift" - free gift note, matching Myntra's checkout
+        # gifting option. Only trust the recipient name/message when the
+        # gift toggle itself is on, so a stray message on a non-gift order
+        # can never end up on a packing slip.
+        is_gift = bool(order.is_gift)
+        gift_recipient_name = None
+        gift_message = None
+        if is_gift:
+            gift_message = (order.gift_message or "").strip()
+            if not gift_message:
+                raise HTTPException(status_code=400, detail="Please add a short gift message, or turn off 'Send as a Gift'")
+            if len(gift_message) > 300:
+                raise HTTPException(status_code=400, detail="Gift message must be 300 characters or less")
+            gift_recipient_name = (order.gift_recipient_name or "").strip()[:100] or None
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         db_order = models.Order(
             user_id=current_user.id,
@@ -121,6 +136,9 @@ def create_order(
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
             gift_card_amount=gift_card_amount,
+            is_gift=is_gift,
+            gift_recipient_name=gift_recipient_name,
+            gift_message=gift_message,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,
