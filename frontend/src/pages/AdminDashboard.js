@@ -9,7 +9,7 @@ const EMPTY_FORM = {
   name: '',
   description: '',
   price: '',
-  compare_at_price: '',
+  mrp: '',
   stock: '',
   category: 'socks',
   image_url: '',
@@ -136,7 +136,7 @@ const AdminDashboard = () => {
       name: form.name,
       description: form.description,
       price: parseFloat(form.price),
-      compare_at_price: form.compare_at_price ? parseFloat(form.compare_at_price) : null,
+      mrp: form.mrp ? parseFloat(form.mrp) : null,
       stock: parseInt(form.stock, 10),
       category: form.category,
       image_url: form.image_url,
@@ -165,7 +165,7 @@ const AdminDashboard = () => {
       name: product.name,
       description: product.description || '',
       price: product.price,
-      compare_at_price: product.compare_at_price || '',
+      mrp: product.mrp || '',
       stock: product.stock,
       category: product.category,
       image_url: product.image_url || '',
@@ -346,11 +346,11 @@ const AdminDashboard = () => {
             </select>
             <input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleFormChange} placeholder="Price" required className="border rounded-lg px-4 py-2" />
             <input
-              name="compare_at_price"
+              name="mrp"
               type="number"
               step="0.01"
               min="0"
-              value={form.compare_at_price}
+              value={form.mrp}
               onChange={handleFormChange}
               placeholder="MRP / Compare-at price (optional)"
               className="border rounded-lg px-4 py-2"
@@ -408,8 +408,8 @@ const AdminDashboard = () => {
                       <td className="p-3">{p.color}</td>
                       <td className="p-3">
                         ₹{p.price}
-                        {p.compare_at_price > p.price && (
-                          <span className="ml-1.5 text-xs text-muted line-through">₹{p.compare_at_price}</span>
+                        {p.mrp > p.price && (
+                          <span className="ml-1.5 text-xs text-muted line-through">₹{p.mrp}</span>
                         )}
                       </td>
                       <td className="p-3">

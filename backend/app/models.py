@@ -50,16 +50,16 @@ class Product(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text)
     price = Column(Float, nullable=False)
-    # The original MRP before the handmade-pricing discount, shown as a
-    # struck-through price + "X% OFF" badge on the grid/PDP, matching
-    # Nykaa/Myntra/Ajio's pricing pattern. Only set for products that
-    # actually carry a real original price (see scripts/migrate_add_compare_at_price.py) -
-    # never fabricated for the rest of the catalog.
-    compare_at_price = Column(Float)
     stock = Column(Integer, default=0)
     category = Column(String(50), index=True)
     subcategory = Column(String(50), index=True)
     image_url = Column(String(500))
+    # Ordered gallery (main image first, then side/angle shots) as a JSON list of URLs.
+    images = Column(Text)
+    sku = Column(String(100), unique=True, index=True)
+    # All colour/size variants of one product share a parent_sku (same as the Amazon parent SKU).
+    parent_sku = Column(String(50), index=True)
+    mrp = Column(Float)
     color = Column(String(255))
     size = Column(String(255))
     material = Column(String(100))
@@ -70,12 +70,6 @@ class Product(Base):
 
     reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan")
     order_items = relationship("OrderItem", back_populates="product", cascade="all, delete-orphan")
-
-    @property
-    def discount_percent(self):
-        if self.compare_at_price and self.compare_at_price > self.price:
-            return round((1 - self.price / self.compare_at_price) * 100)
-        return None
 
 
 class Address(Base):

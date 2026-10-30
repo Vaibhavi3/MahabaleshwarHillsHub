@@ -12,7 +12,7 @@ import QuickViewModal from './QuickViewModal';
 
 const BRAND = 'Ancles Home Socks';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, colourCount = 0 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,6 +22,8 @@ const ProductCard = ({ product }) => {
   const rating = product.rating || 0;
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
+  const discountPct =
+    product.mrp && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
   const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   const handleQuickView = (e) => {
@@ -39,7 +41,7 @@ const ProductCard = ({ product }) => {
         id: product.id,
         name: product.name,
         price: product.price,
-        compare_at_price: product.compare_at_price,
+        mrp: product.mrp,
         image_url: product.image_url,
         stock: product.stock,
         category: product.category,
@@ -114,10 +116,10 @@ const ProductCard = ({ product }) => {
         <p className="text-sm text-muted truncate mb-1.5">{product.name}</p>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-bold text-ink">₹{product.price}</span>
-          {product.compare_at_price > product.price && (
+          {discountPct > 0 && (
             <>
-              <span className="text-xs text-muted line-through">₹{product.compare_at_price}</span>
-              <span className="text-xs font-bold text-emerald-700">{product.discount_percent}% OFF</span>
+              <span className="text-xs text-muted line-through">₹{product.mrp}</span>
+              <span className="text-xs font-bold text-orange-500">({discountPct}% OFF)</span>
             </>
           )}
           {rating > 0 && (
@@ -126,6 +128,7 @@ const ProductCard = ({ product }) => {
             </span>
           )}
         </div>
+        {colourCount > 1 && <p className="text-xs text-muted mt-1">{colourCount} colours</p>}
         {lowStock && (
           <p className="text-xs font-semibold text-brand mt-1">Only {product.stock} left!</p>
         )}

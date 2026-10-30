@@ -80,7 +80,7 @@ const QuickViewModal = ({ product, onClose }) => {
         id: product.id,
         name: product.name,
         price: product.price,
-        compare_at_price: product.compare_at_price,
+        mrp: product.mrp,
         image_url: product.image_url,
         stock: product.stock,
         category: product.category,
@@ -147,10 +147,12 @@ const QuickViewModal = ({ product, onClose }) => {
 
           <div className="flex items-baseline gap-2.5 flex-wrap">
             <span className="text-2xl font-extrabold text-ink">₹{product.price}</span>
-            {product.compare_at_price > product.price && (
+            {product.mrp > product.price && (
               <>
-                <span className="text-sm text-muted line-through">₹{product.compare_at_price}</span>
-                <span className="text-sm font-bold text-emerald-700">{product.discount_percent}% OFF</span>
+                <span className="text-sm text-muted line-through">₹{product.mrp}</span>
+                <span className="text-sm font-bold text-orange-500">
+                  ({Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF)
+                </span>
               </>
             )}
           </div>

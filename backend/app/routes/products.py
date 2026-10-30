@@ -4,7 +4,7 @@ from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_admin_user
 from app.utils.email import send_email
-from sqlalchemy import or_, func
+from sqlalchemy import or_, func, cast, String
 
 router = APIRouter()
 
@@ -15,7 +15,8 @@ def get_products(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=500),
     category: str = Query(None),
-    subcategory: str = Query(None)
+    subcategory: str = Query(None),
+    group: bool = Query(False, description="Return one product per parent SKU (first colour variant)"),
 ):
     """Get all products with optional filtering"""
     query = db.query(models.Product)
@@ -24,18 +25,37 @@ def get_products(
         query = query.filter(models.Product.category == category)
     if subcategory:
         query = query.filter(models.Product.subcategory == subcategory)
+    if group:
+        query = query.filter(models.Product.id.in_(_first_variant_ids(db, category, subcategory)))
 
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(models.Product.id).offset(skip).limit(limit).all()
+
+
+def _first_variant_ids(db: Session, category=None, subcategory=None):
+    family = func.coalesce(models.Product.parent_sku, cast(models.Product.id, String))
+    sub = db.query(func.min(models.Product.id)).group_by(family)
+    if category:
+        sub = sub.filter(models.Product.category == category)
+    if subcategory:
+        sub = sub.filter(models.Product.subcategory == subcategory)
+    return sub
 
 
 @router.get("/products/count")
-def get_products_count(db: Session = Depends(get_db), category: str = Query(None), subcategory: str = Query(None)):
+def get_products_count(
+    db: Session = Depends(get_db),
+    category: str = Query(None),
+    subcategory: str = Query(None),
+    group: bool = Query(False),
+):
     """Get the total product count, optionally filtered by category/subcategory"""
     query = db.query(func.count(models.Product.id))
     if category:
         query = query.filter(models.Product.category == category)
     if subcategory:
         query = query.filter(models.Product.subcategory == subcategory)
+    if group:
+        query = query.filter(models.Product.id.in_(_first_variant_ids(db, category, subcategory)))
     return {"total": query.scalar()}
 
 
@@ -66,14 +86,20 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
 @router.get("/products/{product_id}/variants", response_model=list[schemas.ProductResponse])
 def get_product_variants(product_id: int, db: Session = Depends(get_db)):
-    """Other colour variants of the same product (same name, different id)"""
+    """Other colour/size variants of the same product: same parent SKU, or same name for legacy rows"""
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    same_family = (
+        models.Product.parent_sku == product.parent_sku
+        if product.parent_sku
+        else models.Product.name == product.name
+    )
     return (
         db.query(models.Product)
-        .filter(models.Product.name == product.name, models.Product.id != product_id)
+        .filter(same_family, models.Product.id != product_id)
+        .order_by(models.Product.id)
         .all()
     )
 
@@ -89,11 +115,16 @@ def get_similar_products(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    other_family = (
+        or_(models.Product.parent_sku.is_(None), models.Product.parent_sku != product.parent_sku)
+        if product.parent_sku
+        else models.Product.name != product.name
+    )
     return (
         db.query(models.Product)
         .filter(
             models.Product.category == product.category,
-            models.Product.name != product.name,
+            other_family,
         )
         .order_by(func.abs(models.Product.price - product.price))
         .limit(limit)

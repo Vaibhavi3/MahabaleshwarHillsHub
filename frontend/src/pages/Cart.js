@@ -18,8 +18,7 @@ const Cart = () => {
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const mrpSavings = items.reduce(
-    (sum, item) =>
-      sum + (item.compare_at_price > item.price ? (item.compare_at_price - item.price) * item.quantity : 0),
+    (sum, item) => sum + (item.mrp > item.price ? (item.mrp - item.price) * item.quantity : 0),
     0
   );
   const multibuy = computeMultibuyDiscount(items);
@@ -96,11 +95,11 @@ const Cart = () => {
               <h3 className="font-semibold">{item.name}</h3>
               <div className="flex items-baseline gap-2 flex-wrap">
                 <p className="text-ink font-bold">₹{item.price}</p>
-                {item.compare_at_price > item.price && (
+                {item.mrp > item.price && (
                   <>
-                    <span className="text-xs text-muted line-through">₹{item.compare_at_price}</span>
-                    <span className="text-xs font-bold text-emerald-700">
-                      {Math.round((1 - item.price / item.compare_at_price) * 100)}% OFF
+                    <span className="text-xs text-muted line-through">₹{item.mrp}</span>
+                    <span className="text-xs font-bold text-orange-500">
+                      ({Math.round((1 - item.price / item.mrp) * 100)}% OFF)
                     </span>
                   </>
                 )}

@@ -104,8 +104,8 @@ const CartDrawer = () => {
                     <p className="text-sm font-semibold text-ink truncate">{item.name}</p>
                     <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
                       <p className="text-sm font-bold text-ink">₹{item.price}</p>
-                      {item.compare_at_price > item.price && (
-                        <span className="text-xs text-muted line-through">₹{item.compare_at_price}</span>
+                      {item.mrp > item.price && (
+                        <span className="text-xs text-muted line-through">₹{item.mrp}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-2">

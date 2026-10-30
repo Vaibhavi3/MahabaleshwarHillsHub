@@ -6,8 +6,77 @@ from app.utils.auth import get_password_hash, verify_password, create_access_tok
 from app.utils.loyalty import SIGNUP_BONUS_POINTS, REFERRAL_REFEREE_BONUS_POINTS
 from app.utils.referral import generate_referral_code
 from app.schemas import LoginRequest
+from app.utils.firebase_auth import FirebaseTokenError, verify_phone_id_token, phone_digits
+import secrets
 
 router = APIRouter()
+
+
+def _find_user_by_phone(db: Session, phone: str):
+    digits = phone_digits(phone)
+    if len(digits) < 10:
+        return None
+    candidates = db.query(models.User).filter(models.User.phone.ilike(f"%{digits[-4:]}%")).all()
+    return next((u for u in candidates if phone_digits(u.phone) == digits), None)
+
+
+def _verified_phone(id_token: str) -> str:
+    try:
+        return verify_phone_id_token(id_token)
+    except FirebaseTokenError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+
+
+def _token_response(db_user: models.User) -> dict:
+    if not db_user.is_active:
+        raise HTTPException(status_code=403, detail="User account is disabled")
+    return {
+        "access_token": create_access_token(data={"sub": str(db_user.id)}),
+        "token_type": "bearer",
+        "user": db_user,
+    }
+
+
+@router.post("/auth/phone/verify", response_model=schemas.PhoneVerifyResponse)
+def phone_verify(payload: schemas.PhoneTokenRequest, db: Session = Depends(get_db)):
+    """Log in with a Firebase-verified mobile number. Returns new_user=True
+    (and no token) when no account has this number yet."""
+    phone = _verified_phone(payload.id_token)
+    db_user = _find_user_by_phone(db, phone)
+    if not db_user:
+        return {"new_user": True, "phone": phone}
+    return {"new_user": False, "phone": phone, **_token_response(db_user)}
+
+
+@router.post("/auth/phone/register", response_model=schemas.TokenResponse)
+def phone_register(payload: schemas.PhoneRegisterRequest, db: Session = Depends(get_db)):
+    """Create an account for a Firebase-verified mobile number, then log in."""
+    phone = _verified_phone(payload.id_token)
+    existing = _find_user_by_phone(db, phone)
+    if existing:
+        return _token_response(existing)
+
+    digits = phone_digits(phone)
+    # Email is optional for mobile sign-ups; the placeholder keeps the unique,
+    # non-null email column satisfied and simply never receives mail.
+    email = (payload.email or "").strip().lower() or f"m{digits}@phone-login.mahabaleshwar-hills-hub-pi.vercel.app"
+    if db.query(models.User).filter(models.User.email == email).first():
+        raise HTTPException(status_code=400, detail="Email already registered - log in with your password instead")
+
+    username = f"m{digits}"
+    while db.query(models.User).filter(models.User.username == username).first():
+        username = f"m{digits}{secrets.randbelow(1000)}"
+
+    new_user = schemas.UserCreate(
+        username=username,
+        email=email,
+        password=secrets.token_urlsafe(24),
+        first_name=payload.first_name.strip(),
+        last_name=(payload.last_name or "").strip() or None,
+        phone=phone,
+        referral_code=payload.referral_code,
+    )
+    return _token_response(register(new_user, db))
 
 
 @router.post("/auth/register", response_model=schemas.UserResponse)

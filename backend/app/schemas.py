@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, Field
+import json
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
 from typing import Optional, List
 
@@ -49,10 +50,12 @@ class ProductBase(BaseModel):
 
 class ProductCreate(ProductBase):
     image_url: Optional[str] = None
+    sku: Optional[str] = None
+    parent_sku: Optional[str] = None
+    mrp: Optional[float] = Field(None, ge=0)
     color: Optional[str] = None
     size: Optional[str] = None
     material: Optional[str] = None
-    compare_at_price: Optional[float] = Field(None, ge=0)
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
@@ -62,23 +65,40 @@ class ProductUpdate(BaseModel):
     category: Optional[str] = None
     subcategory: Optional[str] = None
     image_url: Optional[str] = None
+    sku: Optional[str] = None
+    parent_sku: Optional[str] = None
+    mrp: Optional[float] = Field(None, ge=0)
     color: Optional[str] = None
     size: Optional[str] = None
     material: Optional[str] = None
     is_featured: Optional[bool] = None
-    compare_at_price: Optional[float] = Field(None, ge=0)
 
 class ProductResponse(ProductBase):
     id: int
     image_url: Optional[str]
+    images: List[str] = []
+    sku: Optional[str] = None
+    parent_sku: Optional[str] = None
+    mrp: Optional[float] = None
     color: Optional[str]
     size: Optional[str]
     material: Optional[str]
     rating: float
     is_featured: bool
-    compare_at_price: Optional[float] = None
-    discount_percent: Optional[int] = None
     created_at: datetime
+
+    @field_validator("images", mode="before")
+    @classmethod
+    def _parse_images(cls, v):
+        if not v:
+            return []
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+            except ValueError:
+                return []
+            return parsed if isinstance(parsed, list) else []
+        return v
 
     class Config:
         from_attributes = True
@@ -226,6 +246,39 @@ class ReorderAvailableItem(BaseModel):
 class ReorderResponse(BaseModel):
     available: List[ReorderAvailableItem] = []
     skipped: List[ReorderSkippedItem] = []
+
+
+class OrderTrackingRequest(BaseModel):
+    order_number: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr
+
+
+class TrackedOrderItem(BaseModel):
+    product_name: Optional[str] = None
+    product_image: Optional[str] = None
+    quantity: int
+    price: float
+
+    class Config:
+        from_attributes = True
+
+
+class OrderTrackingResponse(BaseModel):
+    """Deliberately narrower than OrderResponse - no shipping address, no
+    coupon/gift-card/points breakdown, no internal user id - since this is
+    reachable without logging in once the order number + email match."""
+    order_number: str
+    status: str
+    payment_status: str
+    tracking_number: Optional[str] = None
+    total_amount: float
+    created_at: datetime
+    items: List[TrackedOrderItem] = []
+    status_history: List[OrderStatusHistoryResponse] = []
+
+    class Config:
+        from_attributes = True
+
 
 class CouponBase(BaseModel):
     code: str = Field(..., min_length=3, max_length=50)
@@ -408,6 +461,22 @@ class TokenResponse(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+class PhoneTokenRequest(BaseModel):
+    id_token: str = Field(..., min_length=20)
+
+class PhoneRegisterRequest(PhoneTokenRequest):
+    first_name: str = Field(..., min_length=1, max_length=50)
+    last_name: Optional[str] = Field(None, max_length=50)
+    email: Optional[EmailStr] = None
+    referral_code: Optional[str] = Field(None, max_length=20)
+
+class PhoneVerifyResponse(BaseModel):
+    new_user: bool
+    phone: str
+    access_token: Optional[str] = None
+    token_type: Optional[str] = None
+    user: Optional[UserResponse] = None
 
 class CRMLeadCreate(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=80)
