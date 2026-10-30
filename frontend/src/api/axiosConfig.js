@@ -153,6 +153,9 @@ export const api = {
   reorder: (id) => {
     return client.get(`/orders/${id}/reorder`);
   },
+  trackOrder: (orderNumber, email) => {
+    return client.post('/orders/track', { order_number: orderNumber, email });
+  },
 
   // Reviews
   getProductReviews: (productId) => {
