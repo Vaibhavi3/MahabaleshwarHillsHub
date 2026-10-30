@@ -19,6 +19,7 @@ import Addresses from './pages/Addresses';
 import Rewards from './pages/Rewards';
 import GiftCards from './pages/GiftCards';
 import Help from './pages/Help';
+import TrackOrder from './pages/TrackOrder';
 import Auth from './pages/Auth';
 import AdminDashboard from './pages/AdminDashboard';
 import CRM from './pages/CRM';
@@ -65,6 +66,7 @@ function App() {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/gift-cards" element={<GiftCards />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/track-order" element={<TrackOrder />} />
           <Route path="/auth" element={<Auth />} />
           <Route
             path="/checkout"

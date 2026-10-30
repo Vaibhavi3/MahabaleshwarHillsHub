@@ -60,6 +60,12 @@ class Product(Base):
     category = Column(String(50), index=True)
     subcategory = Column(String(50), index=True)
     image_url = Column(String(500))
+    # Ordered gallery (main image first, then side/angle shots) as a JSON list of URLs.
+    images = Column(Text)
+    sku = Column(String(100), unique=True, index=True)
+    # All colour/size variants of one product share a parent_sku (same as the Amazon parent SKU).
+    parent_sku = Column(String(50), index=True)
+    mrp = Column(Float)
     color = Column(String(255))
     size = Column(String(255))
     material = Column(String(100))

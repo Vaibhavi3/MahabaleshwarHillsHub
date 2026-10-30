@@ -38,6 +38,7 @@ const ProductDetail = () => {
   const [notifySubscribed, setNotifySubscribed] = useState(false);
   const [notifyBusy, setNotifyBusy] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
   const buyBoxObserverRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ const ProductDetail = () => {
       try {
         const productResponse = await api.getProductById(id);
         setProduct(productResponse.data);
+        setActiveImage(0);
         recordProductView(productResponse.data.id, token);
 
         const [reviewsResponse, variantsResponse, similarResponse, fbtResponse, questionsResponse] = await Promise.all([
@@ -213,7 +215,8 @@ const ProductDetail = () => {
   }
 
   const avgRating = product.rating || 0;
-  const thumbs = [product, ...variants];
+  const gallery = product.images && product.images.length > 0 ? product.images : [product.image_url];
+  const shownImage = gallery[Math.min(activeImage, gallery.length - 1)];
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
   const sizeInfo = parseProductSize(product);
@@ -233,32 +236,53 @@ const ProductDetail = () => {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div className="flex gap-4 items-start">
-          <div className="hidden sm:flex flex-col gap-3 shrink-0">
-            {thumbs.slice(0, 6).map((t) => (
-              <Link
-                key={t.id}
-                to={`/products/${t.id}`}
-                className={`w-16 h-16 rounded overflow-hidden border-2 bg-surface ${
-                  t.id === product.id ? 'border-brand' : 'border-transparent hover:border-gray-300'
-                }`}
-              >
-                <img
-                  src={getImageUrl(t.image_url) || 'https://via.placeholder.com/64'}
-                  alt={t.color}
-                  className="w-full h-full object-contain"
-                />
-              </Link>
-            ))}
+        <div>
+          <div className="flex gap-4 items-start">
+            {gallery.length > 1 && (
+              <div className="hidden sm:flex flex-col gap-3 shrink-0 max-h-[640px] overflow-y-auto pr-1">
+                {gallery.map((src, i) => (
+                  <button
+                    key={src}
+                    type="button"
+                    onClick={() => setActiveImage(i)}
+                    onMouseEnter={() => setActiveImage(i)}
+                    aria-label={`View image ${i + 1}`}
+                    className={`w-16 h-16 shrink-0 rounded overflow-hidden border-2 bg-surface ${
+                      i === activeImage ? 'border-brand' : 'border-transparent hover:border-gray-300'
+                    }`}
+                  >
+                    <img src={getImageUrl(src)} alt="" className="w-full h-full object-contain" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex-1 bg-surface">
+              <ZoomableImage src={getImageUrl(shownImage)} alt={product.name} />
+            </div>
           </div>
-          <div className="flex-1 bg-surface">
-            <ZoomableImage src={getImageUrl(product.image_url)} alt={product.name} />
-          </div>
+          {gallery.length > 1 && (
+            <div className="sm:hidden flex gap-2 overflow-x-auto mt-3 pb-1">
+              {gallery.map((src, i) => (
+                <button
+                  key={src}
+                  type="button"
+                  onClick={() => setActiveImage(i)}
+                  aria-label={`View image ${i + 1}`}
+                  className={`w-16 h-16 shrink-0 rounded overflow-hidden border-2 bg-surface ${
+                    i === activeImage ? 'border-brand' : 'border-transparent'
+                  }`}
+                >
+                  <img src={getImageUrl(src)} alt="" className="w-full h-full object-contain" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
           <h4 className="font-extrabold text-lg text-ink">{BRAND}</h4>
-          <h1 className="text-base text-muted mb-3">{product.name}</h1>
+          <h1 className="text-base text-muted mb-1">{product.name}</h1>
+          {product.sku && <p className="text-xs text-muted mb-3">SKU: {product.sku}</p>}
 
           {avgRating > 0 && (
             <div className="flex items-center gap-3 mb-4">

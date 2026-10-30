@@ -12,7 +12,7 @@ import QuickViewModal from './QuickViewModal';
 
 const BRAND = 'Ancles Home Socks';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, colourCount = 0 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -126,6 +126,7 @@ const ProductCard = ({ product }) => {
             </span>
           )}
         </div>
+        {colourCount > 1 && <p className="text-xs text-muted mt-1">{colourCount} colours</p>}
         {lowStock && (
           <p className="text-xs font-semibold text-brand mt-1">Only {product.stock} left!</p>
         )}

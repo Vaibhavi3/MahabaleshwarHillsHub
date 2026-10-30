@@ -47,9 +47,9 @@ const Home = () => {
     const load = async () => {
       try {
         const [bestsellersRes, newArrivalsRes, countRes, ...categoryResponses] = await Promise.all([
-          api.getProducts(0, 8),
-          api.getProducts(8, 8),
-          api.getProductsCount(),
+          api.getProducts(0, 8, null, null, true),
+          api.getProducts(8, 8, null, null, true),
+          api.getProductsCount(null, null, true),
           ...CATEGORIES.map((cat) => api.getProducts(0, 1, cat.slug)),
         ]);
         setBestsellers(bestsellersRes.data);

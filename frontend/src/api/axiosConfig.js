@@ -42,11 +42,11 @@ client.interceptors.response.use(
 
 export const api = {
   // Products
-  getProducts: (skip = 0, limit = 10, category = null, subcategory = null) => {
-    return client.get('/products', { params: { skip, limit, category, subcategory } });
+  getProducts: (skip = 0, limit = 10, category = null, subcategory = null, group = false) => {
+    return client.get('/products', { params: { skip, limit, category, subcategory, group: group || undefined } });
   },
-  getProductsCount: (category = null, subcategory = null) => {
-    return client.get('/products/count', { params: { category, subcategory } });
+  getProductsCount: (category = null, subcategory = null, group = false) => {
+    return client.get('/products/count', { params: { category, subcategory, group: group || undefined } });
   },
   getProductById: (id) => {
     return client.get(`/products/${id}`);
@@ -94,6 +94,12 @@ export const api = {
   },
   login: (credentials) => {
     return client.post('/auth/login', credentials);
+  },
+  phoneVerify: (idToken) => {
+    return client.post('/auth/phone/verify', { id_token: idToken });
+  },
+  phoneRegister: (payload) => {
+    return client.post('/auth/phone/register', payload);
   },
   getCurrentUser: () => {
     return client.get('/auth/me');
@@ -146,6 +152,9 @@ export const api = {
   },
   reorder: (id) => {
     return client.get(`/orders/${id}/reorder`);
+  },
+  trackOrder: (orderNumber, email) => {
+    return client.post('/orders/track', { order_number: orderNumber, email });
   },
 
   // Reviews
