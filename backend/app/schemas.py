@@ -56,7 +56,7 @@ class ProductCreate(ProductBase):
     color: Optional[str] = None
     size: Optional[str] = None
     material: Optional[str] = None
-    
+
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None

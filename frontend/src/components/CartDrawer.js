@@ -102,7 +102,12 @@ const CartDrawer = () => {
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-ink truncate">{item.name}</p>
-                    <p className="text-sm font-bold text-ink mt-0.5">₹{item.price}</p>
+                    <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
+                      <p className="text-sm font-bold text-ink">₹{item.price}</p>
+                      {item.mrp > item.price && (
+                        <span className="text-xs text-muted line-through">₹{item.mrp}</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex items-center border border-gray-300 rounded">
                         <button
