@@ -121,6 +121,8 @@ def create_order(
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
             gift_card_amount=gift_card_amount,
+            is_gift=order.is_gift,
+            gift_message=(order.gift_message or "").strip()[:300] or None if order.is_gift else None,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,

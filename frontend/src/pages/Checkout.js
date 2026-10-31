@@ -15,6 +15,8 @@ const CHECKOUT_STEPS = [
   { key: 'payment', label: 'Payment' },
 ];
 
+const GIFT_MESSAGE_MAX_LENGTH = 300;
+
 const CheckoutProgress = ({ step }) => {
   const activeIndex = CHECKOUT_STEPS.findIndex((s) => s.key === step);
   return (
@@ -153,6 +155,8 @@ const Checkout = () => {
   const [giftCardInput, setGiftCardInput] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState(null);
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
+  const [isGift, setIsGift] = useState(false);
+  const [giftMessage, setGiftMessage] = useState('');
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const multibuy = computeMultibuyDiscount(items);
@@ -219,6 +223,8 @@ const Checkout = () => {
         coupon_code: couponCode || undefined,
         redeem_points: pointsToRedeem,
         gift_card_code: appliedGiftCard?.code || undefined,
+        is_gift: isGift,
+        gift_message: isGift ? giftMessage.trim() || undefined : undefined,
       });
       setOrder(response.data);
       setStep('payment');
@@ -337,6 +343,43 @@ const Checkout = () => {
                 )}
               </div>
 
+              <div className="border border-gray-200 rounded-lg p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isGift}
+                    onChange={(e) => {
+                      setIsGift(e.target.checked);
+                      if (!e.target.checked) setGiftMessage('');
+                    }}
+                    className="accent-brand w-4 h-4 mt-0.5"
+                  />
+                  <span>
+                    <span className="flex items-center gap-1.5 font-semibold text-ink text-sm">
+                      <FiGift className="text-brand" /> This order is a gift
+                    </span>
+                    <span className="text-xs text-muted">
+                      We&apos;ll wrap it beautifully and tuck in your note, at no extra cost
+                    </span>
+                  </span>
+                </label>
+                {isGift && (
+                  <div className="mt-3 pl-7">
+                    <textarea
+                      value={giftMessage}
+                      onChange={(e) => setGiftMessage(e.target.value.slice(0, GIFT_MESSAGE_MAX_LENGTH))}
+                      placeholder="Add a personal note for the recipient (optional)"
+                      rows={2}
+                      maxLength={GIFT_MESSAGE_MAX_LENGTH}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                    <p className="text-xs text-muted text-right mt-1">
+                      {giftMessage.length}/{GIFT_MESSAGE_MAX_LENGTH}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <button type="button" onClick={handleCreateOrder} disabled={submitting || !selectedAddress} className="btn-primary w-full disabled:opacity-50">
                 {submitting ? 'Please wait...' : 'Continue to Payment'}
               </button>
@@ -416,6 +459,11 @@ const Checkout = () => {
             <span className="flex items-center gap-1.5">
               <FiShield className="text-brand shrink-0" /> Secure checkout via Stripe or Razorpay
             </span>
+            {isGift && (
+              <span className="flex items-center gap-1.5 text-brand font-semibold">
+                <FiGift className="shrink-0" /> Gift wrapped, free of charge
+              </span>
+            )}
           </div>
         </div>
       </div>

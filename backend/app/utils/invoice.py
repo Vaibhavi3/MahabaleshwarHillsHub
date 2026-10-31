@@ -69,6 +69,16 @@ def generate_invoice_pdf(order: "models.Order") -> bytes:
     pdf.multi_cell(0, 6, order.shipping_address or "-")
     pdf.ln(4)
 
+    if getattr(order, "is_gift", False):
+        pdf.set_font("Helvetica", "B", 10)
+        pdf.set_text_color(*BRAND_PINK)
+        pdf.cell(0, 6, "This order is a gift - gift wrapped", ln=True)
+        if order.gift_message:
+            pdf.set_font("Helvetica", "I", 10)
+            pdf.set_text_color(*INK_NAVY)
+            pdf.multi_cell(0, 6, f'"{order.gift_message}"')
+        pdf.ln(2)
+
     # Items table
     pdf.set_fill_color(245, 245, 246)
     pdf.set_text_color(*INK_NAVY)

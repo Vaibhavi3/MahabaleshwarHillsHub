@@ -8,7 +8,7 @@ import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiLink } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiLink, FiGift } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -230,6 +230,15 @@ const Orders = () => {
                 </button>
               </div>
             </div>
+            {order.is_gift && (
+              <div className="flex items-start gap-2 bg-brand-light/20 border border-brand-light rounded-lg px-3 py-2 mb-4">
+                <FiGift className="text-brand shrink-0 mt-0.5" />
+                <p className="text-sm text-ink">
+                  <span className="font-semibold">Gift wrapped.</span>
+                  {order.gift_message && <span className="italic text-muted"> &ldquo;{order.gift_message}&rdquo;</span>}
+                </p>
+              </div>
+            )}
             <div className="border-y py-3 mb-4">
               <OrderTimeline
                 status={order.status}
