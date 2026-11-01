@@ -153,6 +153,9 @@ const Checkout = () => {
   const [giftCardInput, setGiftCardInput] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState(null);
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
+  const [isGift, setIsGift] = useState(false);
+  const [giftNote, setGiftNote] = useState('');
+  const GIFT_NOTE_MAX = 300;
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const multibuy = computeMultibuyDiscount(items);
@@ -219,6 +222,8 @@ const Checkout = () => {
         coupon_code: couponCode || undefined,
         redeem_points: pointsToRedeem,
         gift_card_code: appliedGiftCard?.code || undefined,
+        is_gift: isGift,
+        gift_note: isGift && giftNote.trim() ? giftNote.trim() : undefined,
       });
       setOrder(response.data);
       setStep('payment');
@@ -337,6 +342,39 @@ const Checkout = () => {
                 )}
               </div>
 
+              <div className="border border-gray-200 rounded-lg p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isGift}
+                    onChange={(e) => setIsGift(e.target.checked)}
+                    className="accent-brand w-4 h-4 mt-0.5"
+                  />
+                  <span>
+                    <span className="flex items-center gap-1.5 font-semibold text-ink text-sm">
+                      <FiGift className="text-brand" /> Sending this as a gift?
+                    </span>
+                    <span className="text-xs text-muted">
+                      Add a note and we'll write it out by hand and tuck it into your package.
+                    </span>
+                  </span>
+                </label>
+                {isGift && (
+                  <div className="mt-3 pl-7">
+                    <textarea
+                      value={giftNote}
+                      onChange={(e) => setGiftNote(e.target.value.slice(0, GIFT_NOTE_MAX))}
+                      placeholder="Write your gift message here (optional)"
+                      rows={3}
+                      className="w-full border rounded-lg px-3 py-2 text-sm resize-none"
+                    />
+                    <p className="text-xs text-muted text-right mt-1">
+                      {giftNote.length}/{GIFT_NOTE_MAX}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <button type="button" onClick={handleCreateOrder} disabled={submitting || !selectedAddress} className="btn-primary w-full disabled:opacity-50">
                 {submitting ? 'Please wait...' : 'Continue to Payment'}
               </button>
@@ -371,6 +409,11 @@ const Checkout = () => {
           {multibuy.amount > 0 && (
             <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 mb-3">
               <FiPackage className="shrink-0" /> Mix &amp; Match Socks: {multibuy.percent}% off {multibuy.eligibleQuantity} Home Socks applied
+            </p>
+          )}
+          {isGift && (
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-ink mb-3">
+              <FiGift className="text-brand shrink-0" /> Marked as a gift{giftNote.trim() ? ' with a note' : ''}
             </p>
           )}
           {(multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (
