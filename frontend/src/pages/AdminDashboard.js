@@ -457,6 +457,16 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{order.shipping_address}</p>
+                {order.is_gift && (
+                  <div className="mb-2 border border-dashed border-purple-300 bg-purple-50 rounded-lg px-3 py-2">
+                    <p className="text-sm font-bold text-purple-700">🎁 This is a gift order - include a note when packing</p>
+                    {order.gift_note ? (
+                      <p className="text-sm text-gray-700 italic mt-1">"{order.gift_note}"</p>
+                    ) : (
+                      <p className="text-sm text-gray-500 mt-1">No message left - customer didn't write one.</p>
+                    )}
+                  </div>
+                )}
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-gray-600">
                     Payment: {order.payment_status} ({order.payment_method})

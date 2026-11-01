@@ -108,6 +108,13 @@ def create_order(
                 raise HTTPException(status_code=400, detail="This gift card can't be applied to this order")
             total_amount = round(total_amount - gift_card_amount, 2)
 
+        # A gift note only means anything when "this is a gift" is actually
+        # checked - otherwise drop any stray text instead of storing it.
+        is_gift = bool(order.is_gift)
+        gift_note = order.gift_note.strip() if is_gift and order.gift_note else None
+        if gift_note == "":
+            gift_note = None
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         db_order = models.Order(
             user_id=current_user.id,
@@ -121,6 +128,8 @@ def create_order(
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
             gift_card_amount=gift_card_amount,
+            is_gift=is_gift,
+            gift_note=gift_note,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,
