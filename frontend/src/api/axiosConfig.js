@@ -328,6 +328,13 @@ export const api = {
   validateGiftCard: (code) => client.post('/gift-cards/validate', { code }),
   getMyGiftCards: () => client.get('/gift-cards/mine'),
 
+  // Notifications (the header bell's feed - order status, price-drop,
+  // back-in-stock, return/support and loyalty-points updates)
+  getNotifications: () => client.get('/notifications'),
+  getUnreadNotificationCount: () => client.get('/notifications/unread-count'),
+  markNotificationRead: (id) => client.post(`/notifications/${id}/read`),
+  markAllNotificationsRead: () => client.post('/notifications/read-all'),
+
   // CRM
   getCRMOverview: () => client.get('/crm/overview'),
   getCRMCustomers: (params) => client.get('/crm/customers', { params }),

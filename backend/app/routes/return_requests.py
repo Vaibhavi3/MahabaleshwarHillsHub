@@ -7,6 +7,7 @@ from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.utils.refunds import issue_refund
+from app.utils.notifications import notify
 
 router = APIRouter()
 
@@ -166,6 +167,13 @@ def update_return_request_status(
                 request.exchange_product.stock -= item.quantity
 
     request.status = payload.status
+    notify(
+        db,
+        request.user_id,
+        "return_request",
+        f"Your {request.request_type} request is now {payload.status.replace('_', ' ')}",
+        link="/orders",
+    )
     db.commit()
     db.refresh(request)
     return request

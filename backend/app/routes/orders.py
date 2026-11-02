@@ -14,6 +14,7 @@ from app.utils.loyalty import (
     POINT_VALUE_INR,
     REFERRAL_REFERRER_BONUS_POINTS,
 )
+from app.utils.notifications import notify
 from datetime import datetime, timezone
 import uuid
 
@@ -247,6 +248,13 @@ def cancel_order(
     order.status = "cancelled"
     order.cancellation_reason = reason
     db.add(models.OrderStatusHistory(order_id=order.id, status="cancelled"))
+    notify(
+        db,
+        order.user_id,
+        "order_status",
+        f"Order #{order.order_number} has been cancelled",
+        link="/orders",
+    )
 
     db.commit()
 
@@ -414,6 +422,13 @@ def update_order(
 
     if status_changed:
         db.add(models.OrderStatusHistory(order_id=order.id, status=new_status))
+        notify(
+            db,
+            order.user_id,
+            "order_status",
+            f"Order #{order.order_number} is now {new_status.replace('_', ' ').title()}",
+            link="/orders",
+        )
 
         # Credit Hills Rewards points the first time an order reaches
         # "delivered" - guarded by points_credited so re-saving the order,
@@ -435,6 +450,14 @@ def update_order(
                     points=earned,
                     reason="order_earned",
                 ))
+                notify(
+                    db,
+                    order.user_id,
+                    "loyalty_points",
+                    f"You earned {earned} Hills Rewards points",
+                    body=f"From order #{order.order_number}",
+                    link="/rewards",
+                )
 
             # "Invite & Earn": the referrer's bonus is tied to the referred
             # friend's FIRST delivered order (like Ajio's "referrer earns
@@ -467,6 +490,14 @@ def update_order(
                             points=REFERRAL_REFERRER_BONUS_POINTS,
                             reason="referral_bonus",
                         ))
+                        notify(
+                            db,
+                            referral.referrer_id,
+                            "referral",
+                            "Your Invite & Earn bonus has arrived",
+                            body=f"You earned {REFERRAL_REFERRER_BONUS_POINTS} Hills Rewards points for your referral's first order.",
+                            link="/rewards",
+                        )
 
     db.commit()
     db.refresh(order)
