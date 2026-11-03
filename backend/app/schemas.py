@@ -631,6 +631,10 @@ class LoyaltyTransactionResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class RecommendationsForYouResponse(BaseModel):
+    personalized: bool
+    products: List[ProductResponse] = []
+
 class ReferralItemResponse(BaseModel):
     id: int
     referred_name: str

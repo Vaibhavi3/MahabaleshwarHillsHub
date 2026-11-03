@@ -4,6 +4,7 @@ import api, { getImageUrl } from '../api/axiosConfig';
 import ProductCard from '../components/ProductCard';
 import { ProductGridSkeleton } from '../components/ProductCardSkeleton';
 import RecentlyViewed from '../components/RecentlyViewed';
+import RecommendedForYou from '../components/RecommendedForYou';
 import toast from 'react-hot-toast';
 import { FiTruck, FiRefreshCw, FiShield, FiHeart } from 'react-icons/fi';
 import heroHills from '../assets/hero-hills.jpg';
@@ -218,6 +219,10 @@ const Home = () => {
           </div>
         )}
       </section>
+
+      <div className="border-t border-gray-100">
+        <RecommendedForYou />
+      </div>
     </div>
   );
 };

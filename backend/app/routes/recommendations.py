@@ -11,7 +11,7 @@ from app.utils.auth import get_current_user_optional
 router = APIRouter()
 
 
-@router.get("/recommendations/for-you", response_model=list[schemas.ProductResponse])
+@router.get("/recommendations/for-you", response_model=schemas.RecommendationsForYouResponse)
 def get_recommendations_for_you(
     limit: int = Query(8, ge=1, le=20),
     db: Session = Depends(get_db),
@@ -21,7 +21,11 @@ def get_recommendations_for_you(
     from their most-ordered categories (excluding what they already bought),
     ranked by rating. Everyone else (guests, or logged-in users with no
     orders yet) gets the site's best-selling products - a real popularity
-    signal from order history, not a placeholder."""
+    signal from order history, not a placeholder.
+
+    The response's `personalized` flag tells the caller which branch fired,
+    so the UI can honestly label the rail (e.g. "Based on your orders" vs
+    "Trending now") instead of always claiming personalization."""
     if current_user:
         category_rows = (
             db.query(models.Product.category, func.count(models.OrderItem.id).label("cnt"))
@@ -51,7 +55,7 @@ def get_recommendations_for_you(
                 .all()
             )
             if recs:
-                return recs
+                return {"personalized": True, "products": recs}
 
     # Trending fallback: best-sellers by total units ordered, then rating.
     bestseller_rows = (
@@ -79,4 +83,4 @@ def get_recommendations_for_you(
         .limit(limit - len(trending))
         .all()
     )
-    return trending + fallback
+    return {"personalized": False, "products": trending + fallback}
