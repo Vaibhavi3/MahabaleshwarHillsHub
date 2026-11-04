@@ -457,6 +457,12 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{order.shipping_address}</p>
+                {order.gift_wrap && (
+                  <p className="text-sm font-semibold text-brand mb-2">
+                    🎁 Gift wrap requested
+                    {order.gift_message && <span className="font-normal text-gray-600"> - &ldquo;{order.gift_message}&rdquo;</span>}
+                  </p>
+                )}
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-gray-600">
                     Payment: {order.payment_status} ({order.payment_method})

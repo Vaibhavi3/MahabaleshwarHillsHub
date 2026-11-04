@@ -9,6 +9,7 @@ import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX, FiPackage } from 'rea
 import toast from 'react-hot-toast';
 import AddressBook from '../components/AddressBook';
 import { computeMultibuyDiscount } from '../utils/multibuy';
+import { GIFT_WRAP_FEE_INR, GIFT_MESSAGE_MAX_LEN } from '../utils/giftWrap';
 
 const CHECKOUT_STEPS = [
   { key: 'address', label: 'Shipping' },
@@ -153,6 +154,8 @@ const Checkout = () => {
   const [giftCardInput, setGiftCardInput] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState(null);
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftMessage, setGiftMessage] = useState('');
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const multibuy = computeMultibuyDiscount(items);
@@ -168,7 +171,10 @@ const Checkout = () => {
   const giftCardAmount = appliedGiftCard
     ? Math.max(0, Math.min(appliedGiftCard.balance, totalBeforeGiftCard - 1))
     : 0;
-  const total = Math.max(0, totalBeforeGiftCard - giftCardAmount);
+  // Gift wrap is a flat add-on, applied after every discount, so it's never
+  // itself discounted away.
+  const giftWrapFee = giftWrap ? GIFT_WRAP_FEE_INR : 0;
+  const total = Math.max(0, totalBeforeGiftCard - giftCardAmount) + giftWrapFee;
 
   useEffect(() => {
     api.getLoyaltyBalance()
@@ -219,6 +225,8 @@ const Checkout = () => {
         coupon_code: couponCode || undefined,
         redeem_points: pointsToRedeem,
         gift_card_code: appliedGiftCard?.code || undefined,
+        gift_wrap: giftWrap,
+        gift_message: giftWrap ? giftMessage.trim() || undefined : undefined,
       });
       setOrder(response.data);
       setStep('payment');
@@ -337,6 +345,40 @@ const Checkout = () => {
                 )}
               </div>
 
+              <div className="border border-gray-200 rounded-lg p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={giftWrap}
+                    onChange={(e) => setGiftWrap(e.target.checked)}
+                    className="accent-brand w-4 h-4 mt-0.5"
+                  />
+                  <span>
+                    <span className="flex items-center gap-1.5 font-semibold text-ink text-sm">
+                      <FiGift className="text-brand" /> Gift wrap this order (+₹{GIFT_WRAP_FEE_INR})
+                    </span>
+                    <span className="text-xs text-muted">
+                      Handmade kraft-paper wrap with a note card, added to your order
+                    </span>
+                  </span>
+                </label>
+                {giftWrap && (
+                  <div className="mt-3 pl-7">
+                    <textarea
+                      value={giftMessage}
+                      onChange={(e) => setGiftMessage(e.target.value.slice(0, GIFT_MESSAGE_MAX_LEN))}
+                      maxLength={GIFT_MESSAGE_MAX_LEN}
+                      placeholder="Add a personal message for the recipient (optional)"
+                      rows={3}
+                      className="w-full border rounded-lg px-3 py-2 text-sm resize-none"
+                    />
+                    <p className="text-xs text-muted mt-1 text-right">
+                      {giftMessage.length}/{GIFT_MESSAGE_MAX_LEN}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <button type="button" onClick={handleCreateOrder} disabled={submitting || !selectedAddress} className="btn-primary w-full disabled:opacity-50">
                 {submitting ? 'Please wait...' : 'Continue to Payment'}
               </button>
@@ -373,7 +415,7 @@ const Checkout = () => {
               <FiPackage className="shrink-0" /> Mix &amp; Match Socks: {multibuy.percent}% off {multibuy.eligibleQuantity} Home Socks applied
             </p>
           )}
-          {(multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (
+          {(multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0 || giftWrapFee > 0) && (
             <div className="space-y-1 mb-2 pb-2 border-b">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Subtotal</span>
@@ -401,6 +443,12 @@ const Checkout = () => {
                 <div className="flex justify-between text-sm text-emerald-700 font-semibold">
                   <span>Gift Card ({appliedGiftCard.code})</span>
                   <span>- ₹{giftCardAmount.toFixed(2)}</span>
+                </div>
+              )}
+              {giftWrapFee > 0 && (
+                <div className="flex justify-between text-sm text-ink">
+                  <span>Gift Wrap</span>
+                  <span>₹{giftWrapFee.toFixed(2)}</span>
                 </div>
               )}
             </div>

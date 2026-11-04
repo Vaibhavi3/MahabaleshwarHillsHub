@@ -181,6 +181,8 @@ class OrderCreate(BaseModel):
     coupon_code: Optional[str] = None
     redeem_points: int = Field(0, ge=0)
     gift_card_code: Optional[str] = None
+    gift_wrap: bool = False
+    gift_message: Optional[str] = Field(None, max_length=300)
 
 class OrderUpdate(BaseModel):
     status: Optional[str] = None
@@ -218,6 +220,9 @@ class OrderResponse(BaseModel):
     points_earned: int = 0
     gift_card_code: Optional[str] = None
     gift_card_amount: float = 0
+    gift_wrap: bool = False
+    gift_wrap_fee: float = 0
+    gift_message: Optional[str] = None
     refunded_amount: float = 0
     items: List[OrderItemResponse] = []
     status_history: List[OrderStatusHistoryResponse] = []

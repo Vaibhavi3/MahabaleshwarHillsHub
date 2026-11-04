@@ -7,6 +7,7 @@ from app.routes.coupons import compute_discount
 from app.utils.multibuy import compute_multibuy_discount
 from app.utils.invoice import generate_invoice_pdf
 from app.utils.refunds import issue_refund
+from app.utils.giftwrap import GIFT_WRAP_FEE_INR
 from app.utils.loyalty import (
     earn_points_for_amount,
     max_redeemable_points,
@@ -108,6 +109,15 @@ def create_order(
                 raise HTTPException(status_code=400, detail="This gift card can't be applied to this order")
             total_amount = round(total_amount - gift_card_amount, 2)
 
+        # Gift wrap is a flat add-on fee, applied after every discount so a
+        # coupon/points/gift card never ends up discounting the wrap itself -
+        # matches Myntra's checkout-page "Add Gift Wrap" behaviour.
+        gift_wrap = bool(order.gift_wrap)
+        gift_wrap_fee = GIFT_WRAP_FEE_INR if gift_wrap else 0.0
+        gift_message = (order.gift_message or "").strip() if gift_wrap else None
+        if gift_wrap_fee:
+            total_amount = round(total_amount + gift_wrap_fee, 2)
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         db_order = models.Order(
             user_id=current_user.id,
@@ -121,6 +131,9 @@ def create_order(
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
             gift_card_amount=gift_card_amount,
+            gift_wrap=gift_wrap,
+            gift_wrap_fee=gift_wrap_fee,
+            gift_message=gift_message,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,
