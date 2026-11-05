@@ -48,6 +48,12 @@ export const api = {
   getProductsCount: (category = null, subcategory = null, group = false) => {
     return client.get('/products/count', { params: { category, subcategory, group: group || undefined } });
   },
+  getBestsellers: (limit = 8, category = null) => {
+    return client.get('/products/bestsellers', { params: { limit, category } });
+  },
+  getProductPopularity: (id) => {
+    return client.get(`/products/${id}/popularity`);
+  },
   getProductById: (id) => {
     return client.get(`/products/${id}`);
   },

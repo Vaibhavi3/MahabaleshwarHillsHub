@@ -38,6 +38,7 @@ const ProductDetail = () => {
   const [notifySubscribed, setNotifySubscribed] = useState(false);
   const [notifyBusy, setNotifyBusy] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [purchasedRecently, setPurchasedRecently] = useState(0);
   const [activeImage, setActiveImage] = useState(0);
   const buyBoxObserverRef = useRef(null);
   const dispatch = useDispatch();
@@ -78,6 +79,13 @@ const ProductDetail = () => {
           setCompleteTheLook(lookResponse.data);
         } catch {
           setCompleteTheLook([]);
+        }
+
+        try {
+          const popularityResponse = await api.getProductPopularity(id);
+          setPurchasedRecently(popularityResponse.data.purchased_recently);
+        } catch {
+          setPurchasedRecently(0);
         }
 
         if (productResponse.data.stock <= 0) {
@@ -293,6 +301,12 @@ const ProductDetail = () => {
               </span>
               <span className="text-sm text-muted">{reviews.length} Reviews</span>
             </div>
+          )}
+
+          {purchasedRecently >= 3 && (
+            <p className="text-xs font-bold text-emerald-700 mb-4">
+              {purchasedRecently}+ bought in the last 30 days
+            </p>
           )}
 
           <div className="flex items-baseline gap-3 mb-1 flex-wrap">
