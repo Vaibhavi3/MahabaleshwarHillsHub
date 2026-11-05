@@ -174,6 +174,11 @@ class OrderItemResponse(OrderItemCreate):
     class Config:
         from_attributes = True
 
+
+class ProductPopularityResponse(BaseModel):
+    purchased_recently: int
+
+
 class OrderCreate(BaseModel):
     shipping_address: str
     payment_method: str

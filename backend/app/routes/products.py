@@ -6,6 +6,7 @@ from app.utils.auth import get_current_admin_user
 from app.utils.email import send_email
 from app.utils.notifications import notify
 from sqlalchemy import or_, func, cast, String
+from datetime import datetime, timedelta, timezone
 
 router = APIRouter()
 
@@ -40,6 +41,62 @@ def _first_variant_ids(db: Session, category=None, subcategory=None):
     if subcategory:
         sub = sub.filter(models.Product.subcategory == subcategory)
     return sub
+
+
+@router.get("/products/bestsellers", response_model=list[schemas.ProductResponse])
+def get_bestsellers(
+    db: Session = Depends(get_db),
+    limit: int = Query(8, ge=1, le=50),
+    category: str = Query(None),
+):
+    """Real bestsellers, inspired by Myntra/Nykaa/Ajio's "Bestseller" badge -
+    ranked by actual units sold (summed across every colour variant of a
+    product family, from non-cancelled orders), not just catalogue order.
+    A family with no sales yet simply falls back to its rating, so a brand
+    new catalogue still fills the section instead of showing nothing."""
+    family = func.coalesce(models.Product.parent_sku, cast(models.Product.id, String))
+
+    sold_by_family = dict(
+        db.query(family, func.sum(models.OrderItem.quantity))
+        .join(models.OrderItem, models.OrderItem.product_id == models.Product.id)
+        .join(models.Order, models.Order.id == models.OrderItem.order_id)
+        .filter(models.Order.status != "cancelled")
+        .group_by(family)
+        .all()
+    )
+
+    representative_ids = _first_variant_ids(db, category)
+    candidates = db.query(models.Product).filter(models.Product.id.in_(representative_ids)).all()
+
+    def sort_key(product):
+        family_key = product.parent_sku or str(product.id)
+        return (-(sold_by_family.get(family_key, 0)), -(product.rating or 0))
+
+    candidates.sort(key=sort_key)
+    return candidates[:limit]
+
+
+@router.get("/products/{product_id}/popularity", response_model=schemas.ProductPopularityResponse)
+def get_product_popularity(product_id: int, db: Session = Depends(get_db)):
+    """Honest social proof, inspired by Myntra/Nykaa/Ajio's "X bought
+    recently" badge - a real count of units of this exact product sold in
+    the last 30 days from non-cancelled orders, never an invented number."""
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    since = datetime.now(timezone.utc) - timedelta(days=30)
+    purchased_recently = (
+        db.query(func.coalesce(func.sum(models.OrderItem.quantity), 0))
+        .join(models.Order, models.Order.id == models.OrderItem.order_id)
+        .filter(
+            models.OrderItem.product_id == product_id,
+            models.Order.status != "cancelled",
+            models.Order.created_at >= since,
+        )
+        .scalar()
+    )
+    return {"purchased_recently": purchased_recently}
 
 
 @router.get("/products/count")
