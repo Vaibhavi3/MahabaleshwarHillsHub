@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon } from '../features/cartSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
 import OffersList from '../components/OffersList';
+import RecommendedForYou from '../components/RecommendedForYou';
 import { FiTrash2, FiTag, FiX, FiTruck, FiShield, FiPackage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { computeMultibuyDiscount } from '../utils/multibuy';
@@ -71,11 +72,14 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-        <Link to="/products" className="btn-primary">
-          Continue Shopping
-        </Link>
+      <div>
+        <div className="container mx-auto px-4 pt-16 pb-4 text-center">
+          <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+          <Link to="/products" className="btn-primary">
+            Continue Shopping
+          </Link>
+        </div>
+        <RecommendedForYou />
       </div>
     );
   }
