@@ -143,6 +143,9 @@ class Order(Base):
     points_credited = Column(Boolean, default=False, nullable=False, server_default="false")
     gift_card_code = Column(String(20))
     gift_card_amount = Column(Float, default=0, nullable=False, server_default="0")
+    gift_wrap = Column(Boolean, default=False, nullable=False, server_default="false")
+    gift_wrap_fee = Column(Float, default=0, nullable=False, server_default="0")
+    gift_message = Column(String(200))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

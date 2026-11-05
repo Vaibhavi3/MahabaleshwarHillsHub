@@ -25,6 +25,10 @@ router = APIRouter()
 # shipped" rule).
 CANCELLABLE_STATUSES = {"pending", "confirmed"}
 
+# Flat gift-wrap fee, inspired by Myntra's checkout "Giftings and
+# Personalizations" option (wrap + a personalized note for a small charge).
+GIFT_WRAP_FEE = 49.0
+
 
 @router.post("/orders", response_model=schemas.OrderResponse)
 def create_order(
@@ -108,6 +112,15 @@ def create_order(
                 raise HTTPException(status_code=400, detail="This gift card can't be applied to this order")
             total_amount = round(total_amount - gift_card_amount, 2)
 
+        # Gift wrap is a service fee, added on top after every discount -
+        # unlike the coupon/points/gift-card deductions above, it can't be
+        # discounted away.
+        gift_wrap = bool(order.gift_wrap)
+        gift_wrap_fee = GIFT_WRAP_FEE if gift_wrap else 0.0
+        gift_message = (order.gift_message or "").strip()[:200] if gift_wrap else None
+        if gift_wrap:
+            total_amount = round(total_amount + gift_wrap_fee, 2)
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         db_order = models.Order(
             user_id=current_user.id,
@@ -121,6 +134,9 @@ def create_order(
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
             gift_card_amount=gift_card_amount,
+            gift_wrap=gift_wrap,
+            gift_wrap_fee=gift_wrap_fee,
+            gift_message=gift_message,
             shipping_address=order.shipping_address,
             payment_method=order.payment_method,
             notes=order.notes,

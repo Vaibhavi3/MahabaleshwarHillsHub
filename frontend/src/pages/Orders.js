@@ -8,7 +8,7 @@ import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiLink } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiLink, FiGift } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -314,6 +314,15 @@ const Orders = () => {
               <p className="text-xs text-muted mt-1">
                 Gift card {order.gift_card_code} covered ₹{order.gift_card_amount.toFixed(0)} of this order
               </p>
+            )}
+            {order.gift_wrap && (
+              <div className="flex items-start gap-1.5 text-xs text-muted mt-1">
+                <FiGift className="text-brand shrink-0 mt-0.5" />
+                <span>
+                  Gift wrapped (₹{order.gift_wrap_fee.toFixed(0)})
+                  {order.gift_message && <> &middot; &ldquo;{order.gift_message}&rdquo;</>}
+                </span>
+              </div>
             )}
             {order.status === 'cancelled' && order.cancellation_reason && (
               <p className="text-xs text-muted mt-2">Cancellation reason: {order.cancellation_reason}</p>
