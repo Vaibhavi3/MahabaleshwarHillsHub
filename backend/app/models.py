@@ -571,6 +571,30 @@ class SupportTicket(Base):
         return name or self.user.username
 
 
+class Notification(Base):
+    """An in-app notification, matching the notification/updates inbox
+    (bell icon in the header) that Myntra, Nykaa and Ajio all show -
+    aggregating order status changes, price drops, back-in-stock alerts,
+    return/support updates and loyalty points into one feed. Created
+    alongside (never instead of) the best-effort emails this store already
+    sends for each of these events (see app/utils/email.py) - so a
+    customer still sees the update here even on a deployment where SMTP_*
+    was never configured and no email actually went out. Only ever created
+    from a real state change already happening elsewhere in the app."""
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    type = Column(String(30), nullable=False)
+    title = Column(String(150), nullable=False)
+    body = Column(Text)
+    link = Column(String(255))
+    is_read = Column(Boolean, default=False, nullable=False, server_default="false", index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+
 class SearchQuery(Base):
     """One real shopper search, logged when a search actually lands on the
     results page (not on every keystroke of the header's live-suggestion

@@ -8,6 +8,7 @@ from app import models, schemas
 from app.database import get_db
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.utils.email import send_email
+from app.utils.notifications import notify
 
 router = APIRouter()
 
@@ -124,6 +125,16 @@ def update_ticket(
         setattr(ticket, key, value)
     if updates.get("status") == "resolved" and ticket.resolved_at is None:
         ticket.resolved_at = func.now()
+
+    if replied or updates.get("status"):
+        notify(
+            db,
+            ticket.user_id,
+            "support_ticket",
+            f"Update on your query: {ticket.subject}",
+            body=ticket.admin_reply if replied else None,
+            link="/help",
+        )
 
     db.commit()
     db.refresh(ticket)

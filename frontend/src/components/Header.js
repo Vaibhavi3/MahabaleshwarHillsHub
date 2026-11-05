@@ -7,6 +7,7 @@ import { clearWishlist } from '../features/wishlistSlice';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 import SearchBox from './SearchBox';
 import MegaMenu from './MegaMenu';
+import NotificationBell from './NotificationBell';
 import api from '../api/axiosConfig';
 
 const NAV_LINKS = [
@@ -120,6 +121,8 @@ const Header = () => {
                 <span className="text-[11px] font-semibold uppercase mt-0.5">Rewards</span>
               </Link>
             )}
+
+            {user && <NotificationBell />}
 
             <Link to="/wishlist" className="relative flex flex-col items-center text-ink hover:text-brand transition-colors">
               <FiHeart className="text-xl" />

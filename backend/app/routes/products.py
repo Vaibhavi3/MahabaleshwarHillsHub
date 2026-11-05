@@ -4,6 +4,7 @@ from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_admin_user
 from app.utils.email import send_email
+from app.utils.notifications import notify
 from sqlalchemy import or_, func, cast, String
 
 router = APIRouter()
@@ -321,6 +322,14 @@ def _notify_back_in_stock(db: Session, product: models.Product) -> None:
                 f"https://mahabaleshwar-hills-hub-pi.vercel.app/products/{product.id}"
             ),
         )
+        notify(
+            db,
+            alert.user_id,
+            "back_in_stock",
+            f"Back in stock: {product.name}",
+            body="It's handmade in small batches, so it may sell out again.",
+            link=f"/products/{product.id}",
+        )
         alert.notified = True
         alert.notified_at = func.now()
 
@@ -358,6 +367,14 @@ def _notify_price_drop(db: Session, product: models.Product) -> None:
                     f"(was ₹{item.price_at_add:.0f}) at Mahabaleshwar Hills Hub.\n\n"
                     f"https://mahabaleshwar-hills-hub-pi.vercel.app/products/{product.id}"
                 ),
+            )
+            notify(
+                db,
+                user.id,
+                "price_drop",
+                f"Price drop: {product.name}",
+                body=f"Now ₹{product.price:.0f} (was ₹{item.price_at_add:.0f})",
+                link=f"/products/{product.id}",
             )
         item.price_drop_notified = True
 
