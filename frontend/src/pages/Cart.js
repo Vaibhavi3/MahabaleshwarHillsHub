@@ -17,6 +17,10 @@ const Cart = () => {
   const [applyingCode, setApplyingCode] = useState(null);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const mrpSavings = items.reduce(
+    (sum, item) => sum + (item.mrp > item.price ? (item.mrp - item.price) * item.quantity : 0),
+    0
+  );
   const multibuy = computeMultibuyDiscount(items);
   const subtotalAfterMultibuy = Math.max(0, subtotal - multibuy.amount);
   const total = Math.max(0, subtotalAfterMultibuy - discountAmount);
@@ -89,7 +93,17 @@ const Cart = () => {
             />
             <div className="flex-1">
               <h3 className="font-semibold">{item.name}</h3>
-              <p className="text-ink font-bold">₹{item.price}</p>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <p className="text-ink font-bold">₹{item.price}</p>
+                {item.mrp > item.price && (
+                  <>
+                    <span className="text-xs text-muted line-through">₹{item.mrp}</span>
+                    <span className="text-xs font-bold text-orange-500">
+                      ({Math.round((1 - item.price / item.mrp) * 100)}% OFF)
+                    </span>
+                  </>
+                )}
+              </div>
               {item.stock > 0 && item.stock <= 5 && (
                 <p className="text-xs font-semibold text-brand mt-1">Only {item.stock} left</p>
               )}
@@ -166,6 +180,12 @@ const Cart = () => {
             <span>Subtotal</span>
             <span>₹{subtotal.toFixed(2)}</span>
           </div>
+          {mrpSavings > 0 && (
+            <div className="flex justify-between text-emerald-700 font-semibold">
+              <span>You saved on MRP</span>
+              <span>₹{mrpSavings.toFixed(2)}</span>
+            </div>
+          )}
           {multibuy.amount > 0 && (
             <div className="flex justify-between text-emerald-700 font-semibold">
               <span>Mix &amp; Match Socks ({multibuy.percent}%)</span>

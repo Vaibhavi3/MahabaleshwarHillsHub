@@ -41,6 +41,7 @@ const ProductCard = ({ product, colourCount = 0 }) => {
         id: product.id,
         name: product.name,
         price: product.price,
+        mrp: product.mrp,
         image_url: product.image_url,
         stock: product.stock,
         category: product.category,
