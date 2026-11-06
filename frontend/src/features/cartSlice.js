@@ -1,5 +1,23 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// The cart is account-backed (see backend/app/routes/cart.py), the same
+// way the wishlist already is. Adds/updates/removes still happen here
+// first for an instant, offline-tolerant UI (see cartSyncMiddleware,
+// which mirrors them to the account in the background), and
+// setCartItems replaces the whole list with the account's merged,
+// server-side cart right after login.
+export const mapCartResponse = (data) =>
+  data.map((entry) => ({
+    id: entry.product.id,
+    name: entry.product.name,
+    price: entry.product.price,
+    mrp: entry.product.mrp,
+    image_url: entry.product.image_url,
+    stock: entry.product.stock,
+    category: entry.product.category,
+    quantity: entry.quantity,
+  }));
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState: {
@@ -58,8 +76,17 @@ const cartSlice = createSlice({
       state.discountAmount = 0;
       localStorage.removeItem('cartItems');
     },
+    setCartItems: (state, action) => {
+      state.items = action.payload;
+      localStorage.setItem('cartItems', JSON.stringify(state.items));
+      state.totalPrice = state.items.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
+      );
+    },
   },
 });
 
-export const { addToCart, removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon } = cartSlice.actions;
+export const { addToCart, removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon, setCartItems } =
+  cartSlice.actions;
 export default cartSlice.reducer;

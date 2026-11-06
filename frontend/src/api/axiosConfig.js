@@ -2,6 +2,7 @@ import axios from 'axios';
 import store from '../store';
 import { logout } from '../features/authSlice';
 import { clearWishlist } from '../features/wishlistSlice';
+import { clearCart } from '../features/cartSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const ASSET_BASE_URL = API_URL.replace(/\/api\/?$/, '');
@@ -35,6 +36,7 @@ client.interceptors.response.use(
     if (error.response?.status === 401) {
       store.dispatch(logout());
       store.dispatch(clearWishlist());
+      store.dispatch(clearCart());
     }
     return Promise.reject(error);
   }
@@ -111,21 +113,24 @@ export const api = {
     return client.put('/users/me/password', payload);
   },
 
-  // Cart
+  // Cart (account-backed, syncs across devices once logged in)
   getCart: () => {
     return client.get('/cart');
   },
   addToCart: (cartItem) => {
     return client.post('/cart/add', cartItem);
   },
-  updateCartItem: (itemId, quantity) => {
-    return client.put(`/cart/${itemId}`, { quantity });
+  updateCartItemByProduct: (productId, quantity) => {
+    return client.put(`/cart/product/${productId}`, { quantity });
   },
-  removeFromCart: (itemId) => {
-    return client.delete(`/cart/${itemId}`);
+  removeFromCartByProduct: (productId) => {
+    return client.delete(`/cart/product/${productId}`);
   },
   clearCart: () => {
     return client.delete('/cart');
+  },
+  syncCart: (items) => {
+    return client.post('/cart/sync', { items });
   },
 
   // Orders

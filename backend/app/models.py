@@ -1,16 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, LargeBinary
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean, ForeignKey, UniqueConstraint, LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 from datetime import datetime
-
-cart_items_association = Table(
-    'cart_items',
-    Base.metadata,
-    Column('cart_id', Integer, ForeignKey('carts.id')),
-    Column('product_id', Integer, ForeignKey('products.id'))
-)
-
 
 class User(Base):
     __tablename__ = "users"
@@ -102,21 +94,20 @@ class Cart(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     user = relationship("User", back_populates="cart")
-    items = relationship(
-        "Product",
-        secondary=cart_items_association,
-        backref="carts"
-    )
+    items = relationship("CartItem", back_populates="cart", cascade="all, delete-orphan")
 
 
 class CartItem(Base):
     __tablename__ = "cart_items_details"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     cart_id = Column(Integer, ForeignKey("carts.id"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, default=1)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    cart = relationship("Cart", back_populates="items")
+    product = relationship("Product")
 
 
 class Order(Base):
