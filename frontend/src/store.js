@@ -4,6 +4,7 @@ import cartReducer from './features/cartSlice';
 import productReducer from './features/productSlice';
 import wishlistReducer from './features/wishlistSlice';
 import uiReducer from './features/uiSlice';
+import cartSyncMiddleware from './store/cartSyncMiddleware';
 
 const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ const store = configureStore({
     wishlist: wishlistReducer,
     ui: uiReducer,
   },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(cartSyncMiddleware),
 });
 
 export default store;
