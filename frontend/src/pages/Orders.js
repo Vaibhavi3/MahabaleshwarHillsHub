@@ -8,7 +8,7 @@ import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiLink } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -193,7 +193,14 @@ const Orders = () => {
           <div key={order.id} className="bg-white rounded-lg shadow p-6">
             <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
               <div>
-                <p className="font-semibold">{order.order_number}</p>
+                <p className="font-semibold flex items-center gap-1.5">
+                  {order.order_number}
+                  {order.is_gift && (
+                    <span className="flex items-center gap-1 bg-brand-light/30 text-brand-dark text-[11px] font-bold uppercase px-2 py-0.5 rounded-full">
+                      <FiGift size={11} /> Gift
+                    </span>
+                  )}
+                </p>
                 <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
               </div>
               <div className="flex items-center gap-3">
@@ -237,6 +244,14 @@ const Orders = () => {
                 createdAt={order.created_at}
               />
             </div>
+            {order.is_gift && order.gift_message && (
+              <div className="flex items-start gap-2.5 bg-brand-light/20 border border-brand-light rounded-lg px-4 py-3 mb-4">
+                <FiGift className="text-brand shrink-0 mt-0.5" />
+                <p className="text-sm text-ink">
+                  <span className="font-bold">Your gift note:</span> &ldquo;{order.gift_message}&rdquo;
+                </p>
+              </div>
+            )}
             <div className="space-y-3 mb-4">
               {order.items.map((item) => {
                 const existingRequest = returnRequestForItem(item.id);

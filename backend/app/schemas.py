@@ -56,7 +56,7 @@ class ProductCreate(ProductBase):
     color: Optional[str] = None
     size: Optional[str] = None
     material: Optional[str] = None
-    
+
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -181,6 +181,8 @@ class OrderCreate(BaseModel):
     coupon_code: Optional[str] = None
     redeem_points: int = Field(0, ge=0)
     gift_card_code: Optional[str] = None
+    is_gift: bool = False
+    gift_message: Optional[str] = Field(None, max_length=300)
 
 class OrderUpdate(BaseModel):
     status: Optional[str] = None
@@ -218,6 +220,8 @@ class OrderResponse(BaseModel):
     points_earned: int = 0
     gift_card_code: Optional[str] = None
     gift_card_amount: float = 0
+    is_gift: bool = False
+    gift_message: Optional[str] = None
     refunded_amount: float = 0
     items: List[OrderItemResponse] = []
     status_history: List[OrderStatusHistoryResponse] = []
@@ -467,6 +471,23 @@ class StockAlertResponse(BaseModel):
         from_attributes = True
 
 
+class NotificationResponse(BaseModel):
+    id: int
+    type: str
+    title: str
+    body: Optional[str] = None
+    link: Optional[str] = None
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UnreadNotificationCountResponse(BaseModel):
+    unread_count: int
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
@@ -644,6 +665,10 @@ class LoyaltyTransactionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class RecommendationsForYouResponse(BaseModel):
+    personalized: bool
+    products: List[ProductResponse] = []
 
 class ReferralItemResponse(BaseModel):
     id: int

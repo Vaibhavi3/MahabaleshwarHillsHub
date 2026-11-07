@@ -130,6 +130,7 @@ const ProductDetail = () => {
           id: product.id,
           name: product.name,
           price: product.price,
+          mrp: product.mrp,
           image_url: product.image_url,
           stock: product.stock,
           category: product.category,
@@ -294,7 +295,7 @@ const ProductDetail = () => {
             </div>
           )}
 
-          <div className="flex items-baseline gap-3 mb-1">
+          <div className="flex items-baseline gap-3 mb-1 flex-wrap">
             <span className="text-3xl font-extrabold text-ink">₹{product.price}</span>
             {discountPct > 0 && (
               <>
@@ -488,7 +489,12 @@ const ProductDetail = () => {
       {showStickyBar && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-2px_12px_rgba(40,44,63,0.1)] px-4 py-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-ink truncate">₹{product.price}</p>
+            <p className="text-sm font-bold text-ink truncate">
+              ₹{product.price}
+              {product.mrp > product.price && (
+                <span className="ml-1.5 text-xs text-muted line-through font-normal">₹{product.mrp}</span>
+              )}
+            </p>
             {outOfStock ? (
               <p className="text-xs font-bold text-red-600">Out of Stock</p>
             ) : lowStock ? (

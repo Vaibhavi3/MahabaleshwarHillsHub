@@ -9,6 +9,7 @@ const EMPTY_FORM = {
   name: '',
   description: '',
   price: '',
+  mrp: '',
   stock: '',
   category: 'socks',
   image_url: '',
@@ -135,6 +136,7 @@ const AdminDashboard = () => {
       name: form.name,
       description: form.description,
       price: parseFloat(form.price),
+      mrp: form.mrp ? parseFloat(form.mrp) : null,
       stock: parseInt(form.stock, 10),
       category: form.category,
       image_url: form.image_url,
@@ -163,6 +165,7 @@ const AdminDashboard = () => {
       name: product.name,
       description: product.description || '',
       price: product.price,
+      mrp: product.mrp || '',
       stock: product.stock,
       category: product.category,
       image_url: product.image_url || '',
@@ -342,6 +345,16 @@ const AdminDashboard = () => {
               <option value="bags">Bags</option>
             </select>
             <input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleFormChange} placeholder="Price" required className="border rounded-lg px-4 py-2" />
+            <input
+              name="mrp"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.mrp}
+              onChange={handleFormChange}
+              placeholder="MRP / Compare-at price (optional)"
+              className="border rounded-lg px-4 py-2"
+            />
             <input name="stock" type="number" min="0" value={form.stock} onChange={handleFormChange} placeholder="Stock" required className="border rounded-lg px-4 py-2" />
             <input name="color" value={form.color} onChange={handleFormChange} placeholder="Color" className="border rounded-lg px-4 py-2" />
             <input name="size" value={form.size} onChange={handleFormChange} placeholder="Size" className="border rounded-lg px-4 py-2" />
@@ -393,7 +406,12 @@ const AdminDashboard = () => {
                       <td className="p-3">{p.name}</td>
                       <td className="p-3">{p.category}</td>
                       <td className="p-3">{p.color}</td>
-                      <td className="p-3">₹{p.price}</td>
+                      <td className="p-3">
+                        ₹{p.price}
+                        {p.mrp > p.price && (
+                          <span className="ml-1.5 text-xs text-muted line-through">₹{p.mrp}</span>
+                        )}
+                      </td>
                       <td className="p-3">
                         {p.stock}
                         {p.stock <= 0 && alertCounts[String(p.id)] > 0 && (
@@ -441,7 +459,14 @@ const AdminDashboard = () => {
               <div key={order.id} className="bg-white rounded-lg shadow p-6">
                 <div className="flex flex-wrap justify-between items-center gap-2 mb-3">
                   <div>
-                    <p className="font-semibold">{order.order_number}</p>
+                    <p className="font-semibold flex items-center gap-1.5">
+                      {order.order_number}
+                      {order.is_gift && (
+                        <span className="bg-brand-light/30 text-brand-dark text-[11px] font-bold uppercase px-2 py-0.5 rounded-full">
+                          Gift
+                        </span>
+                      )}
+                    </p>
                     <p className="text-sm text-gray-500">{new Date(order.created_at).toLocaleString()}</p>
                   </div>
                   <select
@@ -457,6 +482,12 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <p className="text-sm text-gray-600 mb-2">{order.shipping_address}</p>
+                {order.is_gift && (
+                  <p className="text-sm bg-brand-light/20 border border-brand-light rounded-lg px-3 py-2 mb-2">
+                    <span className="font-bold text-ink">Gift note for packing:</span>{' '}
+                    {order.gift_message ? `"${order.gift_message}"` : '(no message added - please pack as a gift)'}
+                  </p>
+                )}
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-gray-600">
                     Payment: {order.payment_status} ({order.payment_method})

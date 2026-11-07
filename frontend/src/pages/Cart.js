@@ -5,6 +5,7 @@ import { addToCart, removeFromCart, updateCartItem, clearCart, applyCoupon, remo
 import { setSavedForLaterItems, mapSavedForLaterResponse } from '../features/savedForLaterSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
 import OffersList from '../components/OffersList';
+import RecommendedForYou from '../components/RecommendedForYou';
 import { FiTrash2, FiTag, FiX, FiTruck, FiShield, FiPackage, FiBookmark, FiShoppingBag } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { computeMultibuyDiscount } from '../utils/multibuy';
@@ -62,6 +63,10 @@ const Cart = () => {
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const mrpSavings = items.reduce(
+    (sum, item) => sum + (item.mrp > item.price ? (item.mrp - item.price) * item.quantity : 0),
+    0
+  );
   const multibuy = computeMultibuyDiscount(items);
   const subtotalAfterMultibuy = Math.max(0, subtotal - multibuy.amount);
   const total = Math.max(0, subtotalAfterMultibuy - discountAmount);
@@ -149,12 +154,19 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
-        <Link to="/products" className="btn-primary">
-          Continue Shopping
-        </Link>
-        <SavedForLaterSection />
+      <div>
+        <div className="container mx-auto px-4 pt-16 pb-4 text-center">
+          <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+          <Link to="/products" className="btn-primary">
+            Continue Shopping
+          </Link>
+        </div>
+        {savedItems.length > 0 && (
+          <div className="container mx-auto px-4">
+            <SavedForLaterSection />
+          </div>
+        )}
+        <RecommendedForYou />
       </div>
     );
   }
@@ -172,7 +184,17 @@ const Cart = () => {
             />
             <div className="flex-1">
               <h3 className="font-semibold">{item.name}</h3>
-              <p className="text-ink font-bold">₹{item.price}</p>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <p className="text-ink font-bold">₹{item.price}</p>
+                {item.mrp > item.price && (
+                  <>
+                    <span className="text-xs text-muted line-through">₹{item.mrp}</span>
+                    <span className="text-xs font-bold text-orange-500">
+                      ({Math.round((1 - item.price / item.mrp) * 100)}% OFF)
+                    </span>
+                  </>
+                )}
+              </div>
               {item.stock > 0 && item.stock <= 5 && (
                 <p className="text-xs font-semibold text-brand mt-1">Only {item.stock} left</p>
               )}
@@ -256,6 +278,12 @@ const Cart = () => {
             <span>Subtotal</span>
             <span>₹{subtotal.toFixed(2)}</span>
           </div>
+          {mrpSavings > 0 && (
+            <div className="flex justify-between text-emerald-700 font-semibold">
+              <span>You saved on MRP</span>
+              <span>₹{mrpSavings.toFixed(2)}</span>
+            </div>
+          )}
           {multibuy.amount > 0 && (
             <div className="flex justify-between text-emerald-700 font-semibold">
               <span>Mix &amp; Match Socks ({multibuy.percent}%)</span>

@@ -143,6 +143,8 @@ class Order(Base):
     points_credited = Column(Boolean, default=False, nullable=False, server_default="false")
     gift_card_code = Column(String(20))
     gift_card_amount = Column(Float, default=0, nullable=False, server_default="0")
+    is_gift = Column(Boolean, default=False, nullable=False, server_default="false")
+    gift_message = Column(String(300))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -588,6 +590,30 @@ class SupportTicket(Base):
             return None
         name = " ".join(part for part in [self.user.first_name, self.user.last_name] if part).strip()
         return name or self.user.username
+
+
+class Notification(Base):
+    """An in-app notification, matching the notification/updates inbox
+    (bell icon in the header) that Myntra, Nykaa and Ajio all show -
+    aggregating order status changes, price drops, back-in-stock alerts,
+    return/support updates and loyalty points into one feed. Created
+    alongside (never instead of) the best-effort emails this store already
+    sends for each of these events (see app/utils/email.py) - so a
+    customer still sees the update here even on a deployment where SMTP_*
+    was never configured and no email actually went out. Only ever created
+    from a real state change already happening elsewhere in the app."""
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    type = Column(String(30), nullable=False)
+    title = Column(String(150), nullable=False)
+    body = Column(Text)
+    link = Column(String(255))
+    is_read = Column(Boolean, default=False, nullable=False, server_default="false", index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
 
 
 class SearchQuery(Base):
