@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import api from './api/axiosConfig';
 import { logout, setUser } from './features/authSlice';
 import { setWishlistItems, clearWishlist, mapWishlistResponse } from './features/wishlistSlice';
+import { setSavedForLaterItems, clearSavedForLater, mapSavedForLaterResponse } from './features/savedForLaterSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -38,6 +39,7 @@ function App() {
       .catch(() => {
         dispatch(logout());
         dispatch(clearWishlist());
+        dispatch(clearSavedForLater());
       });
   }, [dispatch, token, user]);
 
@@ -50,6 +52,12 @@ function App() {
     const localIds = wishlistItems.map((item) => item.id);
     api.syncWishlist(localIds)
       .then((response) => dispatch(setWishlistItems(mapWishlistResponse(response.data))))
+      .catch(() => {});
+    // "Saved for Later" bag items are account-only (added via the Cart
+    // page, which already requires login), so there's no guest-local list
+    // to merge here - just pull the account's current list.
+    api.getSavedForLater()
+      .then((response) => dispatch(setSavedForLaterItems(mapSavedForLaterResponse(response.data))))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);

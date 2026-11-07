@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.database import engine, Base
-from app.routes import products, users, cart, orders, reviews, payments, coupons, recommendations, crm, stock_alerts, addresses, wishlist, recently_viewed, return_requests, loyalty, referrals, gift_cards, qna, support, search
+from app.routes import products, users, cart, orders, reviews, payments, coupons, recommendations, crm, stock_alerts, addresses, wishlist, saved_for_later, recently_viewed, return_requests, loyalty, referrals, gift_cards, qna, support, search
 import logging
 
 # Configure logging
@@ -47,6 +47,7 @@ app.include_router(crm.router, prefix="/api", tags=["crm"])
 app.include_router(stock_alerts.router, prefix="/api", tags=["stock-alerts"])
 app.include_router(addresses.router, prefix="/api", tags=["addresses"])
 app.include_router(wishlist.router, prefix="/api", tags=["wishlist"])
+app.include_router(saved_for_later.router, prefix="/api", tags=["saved-for-later"])
 app.include_router(recently_viewed.router, prefix="/api", tags=["recently-viewed"])
 app.include_router(return_requests.router, prefix="/api", tags=["return-requests"])
 app.include_router(loyalty.router, prefix="/api", tags=["loyalty"])

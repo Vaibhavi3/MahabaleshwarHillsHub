@@ -395,6 +395,27 @@ class WishlistItem(Base):
     __table_args__ = (UniqueConstraint("user_id", "product_id", name="uq_wishlist_user_product"),)
 
 
+class SavedForLaterItem(Base):
+    """A bag item a signed-in user set aside for later instead of buying it
+    now, inspired by Myntra/Amazon's "Save for later" section on the bag
+    page. Tied to the account the same way WishlistItem is, so it follows
+    the shopper across devices instead of only this browser's cart. Keeps
+    the quantity that was set aside so "Move to Bag" can restore it
+    exactly (capped again against live stock at that point)."""
+    __tablename__ = "saved_for_later_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    quantity = Column(Integer, default=1, nullable=False, server_default="1")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    product = relationship("Product")
+
+    __table_args__ = (UniqueConstraint("user_id", "product_id", name="uq_saved_for_later_user_product"),)
+
+
 class RecentlyViewed(Base):
     """A signed-in user's product browsing history, tied to the account the
     same way wishlist_items is - so the "Recently Viewed" rail follows a

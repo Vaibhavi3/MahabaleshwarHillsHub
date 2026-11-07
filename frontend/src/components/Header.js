@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage, FiMapPin, FiAward } from 'react-icons/fi';
 import { logout } from '../features/authSlice';
 import { clearWishlist } from '../features/wishlistSlice';
+import { clearSavedForLater } from '../features/savedForLaterSlice';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 import SearchBox from './SearchBox';
 import MegaMenu from './MegaMenu';
@@ -39,6 +40,7 @@ const Header = () => {
   const handleLogout = () => {
     dispatch(logout());
     dispatch(clearWishlist());
+    dispatch(clearSavedForLater());
   };
 
   return (

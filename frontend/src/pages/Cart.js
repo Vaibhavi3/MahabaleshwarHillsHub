@@ -1,20 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon } from '../features/cartSlice';
+import { addToCart, removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon } from '../features/cartSlice';
+import { setSavedForLaterItems, mapSavedForLaterResponse } from '../features/savedForLaterSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
 import OffersList from '../components/OffersList';
-import { FiTrash2, FiTag, FiX, FiTruck, FiShield, FiPackage } from 'react-icons/fi';
+import { FiTrash2, FiTag, FiX, FiTruck, FiShield, FiPackage, FiBookmark, FiShoppingBag } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { computeMultibuyDiscount } from '../utils/multibuy';
 
 const Cart = () => {
   const { items, couponCode, discountAmount } = useSelector((state) => state.cart);
+  const { items: savedItems } = useSelector((state) => state.savedForLater);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [codeInput, setCodeInput] = useState('');
   const [applying, setApplying] = useState(false);
   const [applyingCode, setApplyingCode] = useState(null);
+  const [savingId, setSavingId] = useState(null);
+  const [movingId, setMovingId] = useState(null);
+
+  const handleSaveForLater = async (item) => {
+    setSavingId(item.id);
+    try {
+      const response = await api.saveForLater(item.id, item.quantity);
+      dispatch(setSavedForLaterItems(mapSavedForLaterResponse(response.data)));
+      dispatch(removeFromCart(item.id));
+      toast.success(`${item.name} saved for later`);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not save item for later');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleMoveToBag = async (item) => {
+    setMovingId(item.id);
+    try {
+      const response = await api.removeSavedForLater(item.id);
+      dispatch(setSavedForLaterItems(mapSavedForLaterResponse(response.data)));
+      const capped = item.stock ? Math.min(item.quantity, item.stock) : item.quantity;
+      if (item.stock && capped < item.quantity) {
+        toast.error(`Only ${item.stock} left in stock - added ${capped} to your bag`);
+      }
+      dispatch(addToCart({ ...item, quantity: capped }));
+      toast.success(`${item.name} moved to your bag`);
+    } catch (error) {
+      toast.error('Could not move item to your bag');
+    } finally {
+      setMovingId(null);
+    }
+  };
+
+  const handleRemoveSaved = async (item) => {
+    try {
+      const response = await api.removeSavedForLater(item.id);
+      dispatch(setSavedForLaterItems(mapSavedForLaterResponse(response.data)));
+    } catch (error) {
+      toast.error('Could not remove item');
+    }
+  };
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const multibuy = computeMultibuyDiscount(items);
@@ -65,6 +110,43 @@ const Cart = () => {
     applyCouponCode(codeInput);
   };
 
+  const SavedForLaterSection = () =>
+    savedItems.length === 0 ? null : (
+      <div className="mt-10">
+        <h2 className="text-xl font-bold text-ink mb-4 flex items-center gap-2">
+          <FiBookmark className="text-muted" /> Saved For Later
+          <span className="text-muted font-normal text-base">({savedItems.length})</span>
+        </h2>
+        <div className="space-y-4">
+          {savedItems.map((item) => (
+            <div key={item.id} className="flex items-center gap-4 bg-white rounded-lg shadow p-4">
+              <img
+                src={getImageUrl(item.image_url) || 'https://via.placeholder.com/100'}
+                alt={item.name}
+                className="w-20 h-20 object-contain bg-surface rounded"
+              />
+              <div className="flex-1">
+                <h3 className="font-semibold">{item.name}</h3>
+                <p className="text-ink font-bold">₹{item.price}</p>
+                <p className="text-xs text-muted mt-1">Qty {item.quantity}</p>
+                {item.stock === 0 && <p className="text-xs font-semibold text-red-600 mt-1">Out of stock</p>}
+              </div>
+              <button
+                onClick={() => handleMoveToBag(item)}
+                disabled={movingId === item.id || item.stock === 0}
+                className="flex items-center gap-1.5 btn-secondary disabled:opacity-50 whitespace-nowrap"
+              >
+                <FiShoppingBag size={14} /> Move to Bag
+              </button>
+              <button onClick={() => handleRemoveSaved(item)} className="text-red-600 hover:text-red-800">
+                <FiTrash2 />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -72,6 +154,7 @@ const Cart = () => {
         <Link to="/products" className="btn-primary">
           Continue Shopping
         </Link>
+        <SavedForLaterSection />
       </div>
     );
   }
@@ -93,6 +176,13 @@ const Cart = () => {
               {item.stock > 0 && item.stock <= 5 && (
                 <p className="text-xs font-semibold text-brand mt-1">Only {item.stock} left</p>
               )}
+              <button
+                onClick={() => handleSaveForLater(item)}
+                disabled={savingId === item.id}
+                className="flex items-center gap-1 text-xs font-semibold text-muted hover:text-brand mt-1.5 disabled:opacity-50"
+              >
+                <FiBookmark size={12} /> Save for later
+              </button>
             </div>
             <input
               type="number"
@@ -203,6 +293,8 @@ const Cart = () => {
           Clear Cart
         </button>
       </div>
+
+      <SavedForLaterSection />
     </div>
   );
 };

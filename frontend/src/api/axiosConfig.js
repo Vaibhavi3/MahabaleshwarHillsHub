@@ -2,6 +2,7 @@ import axios from 'axios';
 import store from '../store';
 import { logout } from '../features/authSlice';
 import { clearWishlist } from '../features/wishlistSlice';
+import { clearSavedForLater } from '../features/savedForLaterSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const ASSET_BASE_URL = API_URL.replace(/\/api\/?$/, '');
@@ -35,6 +36,7 @@ client.interceptors.response.use(
     if (error.response?.status === 401) {
       store.dispatch(logout());
       store.dispatch(clearWishlist());
+      store.dispatch(clearSavedForLater());
     }
     return Promise.reject(error);
   }
@@ -263,6 +265,17 @@ export const api = {
   },
   syncWishlist: (productIds) => {
     return client.post('/wishlist/sync', { product_ids: productIds });
+  },
+
+  // Saved for Later (account-backed, syncs across devices once logged in)
+  getSavedForLater: () => {
+    return client.get('/saved-for-later');
+  },
+  saveForLater: (productId, quantity = 1) => {
+    return client.post(`/saved-for-later/${productId}`, { quantity });
+  },
+  removeSavedForLater: (productId) => {
+    return client.delete(`/saved-for-later/${productId}`);
   },
 
   // Recently viewed (account-backed when logged in, browser-local for guests)
