@@ -610,3 +610,45 @@ class SearchQuery(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")
+
+
+class Collection(Base):
+    """A hand-curated "edit" of real catalogue products the store owner
+    puts together around a theme (e.g. "Cosy Socks Edit", "Gifting
+    Picks") - inspired by Myntra/Ajio/Nykaa's curated edit/trend landing
+    pages, shown on the homepage and linking to their own page. Always a
+    real, admin-picked subset of existing products - never auto-generated
+    or fabricated content."""
+    __tablename__ = "collections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(100), nullable=False)
+    slug = Column(String(120), unique=True, index=True, nullable=False)
+    description = Column(Text)
+    banner_image_url = Column(String(500))
+    is_active = Column(Boolean, default=True, nullable=False, server_default="true")
+    display_order = Column(Integer, default=0, nullable=False, server_default="0")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    items = relationship(
+        "CollectionProduct",
+        back_populates="collection",
+        cascade="all, delete-orphan",
+        order_by="CollectionProduct.display_order",
+    )
+
+
+class CollectionProduct(Base):
+    """One product's membership in a Collection, with its own ordering
+    within that collection (independent of the product's id)."""
+    __tablename__ = "collection_products"
+    __table_args__ = (UniqueConstraint("collection_id", "product_id", name="uq_collection_product"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    collection_id = Column(Integer, ForeignKey("collections.id"), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    display_order = Column(Integer, default=0, nullable=False, server_default="0")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    collection = relationship("Collection", back_populates="items")
+    product = relationship("Product")
