@@ -5,6 +5,7 @@ import productReducer from './features/productSlice';
 import wishlistReducer from './features/wishlistSlice';
 import savedForLaterReducer from './features/savedForLaterSlice';
 import uiReducer from './features/uiSlice';
+import cartSyncMiddleware from './store/cartSyncMiddleware';
 
 const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ const store = configureStore({
     savedForLater: savedForLaterReducer,
     ui: uiReducer,
   },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(cartSyncMiddleware),
 });
 
 export default store;

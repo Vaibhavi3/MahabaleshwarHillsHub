@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import { ProductGridSkeleton } from '../components/ProductCardSkeleton';
 import RecentlyViewed from '../components/RecentlyViewed';
 import RecommendedForYou from '../components/RecommendedForYou';
+import CollectionsRail from '../components/CollectionsRail';
 import toast from 'react-hot-toast';
 import { FiTruck, FiRefreshCw, FiShield, FiHeart } from 'react-icons/fi';
 import heroHills from '../assets/hero-hills.jpg';
@@ -48,8 +49,8 @@ const Home = () => {
     const load = async () => {
       try {
         const [bestsellersRes, newArrivalsRes, countRes, ...categoryResponses] = await Promise.all([
+          api.getBestsellers(8),
           api.getProducts(0, 8, null, null, true),
-          api.getProducts(8, 8, null, null, true),
           api.getProductsCount(null, null, true),
           ...CATEGORIES.map((cat) => api.getProducts(0, 1, cat.slug)),
         ]);
@@ -149,6 +150,8 @@ const Home = () => {
           ))}
         </div>
       </section>
+
+      <CollectionsRail />
 
       <RecentlyViewed />
 

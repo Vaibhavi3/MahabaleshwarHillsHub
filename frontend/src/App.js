@@ -5,12 +5,14 @@ import api from './api/axiosConfig';
 import { logout, setUser } from './features/authSlice';
 import { setWishlistItems, clearWishlist, mapWishlistResponse } from './features/wishlistSlice';
 import { setSavedForLaterItems, clearSavedForLater, mapSavedForLaterResponse } from './features/savedForLaterSlice';
+import { setCartItems, clearCart, mapCartResponse } from './features/cartSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
+import CollectionDetail from './pages/CollectionDetail';
 import Cart from './pages/Cart';
 import Wishlist from './pages/Wishlist';
 import Checkout from './pages/Checkout';
@@ -31,6 +33,7 @@ function App() {
   const dispatch = useDispatch();
   const { token, user } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
+  const cartItems = useSelector((state) => state.cart.items);
 
   useEffect(() => {
     if (!token || user) return;
@@ -40,6 +43,7 @@ function App() {
         dispatch(logout());
         dispatch(clearWishlist());
         dispatch(clearSavedForLater());
+        dispatch(clearCart());
       });
   }, [dispatch, token, user]);
 
@@ -62,6 +66,19 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+    // Same idea for the bag: merge whatever this browser had locally into
+    // the account's cart and replace the local copy with the merged,
+    // account-backed result, so the bag follows the shopper across
+    // devices instead of staying stuck in one browser's local storage.
+    const localItems = cartItems.map((item) => ({ product_id: item.id, quantity: item.quantity }));
+    api.syncCart(localItems)
+      .then((response) => dispatch(setCartItems(mapCartResponse(response.data.items))))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -70,6 +87,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/collections/:slug" element={<CollectionDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/gift-cards" element={<GiftCards />} />

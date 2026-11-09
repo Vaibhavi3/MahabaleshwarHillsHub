@@ -3,6 +3,7 @@ import store from '../store';
 import { logout } from '../features/authSlice';
 import { clearWishlist } from '../features/wishlistSlice';
 import { clearSavedForLater } from '../features/savedForLaterSlice';
+import { clearCart } from '../features/cartSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const ASSET_BASE_URL = API_URL.replace(/\/api\/?$/, '');
@@ -37,6 +38,7 @@ client.interceptors.response.use(
       store.dispatch(logout());
       store.dispatch(clearWishlist());
       store.dispatch(clearSavedForLater());
+      store.dispatch(clearCart());
     }
     return Promise.reject(error);
   }
@@ -49,6 +51,12 @@ export const api = {
   },
   getProductsCount: (category = null, subcategory = null, group = false) => {
     return client.get('/products/count', { params: { category, subcategory, group: group || undefined } });
+  },
+  getBestsellers: (limit = 8, category = null) => {
+    return client.get('/products/bestsellers', { params: { limit, category } });
+  },
+  getProductPopularity: (id) => {
+    return client.get(`/products/${id}/popularity`);
   },
   getProductById: (id) => {
     return client.get(`/products/${id}`);
@@ -113,21 +121,24 @@ export const api = {
     return client.put('/users/me/password', payload);
   },
 
-  // Cart
+  // Cart (account-backed, syncs across devices once logged in)
   getCart: () => {
     return client.get('/cart');
   },
   addToCart: (cartItem) => {
     return client.post('/cart/add', cartItem);
   },
-  updateCartItem: (itemId, quantity) => {
-    return client.put(`/cart/${itemId}`, { quantity });
+  updateCartItemByProduct: (productId, quantity) => {
+    return client.put(`/cart/product/${productId}`, { quantity });
   },
-  removeFromCart: (itemId) => {
-    return client.delete(`/cart/${itemId}`);
+  removeFromCartByProduct: (productId) => {
+    return client.delete(`/cart/product/${productId}`);
   },
   clearCart: () => {
     return client.delete('/cart');
+  },
+  syncCart: (items) => {
+    return client.post('/cart/sync', { items });
   },
 
   // Orders
@@ -358,6 +369,19 @@ export const api = {
   getCRMActivities: (params) => client.get('/crm/activities', { params }),
   createCRMActivity: (activity) => client.post('/crm/activities', activity),
   updateCRMActivity: (id, activity) => client.patch('/crm/activities/' + id, activity),
+
+  // Collections (curated "edits" of catalogue products, shown on the homepage)
+  getCollections: () => client.get('/collections'),
+  getCollectionBySlug: (slug) => client.get(`/collections/${slug}`),
+  getAdminCollections: () => client.get('/admin/collections'),
+  getAdminCollection: (id) => client.get(`/admin/collections/${id}`),
+  createCollection: (collection) => client.post('/admin/collections', collection),
+  updateCollection: (id, collection) => client.put(`/admin/collections/${id}`, collection),
+  deleteCollection: (id) => client.delete(`/admin/collections/${id}`),
+  addProductToCollection: (collectionId, productId, displayOrder = 0) =>
+    client.post(`/admin/collections/${collectionId}/products`, { product_id: productId, display_order: displayOrder }),
+  removeProductFromCollection: (collectionId, productId) =>
+    client.delete(`/admin/collections/${collectionId}/products/${productId}`),
 };
 
 export default api;
