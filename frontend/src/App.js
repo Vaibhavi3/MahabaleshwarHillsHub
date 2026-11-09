@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import api from './api/axiosConfig';
 import { logout, setUser } from './features/authSlice';
 import { setWishlistItems, clearWishlist, mapWishlistResponse } from './features/wishlistSlice';
+import { setCartItems, clearCart, mapCartResponse } from './features/cartSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -30,6 +31,7 @@ function App() {
   const dispatch = useDispatch();
   const { token, user } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
+  const cartItems = useSelector((state) => state.cart.items);
 
   useEffect(() => {
     if (!token || user) return;
@@ -38,6 +40,7 @@ function App() {
       .catch(() => {
         dispatch(logout());
         dispatch(clearWishlist());
+        dispatch(clearCart());
       });
   }, [dispatch, token, user]);
 
@@ -50,6 +53,19 @@ function App() {
     const localIds = wishlistItems.map((item) => item.id);
     api.syncWishlist(localIds)
       .then((response) => dispatch(setWishlistItems(mapWishlistResponse(response.data))))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    // Same idea for the bag: merge whatever this browser had locally into
+    // the account's cart and replace the local copy with the merged,
+    // account-backed result, so the bag follows the shopper across
+    // devices instead of staying stuck in one browser's local storage.
+    const localItems = cartItems.map((item) => ({ product_id: item.id, quantity: item.quantity }));
+    api.syncCart(localItems)
+      .then((response) => dispatch(setCartItems(mapCartResponse(response.data.items))))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);

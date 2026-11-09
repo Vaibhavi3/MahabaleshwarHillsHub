@@ -146,9 +146,9 @@ class CartItemUpdate(BaseModel):
 
 class CartItemResponse(BaseModel):
     id: int
-    product_id: int
     quantity: int
-    
+    product: ProductResponse
+
     class Config:
         from_attributes = True
 
@@ -156,9 +156,16 @@ class CartResponse(BaseModel):
     id: int
     user_id: int
     items: List[CartItemResponse] = []
-    
+
     class Config:
         from_attributes = True
+
+class CartSyncItem(BaseModel):
+    product_id: int
+    quantity: int = Field(1, ge=1)
+
+class CartSyncRequest(BaseModel):
+    items: List[CartSyncItem] = Field(default_factory=list, max_length=200)
 
 class OrderItemCreate(BaseModel):
     product_id: int
