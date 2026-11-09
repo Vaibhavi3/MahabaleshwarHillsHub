@@ -56,6 +56,77 @@ const RatingBreakdown = ({ reviews }) => {
   );
 };
 
+const FIT_OPTIONS = [
+  { value: 'runs_small', label: 'Runs Small' },
+  { value: 'true_to_size', label: 'True to Size' },
+  { value: 'runs_large', label: 'Runs Large' },
+];
+
+const FitPicker = ({ value, onChange }) => (
+  <div className="flex gap-2">
+    {FIT_OPTIONS.map((opt) => (
+      <button
+        key={opt.value}
+        type="button"
+        onClick={() => onChange(value === opt.value ? null : opt.value)}
+        className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+          value === opt.value
+            ? 'bg-brand text-white border-brand'
+            : 'bg-white text-ink border-gray-300 hover:border-brand'
+        }`}
+      >
+        {opt.label}
+      </button>
+    ))}
+  </div>
+);
+
+// Aggregate fit feedback as a single stacked bar, inspired by Myntra/
+// Nykaa/Ajio's "size & fit" review insight - built only from reviews that
+// actually chose a fit option, never fabricated or defaulted for reviews
+// that left it blank. Renders nothing until real fit data exists.
+const FitBreakdown = ({ reviews }) => {
+  const withFit = reviews.filter((r) => r.fit);
+  const total = withFit.length;
+  if (total === 0) return null;
+
+  const segments = FIT_OPTIONS.map((opt) => ({
+    ...opt,
+    count: withFit.filter((r) => r.fit === opt.value).length,
+  }));
+  const majority = segments.reduce((a, b) => (b.count > a.count ? b : a));
+
+  return (
+    <div className="max-w-md mb-8">
+      <p className="text-sm font-bold text-ink uppercase mb-2">Size &amp; Fit</p>
+      <p className="text-sm text-gray-700 mb-2">
+        {Math.round((majority.count / total) * 100)}% of {total} reviewer{total !== 1 ? 's' : ''} say this{' '}
+        <span className="font-semibold">{majority.label.toLowerCase()}</span>
+      </p>
+      <div className="flex h-2 rounded-full overflow-hidden bg-surface">
+        {segments.map((seg) => (
+          <div
+            key={seg.value}
+            className={
+              seg.value === 'runs_small'
+                ? 'bg-amber-400'
+                : seg.value === 'true_to_size'
+                ? 'bg-brand'
+                : 'bg-sky-400'
+            }
+            style={{ width: `${total > 0 ? (seg.count / total) * 100 : 0}%` }}
+          />
+        ))}
+      </div>
+      <div className="flex justify-between text-[11px] text-muted mt-1">
+        {segments.map((seg) => (
+          <span key={seg.value}>{seg.label}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Fullscreen viewer for a set of review photos, with prev/next - the same
 // tap-to-zoom affordance customers already know from the product gallery.
 const PhotoLightbox = ({ photoIds, startIndex, onClose }) => {
@@ -105,6 +176,7 @@ const ReviewsSection = ({ productId, reviews, setReviews }) => {
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
+  const [fit, setFit] = useState(null);
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -182,6 +254,7 @@ const ReviewsSection = ({ productId, reviews, setReviews }) => {
         rating,
         title: title.trim() || undefined,
         comment: comment.trim() || undefined,
+        fit: fit || undefined,
       });
       let savedReview = response.data;
 
@@ -198,6 +271,7 @@ const ReviewsSection = ({ productId, reviews, setReviews }) => {
       setRating(0);
       setTitle('');
       setComment('');
+      setFit(null);
       photoPreviews.forEach((url) => URL.revokeObjectURL(url));
       setPhotoFiles([]);
       setPhotoPreviews([]);
@@ -242,6 +316,8 @@ const ReviewsSection = ({ productId, reviews, setReviews }) => {
           <RatingBreakdown reviews={reviews} />
         </div>
       )}
+
+      <FitBreakdown reviews={reviews} />
 
       {allPhotos.length > 0 && (
         <div className="mb-8">
@@ -288,6 +364,11 @@ const ReviewsSection = ({ productId, reviews, setReviews }) => {
             rows={3}
             className="border border-gray-300 rounded px-3 py-2 text-sm w-full mb-3"
           />
+
+          <p className="text-xs font-semibold text-muted mb-1.5">How did it fit? (optional)</p>
+          <div className="mb-3">
+            <FitPicker value={fit} onChange={setFit} />
+          </div>
 
           {photoPreviews.length > 0 && (
             <div className="flex gap-2 mb-3">
@@ -352,6 +433,11 @@ const ReviewsSection = ({ productId, reviews, setReviews }) => {
                     {review.rating} ★
                   </span>
                   {review.title && <span className="text-sm font-semibold text-ink">{review.title}</span>}
+                  {review.fit && (
+                    <span className="text-xs font-semibold text-muted bg-surface px-2 py-0.5 rounded">
+                      {FIT_OPTIONS.find((o) => o.value === review.fit)?.label}
+                    </span>
+                  )}
                   {review.verified_purchase && (
                     <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
                       <FiCheckCircle size={12} /> Verified Purchase
