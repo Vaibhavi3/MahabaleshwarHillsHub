@@ -356,6 +356,19 @@ export const api = {
   getCRMActivities: (params) => client.get('/crm/activities', { params }),
   createCRMActivity: (activity) => client.post('/crm/activities', activity),
   updateCRMActivity: (id, activity) => client.patch('/crm/activities/' + id, activity),
+
+  // Collections (curated "edits" of catalogue products, shown on the homepage)
+  getCollections: () => client.get('/collections'),
+  getCollectionBySlug: (slug) => client.get(`/collections/${slug}`),
+  getAdminCollections: () => client.get('/admin/collections'),
+  getAdminCollection: (id) => client.get(`/admin/collections/${id}`),
+  createCollection: (collection) => client.post('/admin/collections', collection),
+  updateCollection: (id, collection) => client.put(`/admin/collections/${id}`, collection),
+  deleteCollection: (id) => client.delete(`/admin/collections/${id}`),
+  addProductToCollection: (collectionId, productId, displayOrder = 0) =>
+    client.post(`/admin/collections/${collectionId}/products`, { product_id: productId, display_order: displayOrder }),
+  removeProductFromCollection: (collectionId, productId) =>
+    client.delete(`/admin/collections/${collectionId}/products/${productId}`),
 };
 
 export default api;

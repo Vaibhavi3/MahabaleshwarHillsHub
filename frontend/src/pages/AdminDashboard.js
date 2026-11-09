@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import api from '../api/axiosConfig';
+import api, { getImageUrl } from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 
 const EMPTY_FORM = {
@@ -42,6 +42,16 @@ const EMPTY_COUPON_FORM = {
   expires_at: '',
 };
 
+const EMPTY_COLLECTION_FORM = {
+  id: null,
+  title: '',
+  slug: '',
+  description: '',
+  banner_image_url: '',
+  display_order: '0',
+  is_active: true,
+};
+
 const AdminDashboard = () => {
   const { user } = useSelector((state) => state.auth);
   const [tab, setTab] = useState('products');
@@ -56,6 +66,12 @@ const AdminDashboard = () => {
   const [couponForm, setCouponForm] = useState(EMPTY_COUPON_FORM);
   const [loading, setLoading] = useState(true);
   const [alertCounts, setAlertCounts] = useState({});
+  const [collections, setCollections] = useState([]);
+  const [collectionForm, setCollectionForm] = useState(EMPTY_COLLECTION_FORM);
+  const [expandedCollectionId, setExpandedCollectionId] = useState(null);
+  const [expandedCollection, setExpandedCollection] = useState(null);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [productSearchResults, setProductSearchResults] = useState([]);
 
   const loadProducts = useCallback(async () => {
     try {
@@ -108,6 +124,32 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const loadCollections = useCallback(async () => {
+    try {
+      const response = await api.getAdminCollections();
+      setCollections(response.data);
+    } catch (error) {
+      toast.error('Failed to load collections');
+    }
+  }, []);
+
+  const loadExpandedCollection = useCallback(async (id) => {
+    try {
+      const response = await api.getAdminCollection(id);
+      setExpandedCollection(response.data);
+    } catch (error) {
+      toast.error('Failed to load collection products');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (expandedCollectionId == null) {
+      setExpandedCollection(null);
+      return;
+    }
+    loadExpandedCollection(expandedCollectionId);
+  }, [expandedCollectionId, loadExpandedCollection]);
+
   useEffect(() => {
     if (!user?.is_admin) return;
     setLoading(true);
@@ -120,9 +162,11 @@ const AdminDashboard = () => {
         ? loadReturnRequests()
         : tab === 'support'
         ? loadTickets()
+        : tab === 'collections'
+        ? loadCollections()
         : loadCoupons();
     load.finally(() => setLoading(false));
-  }, [tab, loadProducts, loadOrders, loadCoupons, loadReturnRequests, loadTickets, user]);
+  }, [tab, loadProducts, loadOrders, loadCoupons, loadReturnRequests, loadTickets, loadCollections, user]);
 
   if (!user?.is_admin) {
     return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Admin access only</div>;
@@ -295,6 +339,94 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleCollectionFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setCollectionForm({ ...collectionForm, [name]: type === 'checkbox' ? checked : value });
+  };
+
+  const handleSubmitCollection = async (e) => {
+    e.preventDefault();
+    const payload = {
+      title: collectionForm.title,
+      slug: collectionForm.slug || undefined,
+      description: collectionForm.description || undefined,
+      banner_image_url: collectionForm.banner_image_url || undefined,
+      display_order: parseInt(collectionForm.display_order, 10) || 0,
+      is_active: collectionForm.is_active,
+    };
+    try {
+      if (collectionForm.id) {
+        await api.updateCollection(collectionForm.id, payload);
+        toast.success('Collection updated');
+      } else {
+        await api.createCollection(payload);
+        toast.success('Collection created');
+      }
+      setCollectionForm(EMPTY_COLLECTION_FORM);
+      loadCollections();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Save failed');
+    }
+  };
+
+  const handleEditCollection = (collection) => {
+    setCollectionForm({
+      id: collection.id,
+      title: collection.title,
+      slug: collection.slug,
+      description: collection.description || '',
+      banner_image_url: collection.banner_image_url || '',
+      display_order: String(collection.display_order),
+      is_active: collection.is_active,
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteCollection = async (id) => {
+    if (!window.confirm('Delete this collection?')) return;
+    try {
+      await api.deleteCollection(id);
+      toast.success('Collection deleted');
+      if (expandedCollectionId === id) setExpandedCollectionId(null);
+      loadCollections();
+    } catch (error) {
+      toast.error('Delete failed');
+    }
+  };
+
+  const handleSearchProducts = async (e) => {
+    e.preventDefault();
+    const term = productSearchTerm.trim();
+    if (!term) return;
+    try {
+      const response = await api.searchProducts(term);
+      setProductSearchResults(response.data);
+    } catch (error) {
+      toast.error('Search failed');
+    }
+  };
+
+  const handleAddProductToCollection = async (collectionId, productId) => {
+    try {
+      await api.addProductToCollection(collectionId, productId);
+      toast.success('Added to collection');
+      loadCollections();
+      loadExpandedCollection(collectionId);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not add product');
+    }
+  };
+
+  const handleRemoveProductFromCollection = async (collectionId, productId) => {
+    try {
+      await api.removeProductFromCollection(collectionId, productId);
+      loadCollections();
+      loadExpandedCollection(collectionId);
+    } catch (error) {
+      toast.error('Could not remove product');
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-wrap justify-between items-center gap-3 mb-8"><h1 className="text-3xl font-bold">Admin Dashboard</h1><Link to="/crm" className="btn-primary">Open CRM</Link></div>
@@ -317,6 +449,12 @@ const AdminDashboard = () => {
           onClick={() => setTab('offers')}
         >
           Offers
+        </button>
+        <button
+          className={`pb-2 font-semibold ${tab === 'collections' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          onClick={() => setTab('collections')}
+        >
+          Collections
         </button>
         <button
           className={`pb-2 font-semibold ${tab === 'returns' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
@@ -753,6 +891,169 @@ const AdminDashboard = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'collections' && (
+        <>
+          <form
+            onSubmit={handleSubmitCollection}
+            className="bg-white rounded-lg shadow p-6 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
+            <input
+              name="title"
+              value={collectionForm.title}
+              onChange={handleCollectionFormChange}
+              placeholder="Title (e.g. Winter Gifting Picks)"
+              required
+              className="border rounded-lg px-4 py-2"
+            />
+            <input
+              name="slug"
+              value={collectionForm.slug}
+              onChange={handleCollectionFormChange}
+              placeholder="URL slug (optional - auto from title)"
+              className="border rounded-lg px-4 py-2"
+            />
+            <input
+              name="display_order"
+              type="number"
+              value={collectionForm.display_order}
+              onChange={handleCollectionFormChange}
+              placeholder="Display order (0 = first)"
+              className="border rounded-lg px-4 py-2"
+            />
+            <input
+              name="banner_image_url"
+              value={collectionForm.banner_image_url}
+              onChange={handleCollectionFormChange}
+              placeholder="Banner image URL (optional - falls back to first product's photo)"
+              className="border rounded-lg px-4 py-2 md:col-span-2"
+            />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="is_active"
+                checked={collectionForm.is_active}
+                onChange={handleCollectionFormChange}
+                className="accent-brand w-4 h-4"
+              />
+              Visible on site
+            </label>
+            <textarea
+              name="description"
+              value={collectionForm.description}
+              onChange={handleCollectionFormChange}
+              placeholder="Short description shown on the collection page"
+              className="border rounded-lg px-4 py-2 md:col-span-3"
+            />
+            <div className="md:col-span-3 flex gap-3">
+              <button type="submit" className="btn-primary">
+                {collectionForm.id ? 'Update Collection' : 'Add Collection'}
+              </button>
+              {collectionForm.id && (
+                <button type="button" onClick={() => setCollectionForm(EMPTY_COLLECTION_FORM)} className="btn-secondary">
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+          </form>
+
+          {loading ? (
+            <div className="text-center text-gray-600">Loading...</div>
+          ) : (
+            <div className="space-y-4">
+              {collections.length === 0 && (
+                <div className="bg-white rounded-lg shadow p-6 text-center text-gray-600">
+                  No collections yet - add one above, e.g. a "Winter Gifting Picks" edit.
+                </div>
+              )}
+              {collections.map((c) => (
+                <div key={c.id} className="bg-white rounded-lg shadow p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-bold">
+                        {c.title}{' '}
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${c.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                          {c.is_active ? 'Active' : 'Hidden'}
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        /collections/{c.slug} &middot; {c.product_count} product{c.product_count === 1 ? '' : 's'}
+                      </p>
+                    </div>
+                    <div className="flex gap-3 text-sm">
+                      <button
+                        onClick={() => setExpandedCollectionId(expandedCollectionId === c.id ? null : c.id)}
+                        className="text-purple-600 hover:underline"
+                      >
+                        {expandedCollectionId === c.id ? 'Close' : 'Manage Products'}
+                      </button>
+                      <button onClick={() => handleEditCollection(c)} className="text-purple-600 hover:underline">
+                        Edit
+                      </button>
+                      <button onClick={() => handleDeleteCollection(c.id)} className="text-red-600 hover:underline">
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  {expandedCollectionId === c.id && (
+                    <div className="mt-4 border-t pt-4">
+                      <div className="flex flex-wrap gap-3 mb-4">
+                        {(expandedCollection?.products || []).map((p) => (
+                          <div key={p.id} className="flex items-center gap-2 border rounded-lg px-3 py-2">
+                            {p.image_url && (
+                              <img src={getImageUrl(p.image_url)} alt={p.name} className="w-8 h-8 object-cover rounded" />
+                            )}
+                            <span className="text-sm">{p.name}</span>
+                            <button
+                              onClick={() => handleRemoveProductFromCollection(c.id, p.id)}
+                              className="text-red-600 text-xs hover:underline"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                        {expandedCollection && expandedCollection.products.length === 0 && (
+                          <p className="text-sm text-gray-500">No products added yet - search below to add some.</p>
+                        )}
+                      </div>
+
+                      <form onSubmit={handleSearchProducts} className="flex gap-2 mb-3">
+                        <input
+                          value={productSearchTerm}
+                          onChange={(e) => setProductSearchTerm(e.target.value)}
+                          placeholder="Search products by name to add"
+                          className="border rounded-lg px-3 py-2 text-sm flex-1"
+                        />
+                        <button type="submit" className="btn-secondary text-sm">
+                          Search
+                        </button>
+                      </form>
+                      {productSearchResults.length > 0 && (
+                        <div className="flex flex-wrap gap-3">
+                          {productSearchResults.map((p) => (
+                            <button
+                              key={p.id}
+                              onClick={() => handleAddProductToCollection(c.id, p.id)}
+                              className="flex items-center gap-2 border rounded-lg px-3 py-2 hover:border-purple-500"
+                            >
+                              {p.image_url && (
+                                <img src={getImageUrl(p.image_url)} alt={p.name} className="w-8 h-8 object-cover rounded" />
+                              )}
+                              <span className="text-sm">{p.name}</span>
+                              <span className="text-xs text-purple-600">+ Add</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </>

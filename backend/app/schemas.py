@@ -760,3 +760,46 @@ class SearchQueryLogCreate(BaseModel):
 class TrendingSearchTerm(BaseModel):
     term: str
     count: int
+
+
+class CollectionCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+    slug: Optional[str] = Field(None, max_length=120)
+    description: Optional[str] = Field(None, max_length=1000)
+    banner_image_url: Optional[str] = Field(None, max_length=500)
+    is_active: bool = True
+    display_order: int = 0
+
+
+class CollectionUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=100)
+    slug: Optional[str] = Field(None, max_length=120)
+    description: Optional[str] = Field(None, max_length=1000)
+    banner_image_url: Optional[str] = Field(None, max_length=500)
+    is_active: Optional[bool] = None
+    display_order: Optional[int] = None
+
+
+class CollectionProductAdd(BaseModel):
+    product_id: int
+    display_order: int = 0
+
+
+class CollectionResponse(BaseModel):
+    id: int
+    title: str
+    slug: str
+    description: Optional[str] = None
+    banner_image_url: Optional[str] = None
+    is_active: bool
+    display_order: int
+    product_count: int = 0
+    cover_image: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CollectionDetailResponse(CollectionResponse):
+    products: List[ProductResponse] = []
