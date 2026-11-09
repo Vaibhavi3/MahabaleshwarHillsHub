@@ -451,6 +451,20 @@ class WishlistSyncRequest(BaseModel):
     product_ids: List[int] = Field(default_factory=list, max_length=200)
 
 
+class SavedForLaterItemResponse(BaseModel):
+    id: int
+    quantity: int
+    created_at: datetime
+    product: ProductResponse
+
+    class Config:
+        from_attributes = True
+
+
+class SaveForLaterCreate(BaseModel):
+    quantity: int = Field(1, ge=1)
+
+
 class RecentlyViewedResponse(BaseModel):
     id: int
     viewed_at: datetime
