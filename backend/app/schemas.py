@@ -1,7 +1,9 @@
 import json
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Literal
+
+FitFeedback = Literal["runs_small", "true_to_size", "runs_large"]
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
@@ -344,11 +346,13 @@ class ReviewCreate(BaseModel):
     rating: int = Field(..., ge=1, le=5)
     title: Optional[str] = None
     comment: Optional[str] = None
+    fit: Optional[FitFeedback] = None
 
 class ReviewUpdate(BaseModel):
     rating: Optional[int] = Field(None, ge=1, le=5)
     title: Optional[str] = None
     comment: Optional[str] = None
+    fit: Optional[FitFeedback] = None
 
 class ReviewResponse(BaseModel):
     id: int
@@ -357,6 +361,7 @@ class ReviewResponse(BaseModel):
     rating: int
     title: Optional[str]
     comment: Optional[str]
+    fit: Optional[str] = None
     helpful_count: int
     verified_purchase: bool
     reviewer_name: str

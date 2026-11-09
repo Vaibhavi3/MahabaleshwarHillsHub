@@ -45,6 +45,7 @@ def _to_response(review: models.Review, voted_review_ids: set) -> schemas.Review
         rating=review.rating,
         title=review.title,
         comment=review.comment,
+        fit=review.fit,
         helpful_count=review.helpful_count or 0,
         verified_purchase=review.verified_purchase,
         reviewer_name=_reviewer_name(review.user),
@@ -110,6 +111,7 @@ def create_review(
         rating=review.rating,
         title=review.title,
         comment=review.comment,
+        fit=review.fit,
         verified_purchase=_has_verified_purchase(db, current_user.id, review.product_id),
     )
     db.add(db_review)

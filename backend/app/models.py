@@ -204,6 +204,10 @@ class Review(Base):
     rating = Column(Integer, nullable=False)
     title = Column(String(100))
     comment = Column(Text)
+    # Optional fit feedback, inspired by Myntra/Nykaa/Ajio's "size & fit"
+    # review insight: "runs_small" | "true_to_size" | "runs_large". Left
+    # null when the reviewer doesn't say - never inferred or defaulted.
+    fit = Column(String(20))
     helpful_count = Column(Integer, default=0)
     verified_purchase = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
