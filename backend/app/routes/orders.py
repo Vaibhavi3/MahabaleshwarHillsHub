@@ -7,6 +7,7 @@ from app.routes.coupons import compute_discount
 from app.utils.multibuy import compute_multibuy_discount
 from app.utils.invoice import generate_invoice_pdf
 from app.utils.refunds import issue_refund
+from app.utils.wallet import credit_wallet, debit_wallet
 from app.utils.loyalty import (
     earn_points_for_amount,
     max_redeemable_points,
@@ -109,6 +110,18 @@ def create_order(
                 raise HTTPException(status_code=400, detail="This gift card can't be applied to this order")
             total_amount = round(total_amount - gift_card_amount, 2)
 
+        requested_wallet_amount = round(order.wallet_amount_used or 0, 2)
+        wallet_amount_used = 0.0
+        if requested_wallet_amount > 0:
+            # Same Re 1 floor as Hills Rewards points and gift cards - a Rs 0
+            # order isn't something Stripe/Razorpay can actually charge.
+            wallet_amount_used = round(
+                min(requested_wallet_amount, current_user.wallet_balance or 0, max(total_amount - 1, 0)), 2
+            )
+            if wallet_amount_used <= 0:
+                raise HTTPException(status_code=400, detail="Hills Wallet credit can't be applied to this order")
+            total_amount = round(total_amount - wallet_amount_used, 2)
+
         order_number = f"ORD-{uuid.uuid4().hex[:8].upper()}"
         gift_message = order.gift_message.strip() if order.is_gift and order.gift_message else None
         db_order = models.Order(
@@ -123,6 +136,7 @@ def create_order(
             points_discount_amount=points_discount_amount,
             gift_card_code=gift_card.code if gift_card else None,
             gift_card_amount=gift_card_amount,
+            wallet_amount_used=wallet_amount_used,
             is_gift=order.is_gift,
             gift_message=gift_message,
             shipping_address=order.shipping_address,
@@ -164,6 +178,9 @@ def create_order(
             gift_card.balance = round(gift_card.balance - gift_card_amount, 2)
             if gift_card.balance <= 0:
                 gift_card.status = "redeemed"
+
+        if wallet_amount_used > 0:
+            debit_wallet(db, current_user, wallet_amount_used, "order_redeemed", order_id=db_order.id)
 
         db.commit()
     except HTTPException:
@@ -248,6 +265,9 @@ def cancel_order(
             gift_card.balance = round(gift_card.balance + order.gift_card_amount, 2)
             gift_card.status = "active"
 
+    if order.wallet_amount_used > 0:
+        credit_wallet(db, current_user, order.wallet_amount_used, "order_cancelled_restore", order_id=order.id)
+
     order.status = "cancelled"
     order.cancellation_reason = reason
     db.add(models.OrderStatusHistory(order_id=order.id, status="cancelled"))
@@ -262,11 +282,18 @@ def cancel_order(
     db.commit()
 
     # Refund whatever was actually charged via Stripe/Razorpay - the
-    # loyalty-point and gift-card amounts above are this store's own
-    # ledgers and get restored directly, but real money only comes back
-    # through the gateway it was paid through.
+    # loyalty-point, gift-card, and wallet amounts above are this store's
+    # own ledgers and get restored directly, but real money only comes
+    # back through the gateway it was paid through, unless the customer
+    # asked for instant Hills Wallet credit instead.
     if order.payment_status == "completed":
-        issue_refund(db, order, order.total_amount, "order_cancelled")
+        if payload.refund_method == "wallet":
+            credited = credit_wallet(db, current_user, order.total_amount, "order_cancelled_refund", order_id=order.id)
+            if credited > 0:
+                order.payment_status = "refunded_to_wallet"
+                db.commit()
+        else:
+            issue_refund(db, order, order.total_amount, "order_cancelled")
 
     db.refresh(order)
     return order

@@ -23,6 +23,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     loyalty_points = Column(Integer, default=0, nullable=False, server_default="0")
     lifetime_spend = Column(Float, default=0, nullable=False, server_default="0")
+    wallet_balance = Column(Float, default=0, nullable=False, server_default="0")
     referral_code = Column(String(20), unique=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -134,6 +135,7 @@ class Order(Base):
     points_credited = Column(Boolean, default=False, nullable=False, server_default="false")
     gift_card_code = Column(String(20))
     gift_card_amount = Column(Float, default=0, nullable=False, server_default="0")
+    wallet_amount_used = Column(Float, default=0, nullable=False, server_default="0")
     is_gift = Column(Boolean, default=False, nullable=False, server_default="false")
     gift_message = Column(String(300))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -433,6 +435,11 @@ class ReturnRequest(Base):
     # stock rather than return money. refund_status is "none" | "refunded" | "failed".
     refund_amount = Column(Float, default=0, nullable=False, server_default="0")
     refund_status = Column(String(20), default="none", nullable=False, server_default="none")
+    # How the customer asked to be refunded if this becomes a completed
+    # "return": "original" (the gateway it was paid through, the old
+    # default) or "wallet" (instant store credit - see app/utils/wallet.py).
+    # Irrelevant for exchanges, which never move money.
+    refund_method = Column(String(20), default="original", nullable=False, server_default="original")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -482,6 +489,29 @@ class LoyaltyTransaction(Base):
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=True, index=True)
     points = Column(Integer, nullable=False)  # positive = credit, negative = redeemed
     reason = Column(String(30), nullable=False)  # signup_bonus | order_earned | order_redeemed | order_redeemed_refund
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    order = relationship("Order")
+
+
+class WalletTransaction(Base):
+    """Ledger entry for "Hills Wallet", matching Myntra Wallet/Nykaa Cash's
+    "instant store credit" refund option: a cancelled order or a completed
+    return can be credited here immediately instead of waiting on a bank
+    refund through Stripe/Razorpay, and the balance is spendable at
+    checkout on a future order. Append-only, like LoyaltyTransaction, so
+    the running User.wallet_balance is always explainable from history.
+    This never grants promotional credit - every row is money the store
+    already held (a paid order) moving to or from this ledger."""
+    __tablename__ = "wallet_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=True, index=True)
+    amount = Column(Float, nullable=False)  # positive = credit, negative = spent
+    # order_cancelled_refund | return_completed_refund | order_redeemed | order_cancelled_restore
+    reason = Column(String(30), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")

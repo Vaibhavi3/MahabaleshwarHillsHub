@@ -19,6 +19,7 @@ import Orders from './pages/Orders';
 import Account from './pages/Account';
 import Addresses from './pages/Addresses';
 import Rewards from './pages/Rewards';
+import Wallet from './pages/Wallet';
 import GiftCards from './pages/GiftCards';
 import Help from './pages/Help';
 import TrackOrder from './pages/TrackOrder';
@@ -123,6 +124,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Rewards />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/wallet"
+            element={
+              <ProtectedRoute>
+                <Wallet />
               </ProtectedRoute>
             }
           />

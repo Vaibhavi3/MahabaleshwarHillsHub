@@ -16,13 +16,15 @@ const CANCEL_REASONS = [
  */
 const CancelOrderModal = ({ order, onClose, onConfirm }) => {
   const [reason, setReason] = useState('');
+  const [refundMethod, setRefundMethod] = useState('original');
   const [submitting, setSubmitting] = useState(false);
+  const wasPaid = order.payment_status === 'completed';
 
   const handleConfirm = async () => {
     if (!reason) return;
     setSubmitting(true);
     try {
-      await onConfirm(reason);
+      await onConfirm(reason, wasPaid ? refundMethod : 'original');
     } finally {
       setSubmitting(false);
     }
@@ -42,11 +44,54 @@ const CancelOrderModal = ({ order, onClose, onConfirm }) => {
           Order <span className="font-semibold text-ink">{order.order_number}</span> hasn&rsquo;t shipped yet, so
           it can be cancelled. Help us improve by telling us why.
         </p>
-        {order.payment_status === 'completed' && (
-          <p className="text-sm text-muted mb-4 bg-brand-light/20 border border-brand-light rounded-lg px-3 py-2">
-            You&rsquo;ve already paid ₹{order.total_amount.toFixed(2)} for this order - cancelling refunds it to
-            your original payment method automatically.
-          </p>
+        {wasPaid && (
+          <div className="mb-4">
+            <p className="text-xs font-bold text-ink uppercase tracking-wide mb-2">
+              How should we refund your ₹{order.total_amount.toFixed(2)}?
+            </p>
+            <div className="space-y-2">
+              <label
+                className={`flex items-start gap-2 text-sm cursor-pointer border rounded-lg px-3 py-2 ${
+                  refundMethod === 'original' ? 'border-brand bg-brand/5' : 'border-gray-200'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="refund-method"
+                  value="original"
+                  checked={refundMethod === 'original'}
+                  onChange={() => setRefundMethod('original')}
+                  className="accent-brand w-4 h-4 mt-0.5"
+                />
+                <span>
+                  <span className="font-semibold text-ink">Original payment method</span>
+                  <span className="block text-xs text-muted">
+                    Refunded automatically - can take a few days to reflect in your bank/card statement.
+                  </span>
+                </span>
+              </label>
+              <label
+                className={`flex items-start gap-2 text-sm cursor-pointer border rounded-lg px-3 py-2 ${
+                  refundMethod === 'wallet' ? 'border-brand bg-brand/5' : 'border-gray-200'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="refund-method"
+                  value="wallet"
+                  checked={refundMethod === 'wallet'}
+                  onChange={() => setRefundMethod('wallet')}
+                  className="accent-brand w-4 h-4 mt-0.5"
+                />
+                <span>
+                  <span className="font-semibold text-ink">Hills Wallet (instant)</span>
+                  <span className="block text-xs text-muted">
+                    Credited to your account right away - usable on your next order.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
         )}
         <div className="space-y-2 mb-6">
           {CANCEL_REASONS.map((r) => (

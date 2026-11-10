@@ -152,8 +152,8 @@ export const api = {
   updateOrder: (id, orderUpdate) => {
     return client.put(`/orders/${id}`, orderUpdate);
   },
-  cancelOrder: (id, reason) => {
-    return client.post(`/orders/${id}/cancel`, { reason });
+  cancelOrder: (id, reason, refundMethod = 'original') => {
+    return client.post(`/orders/${id}/cancel`, { reason, refund_method: refundMethod });
   },
   getAllOrders: (skip = 0, limit = 100) => {
     return client.get('/orders/admin/all', { params: { skip, limit } });
@@ -324,6 +324,10 @@ export const api = {
   // Loyalty ("Hills Rewards" points - earn on delivery, redeem at checkout)
   getLoyaltyBalance: () => client.get('/loyalty/balance'),
   getLoyaltyTransactions: () => client.get('/loyalty/transactions'),
+
+  // Hills Wallet (instant store credit from a cancelled order or completed return - redeem at checkout)
+  getWalletBalance: () => client.get('/wallet/balance'),
+  getWalletTransactions: () => client.get('/wallet/transactions'),
 
   // Referrals ("Invite & Earn" - share a code, earn points when a referred friend's first order is delivered)
   getMyReferrals: () => client.get('/referrals/me'),

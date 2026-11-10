@@ -19,7 +19,9 @@ const STATUS_LABELS = {
 const label = (request) => {
   if (request.status === 'completed') {
     if (request.request_type === 'exchange') return 'Exchanged';
-    return request.refund_status === 'refunded' ? 'Refunded' : 'Completed';
+    return request.refund_status === 'refunded' || request.refund_status === 'refunded_to_wallet'
+      ? 'Refunded'
+      : 'Completed';
   }
   return STATUS_LABELS[request.status] || request.status;
 };
@@ -33,6 +35,11 @@ const ReturnRequestStatus = ({ request, orderId }) => (
       request.refund_status === 'refunded' ? (
         <span className="text-xs text-emerald-700 font-semibold">
           ₹{request.refund_amount.toFixed(0)} refunded to your original payment method
+        </span>
+      ) : request.refund_status === 'refunded_to_wallet' ? (
+        <span className="text-xs text-emerald-700 font-semibold">
+          ₹{request.refund_amount.toFixed(0)} credited to your{' '}
+          <Link to="/wallet" className="underline">Hills Wallet</Link>
         </span>
       ) : request.refund_status === 'failed' ? (
         <span className="text-xs text-muted">
