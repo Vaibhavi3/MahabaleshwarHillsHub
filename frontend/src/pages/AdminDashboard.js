@@ -637,6 +637,11 @@ const AdminDashboard = () => {
                     ₹{order.refunded_amount.toFixed(2)} refunded via {order.payment_method}
                   </p>
                 )}
+                {order.payment_status === 'refunded_to_wallet' && (
+                  <p className="text-xs text-emerald-700 font-semibold mt-1">
+                    ₹{order.total_amount.toFixed(2)} credited to customer's Hills Wallet instead of a gateway refund
+                  </p>
+                )}
                 {order.payment_status === 'refund_failed' && (
                   <p className="text-xs text-red-600 font-semibold mt-1">
                     Automatic refund failed - refund this order manually via the {order.payment_method} dashboard
@@ -683,8 +688,18 @@ const AdminDashboard = () => {
                 {r.request_type === 'exchange' && (
                   <p className="text-sm text-gray-600">Exchange for: {r.exchange_product_name}</p>
                 )}
+                {r.request_type === 'return' && r.status !== 'completed' && (
+                  <p className="text-sm text-gray-600">
+                    Refund method: {r.refund_method === 'wallet' ? 'Hills Wallet (instant)' : 'Original payment method'}
+                  </p>
+                )}
                 {r.request_type === 'return' && r.refund_status === 'refunded' && (
                   <p className="text-sm text-emerald-700 font-semibold">₹{r.refund_amount.toFixed(2)} refunded</p>
+                )}
+                {r.request_type === 'return' && r.refund_status === 'refunded_to_wallet' && (
+                  <p className="text-sm text-emerald-700 font-semibold">
+                    ₹{r.refund_amount.toFixed(2)} credited to customer's Hills Wallet
+                  </p>
                 )}
                 {r.request_type === 'return' && r.refund_status === 'failed' && (
                   <p className="text-sm text-red-600 font-semibold">

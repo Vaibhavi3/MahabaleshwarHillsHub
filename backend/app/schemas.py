@@ -37,6 +37,7 @@ class UserResponse(UserBase):
     is_active: bool
     is_admin: bool
     loyalty_points: int = 0
+    wallet_balance: float = 0
     created_at: datetime
 
     class Config:
@@ -195,6 +196,7 @@ class OrderCreate(BaseModel):
     coupon_code: Optional[str] = None
     redeem_points: int = Field(0, ge=0)
     gift_card_code: Optional[str] = None
+    wallet_amount_used: float = Field(0, ge=0)
     is_gift: bool = False
     gift_message: Optional[str] = Field(None, max_length=300)
 
@@ -206,6 +208,10 @@ class OrderUpdate(BaseModel):
 
 class OrderCancelRequest(BaseModel):
     reason: str
+    # How to refund a payment that was actually captured: "original" (the
+    # gateway it was paid through - may take a few days to reflect) or
+    # "wallet" (instant Hills Wallet store credit).
+    refund_method: str = Field("original", pattern="^(original|wallet)$")
 
 class OrderStatusHistoryResponse(BaseModel):
     id: int
@@ -234,6 +240,7 @@ class OrderResponse(BaseModel):
     points_earned: int = 0
     gift_card_code: Optional[str] = None
     gift_card_amount: float = 0
+    wallet_amount_used: float = 0
     is_gift: bool = False
     gift_message: Optional[str] = None
     refunded_amount: float = 0
@@ -579,6 +586,9 @@ class ReturnRequestCreate(BaseModel):
     reason: str = Field(..., min_length=1, max_length=255)
     comment: Optional[str] = None
     exchange_product_id: Optional[int] = None
+    # Only meaningful for request_type="return": "original" (refund to the
+    # gateway it was paid through) or "wallet" (instant Hills Wallet credit).
+    refund_method: str = Field("original", pattern="^(original|wallet)$")
 
 class ReturnRequestStatusUpdate(BaseModel):
     status: str = Field(..., pattern="^(requested|approved|rejected|picked_up|completed)$")
@@ -600,6 +610,7 @@ class ReturnRequestResponse(BaseModel):
     status: str
     refund_amount: float = 0
     refund_status: str = "none"
+    refund_method: str = "original"
     created_at: datetime
     updated_at: Optional[datetime] = None
 
@@ -663,6 +674,19 @@ class LoyaltyTransactionResponse(BaseModel):
     id: int
     order_id: Optional[int] = None
     points: int
+    reason: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class WalletBalanceResponse(BaseModel):
+    balance: float
+
+class WalletTransactionResponse(BaseModel):
+    id: int
+    order_id: Optional[int] = None
+    amount: float
     reason: str
     created_at: datetime
 

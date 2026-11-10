@@ -24,6 +24,7 @@ const ReturnRequestModal = ({ order, item, onClose, onSubmitted }) => {
   const [reason, setReason] = useState('');
   const [exchangeProductId, setExchangeProductId] = useState('');
   const [comment, setComment] = useState('');
+  const [refundMethod, setRefundMethod] = useState('original');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -55,6 +56,7 @@ const ReturnRequestModal = ({ order, item, onClose, onSubmitted }) => {
         reason,
         comment: comment.trim() || undefined,
         exchange_product_id: requestType === 'exchange' ? Number(exchangeProductId) : undefined,
+        refund_method: requestType === 'return' ? refundMethod : undefined,
       });
     } finally {
       setSubmitting(false);
@@ -146,6 +148,37 @@ const ReturnRequestModal = ({ order, item, onClose, onSubmitted }) => {
             ))}
           </div>
         </div>
+
+        {requestType === 'return' && (
+          <div className="mb-5">
+            <h3 className="font-bold text-ink uppercase text-xs mb-2 tracking-wide">How should we refund you?</h3>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setRefundMethod('original')}
+                className={`flex-1 py-2 px-2 rounded text-xs font-semibold border text-center ${
+                  refundMethod === 'original' ? 'border-brand text-brand bg-brand/5' : 'border-gray-200 text-ink'
+                }`}
+              >
+                Original payment method
+              </button>
+              <button
+                type="button"
+                onClick={() => setRefundMethod('wallet')}
+                className={`flex-1 py-2 px-2 rounded text-xs font-semibold border text-center ${
+                  refundMethod === 'wallet' ? 'border-brand text-brand bg-brand/5' : 'border-gray-200 text-ink'
+                }`}
+              >
+                Hills Wallet (instant)
+              </button>
+            </div>
+            <p className="text-xs text-muted mt-1">
+              {refundMethod === 'wallet'
+                ? 'Credited to your account the moment the return is marked completed.'
+                : 'Can take a few days to reflect in your bank/card statement once the return is approved.'}
+            </p>
+          </div>
+        )}
 
         <div className="mb-6">
           <textarea

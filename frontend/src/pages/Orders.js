@@ -26,6 +26,7 @@ const PAYMENT_STATUS_LABELS = {
   completed: 'Paid',
   failed: 'Failed',
   refunded: 'Refunded',
+  refunded_to_wallet: 'Refunded to Hills Wallet',
   partially_refunded: 'Partially refunded',
   refund_failed: 'Paid (refund pending)',
 };
@@ -159,9 +160,9 @@ const Orders = () => {
     }
   };
 
-  const handleCancelConfirm = async (reason) => {
+  const handleCancelConfirm = async (reason, refundMethod) => {
     try {
-      const response = await api.cancelOrder(cancelTarget.id, reason);
+      const response = await api.cancelOrder(cancelTarget.id, reason, refundMethod);
       setOrders((prev) => prev.map((o) => (o.id === response.data.id ? response.data : o)));
       toast.success('Order cancelled');
       setCancelTarget(null);

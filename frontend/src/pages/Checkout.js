@@ -5,7 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
-import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX, FiPackage } from 'react-icons/fi';
+import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX, FiPackage, FiCreditCard } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import AddressBook from '../components/AddressBook';
 import { computeMultibuyDiscount } from '../utils/multibuy';
@@ -153,6 +153,9 @@ const Checkout = () => {
   const [giftCardInput, setGiftCardInput] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState(null);
   const [applyingGiftCard, setApplyingGiftCard] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [walletAmount, setWalletAmount] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
   const [isGift, setIsGift] = useState(false);
   const [giftMessage, setGiftMessage] = useState('');
   const GIFT_MESSAGE_LIMIT = 300;
@@ -171,11 +174,19 @@ const Checkout = () => {
   const giftCardAmount = appliedGiftCard
     ? Math.max(0, Math.min(appliedGiftCard.balance, totalBeforeGiftCard - 1))
     : 0;
-  const total = Math.max(0, totalBeforeGiftCard - giftCardAmount);
+  const totalBeforeWallet = Math.max(0, totalBeforeGiftCard - giftCardAmount);
+  // Same Re 1 floor as every other discount here - a Rs 0 order isn't
+  // something Stripe/Razorpay can actually charge.
+  const maxWalletUsable = Math.max(0, Math.min(walletBalance, totalBeforeWallet - 1));
+  const walletAmountUsed = useWallet ? Math.min(walletAmount, maxWalletUsable) : 0;
+  const total = Math.max(0, totalBeforeWallet - walletAmountUsed);
 
   useEffect(() => {
     api.getLoyaltyBalance()
       .then((response) => setRewardsBalance(response.data.points_balance))
+      .catch(() => {});
+    api.getWalletBalance()
+      .then((response) => setWalletBalance(response.data.balance))
       .catch(() => {});
   }, []);
 
@@ -222,6 +233,7 @@ const Checkout = () => {
         coupon_code: couponCode || undefined,
         redeem_points: pointsToRedeem,
         gift_card_code: appliedGiftCard?.code || undefined,
+        wallet_amount_used: walletAmountUsed,
         is_gift: isGift,
         gift_message: isGift ? giftMessage.trim() || undefined : undefined,
       });
@@ -342,6 +354,46 @@ const Checkout = () => {
                 )}
               </div>
 
+              {walletBalance > 0 && (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useWallet}
+                      onChange={(e) => {
+                        setUseWallet(e.target.checked);
+                        if (e.target.checked) setWalletAmount(maxWalletUsable);
+                      }}
+                      className="accent-brand w-4 h-4 mt-0.5"
+                    />
+                    <span>
+                      <span className="flex items-center gap-1.5 font-semibold text-ink text-sm">
+                        <FiCreditCard className="text-brand" /> Use Hills Wallet credit
+                      </span>
+                      <span className="text-xs text-muted">
+                        You have ₹{walletBalance.toFixed(2)} in store credit
+                      </span>
+                    </span>
+                  </label>
+                  {useWallet && maxWalletUsable > 0 && (
+                    <div className="mt-3 pl-7 flex items-center gap-3">
+                      <input
+                        type="range"
+                        min="0"
+                        max={maxWalletUsable}
+                        step="1"
+                        value={Math.min(walletAmount, maxWalletUsable)}
+                        onChange={(e) => setWalletAmount(parseFloat(e.target.value))}
+                        className="flex-1 accent-brand"
+                      />
+                      <span className="text-sm font-bold text-ink whitespace-nowrap">
+                        -₹{walletAmountUsed.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="border border-gray-200 rounded-lg p-4">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -412,7 +464,7 @@ const Checkout = () => {
               <FiPackage className="shrink-0" /> Mix &amp; Match Socks: {multibuy.percent}% off {multibuy.eligibleQuantity} Home Socks applied
             </p>
           )}
-          {(multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (
+          {(multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0 || walletAmountUsed > 0) && (
             <div className="space-y-1 mb-2 pb-2 border-b">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Subtotal</span>
@@ -440,6 +492,12 @@ const Checkout = () => {
                 <div className="flex justify-between text-sm text-emerald-700 font-semibold">
                   <span>Gift Card ({appliedGiftCard.code})</span>
                   <span>- ₹{giftCardAmount.toFixed(2)}</span>
+                </div>
+              )}
+              {walletAmountUsed > 0 && (
+                <div className="flex justify-between text-sm text-emerald-700 font-semibold">
+                  <span>Hills Wallet</span>
+                  <span>- ₹{walletAmountUsed.toFixed(2)}</span>
                 </div>
               )}
             </div>

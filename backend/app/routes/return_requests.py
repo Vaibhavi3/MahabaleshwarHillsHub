@@ -7,6 +7,7 @@ from app.database import get_db
 from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.utils.refunds import issue_refund
+from app.utils.wallet import credit_wallet
 from app.utils.notifications import notify
 
 router = APIRouter()
@@ -96,6 +97,7 @@ def create_return_request(
         reason=payload.reason.strip(),
         comment=(payload.comment or "").strip() or None,
         exchange_product_id=exchange_product_id,
+        refund_method=payload.refund_method if payload.request_type == "return" else "original",
         status="requested",
     )
     db.add(request)
@@ -149,15 +151,25 @@ def update_return_request_status(
             if item and item.product:
                 item.product.stock += item.quantity
             # A return hands money back; an exchange only swaps stock, so
-            # only "return" triggers a real gateway refund for what this
-            # item was actually paid - never a fabricated one.
+            # only "return" triggers a refund for what this item was
+            # actually paid - never a fabricated one. The customer chose
+            # how when they submitted the request: instant Hills Wallet
+            # credit, or the gateway it was paid through (the old default).
             if item and item.order:
-                result = issue_refund(db, item.order, item.price * item.quantity, "return_completed")
-                request.refund_amount = result["amount_refunded"]
-                request.refund_status = (
-                    "refunded" if result["amount_refunded"] > 0
-                    else ("failed" if result["status"] == "failed" else "none")
-                )
+                refund_item_amount = round(item.price * item.quantity, 2)
+                if request.refund_method == "wallet" and item.order.payment_status == "completed":
+                    credited = credit_wallet(
+                        db, request.user, refund_item_amount, "return_completed_refund", order_id=item.order.id
+                    )
+                    request.refund_amount = credited
+                    request.refund_status = "refunded_to_wallet" if credited > 0 else "none"
+                else:
+                    result = issue_refund(db, item.order, refund_item_amount, "return_completed")
+                    request.refund_amount = result["amount_refunded"]
+                    request.refund_status = (
+                        "refunded" if result["amount_refunded"] > 0
+                        else ("failed" if result["status"] == "failed" else "none")
+                    )
         else:
             if item and item.product:
                 item.product.stock += item.quantity
