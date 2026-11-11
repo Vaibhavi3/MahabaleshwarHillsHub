@@ -202,13 +202,21 @@ export const api = {
   },
 
   // Payments - Stripe
-  createPaymentIntent: (orderId) => {
-    return client.post('/payments/create-payment-intent', null, { params: { order_id: orderId } });
+  createPaymentIntent: (orderId, { saveCard, paymentMethodId } = {}) => {
+    return client.post('/payments/create-payment-intent', null, {
+      params: { order_id: orderId, save_card: saveCard || undefined, payment_method_id: paymentMethodId || undefined },
+    });
   },
   confirmPayment: (orderId, paymentIntentId) => {
     return client.post('/payments/confirm', null, {
       params: { order_id: orderId, payment_intent_id: paymentIntentId },
     });
+  },
+  getSavedCards: () => {
+    return client.get('/payments/saved-cards');
+  },
+  deleteSavedCard: (paymentMethodId) => {
+    return client.delete(`/payments/saved-cards/${paymentMethodId}`);
   },
 
   // Payments - Razorpay
