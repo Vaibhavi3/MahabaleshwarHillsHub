@@ -179,6 +179,10 @@ class OrderItemResponse(OrderItemCreate):
     order_id: int
     product_name: Optional[str] = None
     product_image: Optional[str] = None
+    # Whether the current user has already reviewed this item's product -
+    # computed per-request from the reviews table, never stored. Drives the
+    # "Rate & Review" CTA on the order history page.
+    reviewed: bool = False
 
     class Config:
         from_attributes = True
