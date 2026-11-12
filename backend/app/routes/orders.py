@@ -27,6 +27,28 @@ router = APIRouter()
 CANCELLABLE_STATUSES = {"pending", "confirmed"}
 
 
+def _mark_reviewed_items(db: Session, user_id: int, orders: list[models.Order]) -> list[models.Order]:
+    """Flag each order item with whether this user has already reviewed its
+    product, so the order history page knows when to show "Rate & Review"
+    vs "Reviewed". Computed fresh from the reviews table every request -
+    never persisted on the order item itself."""
+    product_ids = {item.product_id for order in orders for item in order.items}
+    if not product_ids:
+        return orders
+
+    reviewed_product_ids = {
+        row[0]
+        for row in db.query(models.Review.product_id).filter(
+            models.Review.user_id == user_id,
+            models.Review.product_id.in_(product_ids),
+        )
+    }
+    for order in orders:
+        for item in order.items:
+            item.reviewed = item.product_id in reviewed_product_ids
+    return orders
+
+
 @router.post("/orders", response_model=schemas.OrderResponse)
 def create_order(
     order: schemas.OrderCreate,
@@ -340,7 +362,8 @@ def get_user_orders(
     current_user: models.User = Depends(get_current_user)
 ):
     """Get all orders of current user"""
-    return db.query(models.Order).filter(models.Order.user_id == current_user.id).all()
+    orders = db.query(models.Order).filter(models.Order.user_id == current_user.id).all()
+    return _mark_reviewed_items(db, current_user.id, orders)
 
 
 @router.get("/orders/admin/all", response_model=list[schemas.OrderResponse])
@@ -373,7 +396,9 @@ def get_order(
     
     if order.user_id != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
+    if order.user_id == current_user.id:
+        _mark_reviewed_items(db, current_user.id, [order])
     return order
 
 

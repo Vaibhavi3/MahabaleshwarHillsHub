@@ -7,8 +7,9 @@ import OrderTimeline from '../components/OrderTimeline';
 import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
+import RateReviewModal from '../components/RateReviewModal';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink, FiStar, FiCheckCircle } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -55,6 +56,7 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [returnTarget, setReturnTarget] = useState(null);
+  const [reviewTarget, setReviewTarget] = useState(null);
   const [reorderingId, setReorderingId] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -157,6 +159,18 @@ const Orders = () => {
     } finally {
       setReorderingId(null);
     }
+  };
+
+  const handleReviewSubmitted = (productId) => {
+    // One review covers the product everywhere, so flip the flag on every
+    // order item for that product, not just the one the modal was opened from.
+    setOrders((prev) =>
+      prev.map((o) => ({
+        ...o,
+        items: o.items.map((it) => (it.product_id === productId ? { ...it, reviewed: true } : it)),
+      }))
+    );
+    setReviewTarget(null);
   };
 
   const handleCancelConfirm = async (reason) => {
@@ -286,6 +300,22 @@ const Orders = () => {
                         </div>
                       )
                     )}
+                    {order.status === 'delivered' && (
+                      <div className="mt-2 ml-[60px]">
+                        {item.reviewed ? (
+                          <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                            <FiCheckCircle size={12} /> Reviewed
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setReviewTarget({ order, item })}
+                            className="flex items-center gap-1 text-xs font-semibold uppercase text-brand hover:underline"
+                          >
+                            <FiStar size={12} /> Rate &amp; Review
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -359,6 +389,15 @@ const Orders = () => {
           item={returnTarget.item}
           onClose={() => setReturnTarget(null)}
           onSubmitted={handleReturnSubmit}
+        />
+      )}
+
+      {reviewTarget && (
+        <RateReviewModal
+          item={reviewTarget.item}
+          orderNumber={reviewTarget.order.order_number}
+          onClose={() => setReviewTarget(null)}
+          onSubmitted={handleReviewSubmitted}
         />
       )}
     </div>
