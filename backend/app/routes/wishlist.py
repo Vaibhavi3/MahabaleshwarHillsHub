@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
@@ -69,6 +71,65 @@ def sync_wishlist(
             db.commit()
 
     return _get_wishlist_items(db, current_user.id)
+
+
+def _share_status(user: models.User) -> schemas.WishlistShareStatusResponse:
+    return schemas.WishlistShareStatusResponse(enabled=bool(user.wishlist_share_token), token=user.wishlist_share_token)
+
+
+# Registered ahead of the /wishlist/{product_id} routes below, same reason
+# as /wishlist/sync above: "share" and "shared" must never be captured as
+# a product_id path param.
+@router.get("/wishlist/share", response_model=schemas.WishlistShareStatusResponse)
+def get_wishlist_share_status(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return _share_status(current_user)
+
+
+@router.post("/wishlist/share", response_model=schemas.WishlistShareStatusResponse)
+def enable_wishlist_share(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Turns on a public, read-only link to this shopper's wishlist -
+    matching Myntra/Nykaa/Ajio's "share your wishlist" so a shopper can
+    send a gifting hint to family/friends without handing out their
+    account. Mints a token the first time; it stays stable across repeat
+    calls so the same link keeps working until explicitly turned off."""
+    if not current_user.wishlist_share_token:
+        current_user.wishlist_share_token = secrets.token_urlsafe(16)
+        db.commit()
+    return _share_status(current_user)
+
+
+@router.delete("/wishlist/share", response_model=schemas.WishlistShareStatusResponse)
+def disable_wishlist_share(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Revokes the public link - anyone with the old URL gets a 404 from
+    here on. Turning sharing back on later mints a brand new token, so an
+    old link that was shared around can't quietly come back to life."""
+    current_user.wishlist_share_token = None
+    db.commit()
+    return _share_status(current_user)
+
+
+@router.get("/wishlist/shared/{token}", response_model=schemas.SharedWishlistResponse)
+def get_shared_wishlist(token: str, db: Session = Depends(get_db)):
+    """Public, no-login lookup for a shared wishlist link. Only ever
+    returns the owner's real saved items - never fabricated ones - and
+    never their email/phone/address, just a first name (if they have one)
+    to personalize the page for whoever the link was sent to."""
+    owner = db.query(models.User).filter(models.User.wishlist_share_token == token).first()
+    if not owner:
+        raise HTTPException(status_code=404, detail="This wishlist link is invalid or no longer shared")
+    return schemas.SharedWishlistResponse(
+        owner_first_name=owner.first_name,
+        items=_get_wishlist_items(db, owner.id),
+    )
 
 
 @router.post("/wishlist/{product_id}", response_model=list[schemas.WishlistItemResponse])
