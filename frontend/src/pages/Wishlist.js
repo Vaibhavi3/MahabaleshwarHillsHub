@@ -7,9 +7,11 @@ import { openCartDrawer } from '../features/uiSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
 import { FiTrash2, FiShoppingBag, FiTrendingDown } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import ShareWishlistCard from '../components/ShareWishlistCard';
 
 const Wishlist = () => {
   const { items } = useSelector((state) => state.wishlist);
+  const { token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
   const handleRemove = async (productId) => {
@@ -41,9 +43,10 @@ const Wishlist = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-extrabold text-ink mb-8">
+      <h1 className="text-2xl font-extrabold text-ink mb-6">
         My Wishlist <span className="text-muted font-normal text-base">({items.length})</span>
       </h1>
+      {token && <ShareWishlistCard />}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 items-start">
         {items.map((item) => {
           const droppedBy =

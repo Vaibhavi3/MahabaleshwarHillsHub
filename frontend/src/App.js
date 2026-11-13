@@ -14,6 +14,7 @@ import ProductDetail from './pages/ProductDetail';
 import CollectionDetail from './pages/CollectionDetail';
 import Cart from './pages/Cart';
 import Wishlist from './pages/Wishlist';
+import SharedWishlist from './pages/SharedWishlist';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Account from './pages/Account';
@@ -82,6 +83,7 @@ function App() {
           <Route path="/collections/:slug" element={<CollectionDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/wishlist/shared/:token" element={<SharedWishlist />} />
           <Route path="/gift-cards" element={<GiftCards />} />
           <Route path="/help" element={<Help />} />
           <Route path="/track-order" element={<TrackOrder />} />
