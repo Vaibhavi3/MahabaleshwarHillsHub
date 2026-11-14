@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon } from '../features/cartSlice';
+import {
+  removeFromCart,
+  updateCartItem,
+  swapCartItem,
+  clearCart,
+  applyCoupon,
+  removeCoupon,
+} from '../features/cartSlice';
 import api, { getImageUrl } from '../api/axiosConfig';
 import OffersList from '../components/OffersList';
 import RecommendedForYou from '../components/RecommendedForYou';
@@ -16,6 +23,53 @@ const Cart = () => {
   const [codeInput, setCodeInput] = useState('');
   const [applying, setApplying] = useState(false);
   const [applyingCode, setApplyingCode] = useState(null);
+  const [variantsByProduct, setVariantsByProduct] = useState({});
+
+  const itemIdsKey = items.map((item) => item.id).join(',');
+
+  // Other colour/size variants of each bag line's product, so a shopper
+  // can swap a line in place (see cart/swapCartItem) instead of removing
+  // it and re-adding the other variant from its own product page.
+  useEffect(() => {
+    if (!itemIdsKey) {
+      setVariantsByProduct({});
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      itemIdsKey
+        .split(',')
+        .map((id) => api.getProductVariants(id).then(({ data }) => [id, data]).catch(() => [id, []]))
+    ).then((results) => {
+      if (!cancelled) setVariantsByProduct(Object.fromEntries(results));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [itemIdsKey]);
+
+  const handleSwapVariant = (item, variant) => {
+    if (variant.stock <= 0) {
+      toast.error(`${variant.color} is out of stock`);
+      return;
+    }
+    dispatch(
+      swapCartItem({
+        oldId: item.id,
+        newProduct: {
+          id: variant.id,
+          name: variant.name,
+          price: variant.price,
+          mrp: variant.mrp,
+          image_url: variant.image_url,
+          stock: variant.stock,
+          category: variant.category,
+          color: variant.color,
+        },
+      })
+    );
+    toast.success(`Switched to ${variant.color}`);
+  };
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const mrpSavings = items.reduce(
@@ -110,6 +164,42 @@ const Cart = () => {
               </div>
               {item.stock > 0 && item.stock <= 5 && (
                 <p className="text-xs font-semibold text-brand mt-1">Only {item.stock} left</p>
+              )}
+              {(variantsByProduct[item.id] || []).length > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-muted shrink-0">Colour:</span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <div
+                      title={item.color || 'Current colour'}
+                      className="w-8 h-8 rounded border-2 border-brand ring-1 ring-brand-light overflow-hidden bg-surface shrink-0"
+                    >
+                      <img
+                        src={getImageUrl(item.image_url) || 'https://via.placeholder.com/40'}
+                        alt={item.color || item.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    {variantsByProduct[item.id].map((v) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        title={v.stock > 0 ? v.color : `${v.color} - out of stock`}
+                        onClick={() => handleSwapVariant(item, v)}
+                        className={`w-8 h-8 rounded border-2 overflow-hidden bg-surface shrink-0 ${
+                          v.stock > 0
+                            ? 'border-transparent hover:border-gray-300'
+                            : 'opacity-40 cursor-not-allowed border-transparent'
+                        }`}
+                      >
+                        <img
+                          src={getImageUrl(v.image_url) || 'https://via.placeholder.com/40'}
+                          alt={v.color}
+                          className="w-full h-full object-contain"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
             <input

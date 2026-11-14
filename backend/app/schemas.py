@@ -146,6 +146,9 @@ class CartItemCreate(BaseModel):
 class CartItemUpdate(BaseModel):
     quantity: int = Field(..., ge=1)
 
+class CartItemSwap(BaseModel):
+    new_product_id: int
+
 class CartItemResponse(BaseModel):
     id: int
     quantity: int
