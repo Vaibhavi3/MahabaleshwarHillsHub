@@ -15,6 +15,7 @@ export const mapCartResponse = (data) =>
     image_url: entry.product.image_url,
     stock: entry.product.stock,
     category: entry.product.category,
+    color: entry.product.color,
     quantity: entry.quantity,
   }));
 
@@ -76,6 +77,34 @@ const cartSlice = createSlice({
       state.discountAmount = 0;
       localStorage.removeItem('cartItems');
     },
+    // Swap a line to a different colour/size variant of the same product
+    // in place, keeping its quantity (capped to the new variant's stock).
+    // If that variant is already its own line, the two merge instead of
+    // leaving a duplicate - the larger quantity wins, mirroring cart/sync.
+    swapCartItem: (state, action) => {
+      const { oldId, newProduct } = action.payload;
+      const oldIndex = state.items.findIndex((item) => item.id === oldId);
+      if (oldIndex === -1) return;
+
+      const quantity = Math.min(state.items[oldIndex].quantity, newProduct.stock ?? Infinity);
+      const existingIndex = state.items.findIndex((item) => item.id === newProduct.id);
+
+      if (existingIndex !== -1 && existingIndex !== oldIndex) {
+        state.items[existingIndex].quantity = Math.min(
+          Math.max(state.items[existingIndex].quantity, quantity),
+          newProduct.stock ?? Infinity
+        );
+        state.items.splice(oldIndex, 1);
+      } else {
+        state.items[oldIndex] = { ...newProduct, quantity };
+      }
+
+      localStorage.setItem('cartItems', JSON.stringify(state.items));
+      state.totalPrice = state.items.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
+      );
+    },
     setCartItems: (state, action) => {
       state.items = action.payload;
       localStorage.setItem('cartItems', JSON.stringify(state.items));
@@ -87,6 +116,14 @@ const cartSlice = createSlice({
   },
 });
 
-export const { addToCart, removeFromCart, updateCartItem, clearCart, applyCoupon, removeCoupon, setCartItems } =
-  cartSlice.actions;
+export const {
+  addToCart,
+  removeFromCart,
+  updateCartItem,
+  swapCartItem,
+  clearCart,
+  applyCoupon,
+  removeCoupon,
+  setCartItems,
+} = cartSlice.actions;
 export default cartSlice.reducer;

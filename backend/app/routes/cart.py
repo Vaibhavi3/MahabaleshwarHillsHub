@@ -155,6 +155,56 @@ def update_cart_item_by_product(
     return _get_cart(db, current_user.id)
 
 
+@router.put("/cart/product/{product_id}/swap", response_model=schemas.CartResponse)
+def swap_cart_item_variant(
+    product_id: int,
+    swap: schemas.CartItemSwap,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Change a bag line to a different colour/size variant of the same
+    product in one step - like Myntra/Ajio/Nykaa's in-cart variant swap -
+    instead of making the shopper remove the item, go find the other
+    variant's own product page, and re-add it."""
+    cart = _get_or_create_cart(db, current_user.id)
+
+    cart_item = db.query(models.CartItem).filter(
+        models.CartItem.cart_id == cart.id, models.CartItem.product_id == product_id
+    ).first()
+    if not cart_item:
+        raise HTTPException(status_code=404, detail="Item not in cart")
+
+    current_product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    new_product = db.query(models.Product).filter(models.Product.id == swap.new_product_id).first()
+    if not current_product or not new_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    same_family = (
+        new_product.parent_sku == current_product.parent_sku
+        if current_product.parent_sku
+        else new_product.name == current_product.name
+    )
+    if not same_family or new_product.id == current_product.id:
+        raise HTTPException(status_code=400, detail="That isn't another variant of this item")
+    if new_product.stock <= 0:
+        raise HTTPException(status_code=400, detail="That variant is out of stock")
+
+    quantity = min(cart_item.quantity, new_product.stock)
+
+    existing_target = db.query(models.CartItem).filter(
+        models.CartItem.cart_id == cart.id, models.CartItem.product_id == swap.new_product_id
+    ).first()
+    if existing_target:
+        existing_target.quantity = min(max(existing_target.quantity, quantity), new_product.stock)
+        db.delete(cart_item)
+    else:
+        cart_item.product_id = swap.new_product_id
+        cart_item.quantity = quantity
+
+    db.commit()
+    return _get_cart(db, current_user.id)
+
+
 @router.delete("/cart/product/{product_id}", response_model=schemas.CartResponse)
 def remove_from_cart_by_product(
     product_id: int,

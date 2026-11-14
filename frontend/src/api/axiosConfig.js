@@ -132,6 +132,9 @@ export const api = {
   removeFromCartByProduct: (productId) => {
     return client.delete(`/cart/product/${productId}`);
   },
+  swapCartItemVariant: (productId, newProductId) => {
+    return client.put(`/cart/product/${productId}/swap`, { new_product_id: newProductId });
+  },
   clearCart: () => {
     return client.delete('/cart');
   },

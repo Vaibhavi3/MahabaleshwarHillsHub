@@ -29,6 +29,9 @@ const cartSyncMiddleware = (store) => (next) => (action) => {
     case 'cart/removeFromCart':
       api.removeFromCartByProduct(action.payload).catch(() => {});
       break;
+    case 'cart/swapCartItem':
+      api.swapCartItemVariant(action.payload.oldId, action.payload.newProduct.id).catch(() => {});
+      break;
     case 'cart/clearCart':
       api.clearCart().catch(() => {});
       break;
