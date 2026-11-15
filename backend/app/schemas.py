@@ -197,6 +197,10 @@ class OrderCreate(BaseModel):
     gift_card_code: Optional[str] = None
     is_gift: bool = False
     gift_message: Optional[str] = Field(None, max_length=300)
+    # "Buy Now" checkout: an explicit item list that bypasses the account
+    # cart entirely, so a direct-from-PDP purchase never reads from or
+    # clears whatever the shopper already has saved in their bag.
+    buy_now_items: Optional[List[CartItemCreate]] = None
 
 class OrderUpdate(BaseModel):
     status: Optional[str] = None
