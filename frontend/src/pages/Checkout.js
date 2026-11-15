@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -138,7 +138,18 @@ const RazorpayButton = ({ order, onSuccess }) => {
 };
 
 const Checkout = () => {
-  const { items, couponCode, discountAmount } = useSelector((state) => state.cart);
+  const location = useLocation();
+  // "Buy Now" from a product page: a single item passed via navigation
+  // state, entirely independent of whatever is already saved in the bag.
+  // Coupons are tied to the bag total on the Cart page, so a Buy Now
+  // order simply skips coupons rather than carrying over an unrelated one.
+  const buyNowItem = location.state?.buyNow || null;
+  const { items: cartItems, couponCode: cartCouponCode, discountAmount: cartDiscountAmount } = useSelector(
+    (state) => state.cart
+  );
+  const items = buyNowItem ? [buyNowItem] : cartItems;
+  const couponCode = buyNowItem ? null : cartCouponCode;
+  const discountAmount = buyNowItem ? 0 : cartDiscountAmount;
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -207,11 +218,15 @@ const Checkout = () => {
     }
     setSubmitting(true);
     try {
-      // Backend orders are built from the server-side cart, so mirror the
-      // client cart there before creating the order.
-      await api.clearCart();
-      for (const item of items) {
-        await api.addToCart({ product_id: item.id, quantity: item.quantity });
+      // Buy Now bypasses the server-side cart entirely - never sync or
+      // clear it, so whatever the shopper already has saved stays put.
+      // Normal cart checkout still mirrors the client cart there first,
+      // since backend orders are built from the server-side cart.
+      if (!buyNowItem) {
+        await api.clearCart();
+        for (const item of items) {
+          await api.addToCart({ product_id: item.id, quantity: item.quantity });
+        }
       }
 
       const addressLine2 = selectedAddress.address_line2 ? `, ${selectedAddress.address_line2}` : '';
@@ -224,6 +239,7 @@ const Checkout = () => {
         gift_card_code: appliedGiftCard?.code || undefined,
         is_gift: isGift,
         gift_message: isGift ? giftMessage.trim() || undefined : undefined,
+        buy_now_items: buyNowItem ? [{ product_id: buyNowItem.id, quantity: buyNowItem.quantity }] : undefined,
       });
       setOrder(response.data);
       setStep('payment');
@@ -235,7 +251,10 @@ const Checkout = () => {
   };
 
   const handlePaymentSuccess = () => {
-    dispatch(clearCart());
+    // Buy Now never touched the bag, so there's nothing to clear.
+    if (!buyNowItem) {
+      dispatch(clearCart());
+    }
     toast.success('Order placed successfully!');
     navigate('/orders');
   };
@@ -246,7 +265,12 @@ const Checkout = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+      <h1 className="text-3xl font-bold mb-2">Checkout</h1>
+      {buyNowItem && (
+        <p className="text-sm text-muted mb-4">
+          Buying this item directly - anything already in your bag is untouched.
+        </p>
+      )}
       <CheckoutProgress step={step} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white rounded-lg shadow p-6">

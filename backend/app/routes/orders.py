@@ -33,14 +33,22 @@ def create_order(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    """Create new order from cart"""
-    cart = db.query(models.Cart).filter(models.Cart.user_id == current_user.id).first()
-    if not cart:
-        raise HTTPException(status_code=404, detail="Cart not found")
-    
-    cart_items = db.query(models.CartItem).filter(models.CartItem.cart_id == cart.id).all()
-    if not cart_items:
-        raise HTTPException(status_code=400, detail="Cart is empty")
+    """Create new order from cart, or from an explicit "Buy Now" item list
+    that bypasses the account cart entirely - a direct-from-PDP purchase
+    never reads from, or clears, whatever the shopper already has saved
+    in their bag."""
+    is_buy_now = bool(order.buy_now_items)
+    cart = None
+    if is_buy_now:
+        cart_items = order.buy_now_items
+    else:
+        cart = db.query(models.Cart).filter(models.Cart.user_id == current_user.id).first()
+        if not cart:
+            raise HTTPException(status_code=404, detail="Cart not found")
+
+        cart_items = db.query(models.CartItem).filter(models.CartItem.cart_id == cart.id).all()
+        if not cart_items:
+            raise HTTPException(status_code=400, detail="Cart is empty")
 
     try:
         products_by_id = {}
@@ -146,7 +154,8 @@ def create_order(
             db.add(order_item)
             product.stock -= item.quantity
 
-        db.query(models.CartItem).filter(models.CartItem.cart_id == cart.id).delete()
+        if not is_buy_now:
+            db.query(models.CartItem).filter(models.CartItem.cart_id == cart.id).delete()
 
         if coupon:
             coupon.used_count += 1

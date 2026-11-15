@@ -149,6 +149,25 @@ const ProductDetail = () => {
     }
   };
 
+  const handleBuyNow = () => {
+    if (!product || product.stock <= 0) return;
+    if (!requireAuth(token, navigate, location, 'Please login or register to buy this item')) return;
+    navigate('/checkout', {
+      state: {
+        buyNow: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          mrp: product.mrp,
+          image_url: product.image_url,
+          stock: product.stock,
+          category: product.category,
+          quantity: parseInt(quantity) || 1,
+        },
+      },
+    });
+  };
+
   const handleWishlist = async () => {
     if (!product) return;
     if (!requireAuth(token, navigate, location, 'Please login or register to save items to your wishlist')) return;
@@ -385,35 +404,54 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          <div ref={buyBoxRef} className={`flex flex-col sm:flex-row gap-3 ${outOfStock ? 'mb-2' : 'mb-8'}`}>
+          <div ref={buyBoxRef} className={outOfStock ? 'mb-2' : 'mb-8'}>
             {outOfStock ? (
-              <button
-                onClick={handleNotifyMe}
-                disabled={notifyBusy}
-                className={`flex-1 py-3.5 text-base flex items-center justify-center gap-2 rounded font-bold uppercase tracking-wide disabled:opacity-60 ${
-                  notifySubscribed
-                    ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-600'
-                    : 'btn-primary'
-                }`}
-              >
-                {notifySubscribed ? <FiCheck /> : <FiBell />}
-                {notifySubscribed ? "We'll Notify You" : 'Notify Me When Available'}
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleNotifyMe}
+                  disabled={notifyBusy}
+                  className={`flex-1 py-3.5 text-base flex items-center justify-center gap-2 rounded font-bold uppercase tracking-wide disabled:opacity-60 ${
+                    notifySubscribed
+                      ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-600'
+                      : 'btn-primary'
+                  }`}
+                >
+                  {notifySubscribed ? <FiCheck /> : <FiBell />}
+                  {notifySubscribed ? "We'll Notify You" : 'Notify Me When Available'}
+                </button>
+                <button
+                  onClick={handleWishlist}
+                  className="btn-secondary flex-1 py-3.5 text-base flex items-center justify-center gap-2"
+                >
+                  <FiHeart className={wishlisted ? 'text-brand fill-current' : ''} />
+                  {wishlisted ? 'Wishlisted' : 'Wishlist'}
+                </button>
+              </div>
             ) : (
-              <button
-                onClick={handleAddToCart}
-                className="btn-primary flex-1 py-3.5 text-base"
-              >
-                Add to Bag
-              </button>
+              <>
+                <div className="flex flex-col sm:flex-row gap-3 mb-3">
+                  <button
+                    onClick={handleAddToCart}
+                    className="btn-secondary flex-1 py-3.5 text-base"
+                  >
+                    Add to Bag
+                  </button>
+                  <button
+                    onClick={handleBuyNow}
+                    className="flex-1 py-3.5 text-base rounded font-bold uppercase tracking-wide bg-ink text-white hover:bg-black transition-colors"
+                  >
+                    Buy Now
+                  </button>
+                </div>
+                <button
+                  onClick={handleWishlist}
+                  className="btn-secondary w-full py-3 text-sm flex items-center justify-center gap-2"
+                >
+                  <FiHeart className={wishlisted ? 'text-brand fill-current' : ''} />
+                  {wishlisted ? 'Wishlisted' : 'Add to Wishlist'}
+                </button>
+              </>
             )}
-            <button
-              onClick={handleWishlist}
-              className="btn-secondary flex-1 py-3.5 text-base flex items-center justify-center gap-2"
-            >
-              <FiHeart className={wishlisted ? 'text-brand fill-current' : ''} />
-              {wishlisted ? 'Wishlisted' : 'Wishlist'}
-            </button>
           </div>
           {outOfStock && (
             <p className="text-xs text-muted mb-8">
@@ -531,9 +569,17 @@ const ProductDetail = () => {
               {notifySubscribed ? 'Notified' : 'Notify Me'}
             </button>
           ) : (
-            <button onClick={handleAddToCart} className="btn-primary px-8 py-3">
-              Add to Bag
-            </button>
+            <div className="flex gap-2 shrink-0">
+              <button onClick={handleAddToCart} className="btn-secondary px-4 py-3 text-sm whitespace-nowrap">
+                Add to Bag
+              </button>
+              <button
+                onClick={handleBuyNow}
+                className="px-4 py-3 text-sm whitespace-nowrap rounded font-bold uppercase tracking-wide bg-ink text-white hover:bg-black transition-colors"
+              >
+                Buy Now
+              </button>
+            </div>
           )}
         </div>
       )}
