@@ -33,7 +33,8 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [pincode, setPincode] = useState('');
-  const [pincodeMsg, setPincodeMsg] = useState('');
+  const [pincodeResult, setPincodeResult] = useState(null); // { ok, city, state } | { ok: false }
+  const [pincodeChecking, setPincodeChecking] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [notifySubscribed, setNotifySubscribed] = useState(false);
   const [notifyBusy, setNotifyBusy] = useState(false);
@@ -184,12 +185,26 @@ const ProductDetail = () => {
     }
   };
 
-  const handleCheckPincode = (e) => {
+  const handleCheckPincode = async (e) => {
     e.preventDefault();
-    if (/^\d{6}$/.test(pincode)) {
-      setPincodeMsg('Delivery available - usually arrives in 4-6 business days.');
-    } else {
-      setPincodeMsg('Please enter a valid 6-digit pincode.');
+    if (!/^[1-9]\d{5}$/.test(pincode)) {
+      setPincodeResult({ ok: false });
+      return;
+    }
+    setPincodeChecking(true);
+    try {
+      const { data } = await api.lookupPincode(pincode);
+      setPincodeResult({
+        ok: true,
+        city: data.found ? data.city : null,
+        state: data.found ? data.state : null,
+      });
+    } catch (error) {
+      // We ship pan-India regardless, so a lookup failure still gets an
+      // honest, non-blocking answer - never a fabricated delivery date.
+      setPincodeResult({ ok: true, city: null, state: null });
+    } finally {
+      setPincodeChecking(false);
     }
   };
 
@@ -430,15 +445,41 @@ const ProductDetail = () => {
                 type="text"
                 maxLength={6}
                 value={pincode}
-                onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))}
-                placeholder="Enter pincode"
+                onChange={(e) => {
+                  setPincode(e.target.value.replace(/\D/g, ''));
+                  setPincodeResult(null);
+                }}
+                placeholder="Enter PIN code"
                 className="border border-gray-300 rounded px-4 py-2 text-sm w-40"
               />
-              <button type="submit" className="text-brand font-bold text-sm uppercase hover:underline">
-                Check
+              <button
+                type="submit"
+                disabled={pincodeChecking}
+                className="text-brand font-bold text-sm uppercase hover:underline disabled:opacity-60"
+              >
+                {pincodeChecking ? 'Checking...' : 'Check'}
               </button>
             </div>
-            {pincodeMsg && <p className="text-sm text-muted mt-2">{pincodeMsg}</p>}
+            {pincodeResult && (
+              pincodeResult.ok ? (
+                <p className="text-sm text-ink mt-2 flex items-start gap-1.5">
+                  <FiCheck className="text-emerald-600 mt-0.5 shrink-0" />
+                  <span>
+                    We deliver to{' '}
+                    {pincodeResult.city ? (
+                      <span className="font-semibold">
+                        {pincodeResult.city}, {pincodeResult.state}
+                      </span>
+                    ) : (
+                      'this PIN code'
+                    )}
+                    . Free shipping, no minimum - pay securely via Razorpay or Stripe (no cash on delivery).
+                  </span>
+                </p>
+              ) : (
+                <p className="text-sm text-red-600 mt-2">Please enter a valid 6-digit PIN code.</p>
+              )
+            )}
           </form>
 
           <OffersList />

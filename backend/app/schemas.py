@@ -808,3 +808,11 @@ class CollectionResponse(BaseModel):
 
 class CollectionDetailResponse(CollectionResponse):
     products: List[ProductResponse] = []
+
+
+class PincodeLookupResult(BaseModel):
+    valid: bool
+    found: bool
+    city: Optional[str] = None
+    state: Optional[str] = None
+    service_unavailable: bool = False
