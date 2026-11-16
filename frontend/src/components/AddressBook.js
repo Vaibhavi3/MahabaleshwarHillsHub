@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FiEdit2, FiTrash2, FiPlus, FiCheck, FiMapPin } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../api/axiosConfig';
@@ -21,11 +21,42 @@ const EMPTY_FORM = {
 const AddressForm = ({ initial, onCancel, onSaved, saveFn, showDefaultToggle }) => {
   const [form, setForm] = useState(initial || EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [pincodeStatus, setPincodeStatus] = useState(null); // null | 'checking' | 'autofilled'
+  const lastLookedUpRef = useRef('');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
+    if (name === 'postal_code') setPincodeStatus(null);
   };
+
+  // Auto-fill city/state from the PIN code, like checkout on Myntra/Nykaa/
+  // Ajio - saves typing but never blocks the form if the lookup fails or
+  // the PIN isn't recognised; both fields stay editable either way.
+  useEffect(() => {
+    const code = form.postal_code;
+    if (!/^[1-9]\d{5}$/.test(code) || code === lastLookedUpRef.current) return;
+    lastLookedUpRef.current = code;
+    let active = true;
+    setPincodeStatus('checking');
+    api
+      .lookupPincode(code)
+      .then(({ data }) => {
+        if (!active) return;
+        if (data.found) {
+          setForm((f) => (f.postal_code === code ? { ...f, city: data.city, state: data.state } : f));
+          setPincodeStatus('autofilled');
+        } else {
+          setPincodeStatus(null);
+        }
+      })
+      .catch(() => {
+        if (active) setPincodeStatus(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [form.postal_code]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,9 +114,25 @@ const AddressForm = ({ initial, onCancel, onSaved, saveFn, showDefaultToggle }) 
         </div>
         <div>
           <label className="block text-xs font-semibold text-muted mb-1">PIN Code</label>
-          <input name="postal_code" value={form.postal_code} onChange={handleChange} required className="w-full border rounded-lg px-3 py-2 text-sm" />
+          <input
+            name="postal_code"
+            value={form.postal_code}
+            onChange={handleChange}
+            required
+            maxLength={6}
+            inputMode="numeric"
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+          />
         </div>
       </div>
+      {pincodeStatus === 'checking' && (
+        <p className="text-xs text-muted">Looking up city/state for this PIN code...</p>
+      )}
+      {pincodeStatus === 'autofilled' && (
+        <p className="text-xs text-emerald-700 flex items-center gap-1">
+          <FiCheck size={12} /> City &amp; state auto-filled from PIN code - edit if this looks wrong.
+        </p>
+      )}
       {showDefaultToggle && (
         <label className="flex items-center gap-2 text-sm text-ink">
           <input type="checkbox" name="is_default" checked={form.is_default} onChange={handleChange} />

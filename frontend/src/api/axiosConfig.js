@@ -74,6 +74,9 @@ export const api = {
   getCategoryMenu: () => {
     return client.get('/categories/menu');
   },
+  lookupPincode: (code) => {
+    return client.get(`/pincode/${code}`);
+  },
   getProductVariants: (id) => {
     return client.get(`/products/${id}/variants`);
   },
