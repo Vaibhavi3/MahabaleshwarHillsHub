@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { FiChevronDown, FiLifeBuoy, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiChevronDown, FiLifeBuoy, FiClock, FiCheckCircle, FiMessageCircle } from 'react-icons/fi';
 import api from '../api/axiosConfig';
 import { requireAuth } from '../utils/requireAuth';
+import TicketThread from '../components/TicketThread';
 
 // Real store policy only - never a fabricated delivery date, discount, or
 // threshold. Mirrors the facts already shown on the homepage trust strip,
@@ -131,6 +132,7 @@ const Help = () => {
   const [tickets, setTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedTicketId, setExpandedTicketId] = useState(null);
 
   const preselectOrderId = searchParams.get('order');
   const [form, setForm] = useState({
@@ -283,13 +285,29 @@ const Help = () => {
                       {STATUS_LABELS[t.status] || t.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 mb-2">{t.message}</p>
-                  {t.admin_reply && (
-                    <div className="bg-surface rounded p-3 text-sm text-ink mt-2">
-                      <p className="text-xs font-bold uppercase text-muted mb-1">Our reply</p>
-                      {t.admin_reply}
+                  {expandedTicketId === t.id ? (
+                    <div className="mt-3 border-t border-gray-100 pt-3">
+                      <TicketThread ticketId={t.id} />
                     </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-700 mb-2">{t.message}</p>
+                      {t.admin_reply && (
+                        <div className="bg-surface rounded p-3 text-sm text-ink mt-2">
+                          <p className="text-xs font-bold uppercase text-muted mb-1">Our reply</p>
+                          {t.admin_reply}
+                        </div>
+                      )}
+                    </>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setExpandedTicketId(expandedTicketId === t.id ? null : t.id)}
+                    className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-brand hover:underline"
+                  >
+                    <FiMessageCircle size={13} />
+                    {expandedTicketId === t.id ? 'Hide conversation' : 'View / continue conversation'}
+                  </button>
                 </div>
               ))}
             </div>
