@@ -321,6 +321,12 @@ export const api = {
   getAdminTickets: (status) => client.get('/support/tickets/admin/all', { params: status ? { status } : {} }),
   updateSupportTicket: (id, payload) => client.put(`/support/tickets/${id}`, payload),
 
+  // Support ticket conversation thread ("chat with us" follow-up on a ticket)
+  getTicketThread: (id) => client.get(`/support/tickets/${id}/messages`),
+  sendTicketMessage: (id, message) => client.post(`/support/tickets/${id}/messages`, { message }),
+  sendAdminTicketMessage: (id, message) => client.post(`/support/tickets/${id}/admin-messages`, { message }),
+  getSupportUnreadCount: () => client.get('/support/tickets/unread-count'),
+
   // Loyalty ("Hills Rewards" points - earn on delivery, redeem at checkout)
   getLoyaltyBalance: () => client.get('/loyalty/balance'),
   getLoyaltyTransactions: () => client.get('/loyalty/transactions'),

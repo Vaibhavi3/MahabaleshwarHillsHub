@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import toast from 'react-hot-toast';
+import TicketThread from '../components/TicketThread';
 
 const EMPTY_FORM = {
   id: null,
@@ -60,7 +61,7 @@ const AdminDashboard = () => {
   const [coupons, setCoupons] = useState([]);
   const [returnRequests, setReturnRequests] = useState([]);
   const [tickets, setTickets] = useState([]);
-  const [replyDrafts, setReplyDrafts] = useState({});
+  const [expandedTicketId, setExpandedTicketId] = useState(null);
   const [page, setPage] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [couponForm, setCouponForm] = useState(EMPTY_COUPON_FORM);
@@ -258,22 +259,6 @@ const AdminDashboard = () => {
       loadTickets();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Update failed');
-    }
-  };
-
-  const handleTicketReply = async (ticketId) => {
-    const reply = (replyDrafts[ticketId] || '').trim();
-    if (!reply) {
-      toast.error('Write a reply first');
-      return;
-    }
-    try {
-      await api.updateSupportTicket(ticketId, { admin_reply: reply, status: 'resolved' });
-      toast.success('Reply sent');
-      setReplyDrafts((d) => ({ ...d, [ticketId]: '' }));
-      loadTickets();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Could not send reply');
     }
   };
 
@@ -725,25 +710,19 @@ const AdminDashboard = () => {
                     ))}
                   </select>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{t.message}</p>
-                {t.admin_reply && (
-                  <p className="text-sm bg-gray-50 rounded-lg p-3 mb-3">
-                    <span className="font-semibold">Our reply: </span>
-                    {t.admin_reply}
-                  </p>
+                {expandedTicketId === t.id ? (
+                  <div className="border-t pt-3">
+                    <TicketThread ticketId={t.id} viewerType="admin" onThreadUpdate={loadTickets} />
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600 mb-3">{t.message}</p>
                 )}
-                <div className="flex flex-wrap gap-2">
-                  <textarea
-                    value={replyDrafts[t.id] || ''}
-                    onChange={(e) => setReplyDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
-                    placeholder="Write a reply..."
-                    rows={2}
-                    className="border rounded-lg px-3 py-2 flex-1 min-w-[200px]"
-                  />
-                  <button onClick={() => handleTicketReply(t.id)} className="btn-primary self-start">
-                    Send Reply
-                  </button>
-                </div>
+                <button
+                  onClick={() => setExpandedTicketId(expandedTicketId === t.id ? null : t.id)}
+                  className="mt-2 text-sm font-semibold text-brand hover:underline"
+                >
+                  {expandedTicketId === t.id ? 'Hide conversation' : 'View conversation / reply'}
+                </button>
               </div>
             ))}
             {tickets.length === 0 && <div className="text-center text-gray-600">No support tickets yet</div>}

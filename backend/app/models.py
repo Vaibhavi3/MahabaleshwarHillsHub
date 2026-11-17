@@ -549,6 +549,12 @@ class SupportTicket(Base):
 
     user = relationship("User")
     order = relationship("Order")
+    messages = relationship(
+        "SupportTicketMessage",
+        back_populates="ticket",
+        cascade="all, delete-orphan",
+        order_by="SupportTicketMessage.created_at",
+    )
 
     @property
     def order_number(self):
@@ -564,6 +570,25 @@ class SupportTicket(Base):
             return None
         name = " ".join(part for part in [self.user.first_name, self.user.last_name] if part).strip()
         return name or self.user.username
+
+
+class SupportTicketMessage(Base):
+    """A follow-up message in a support ticket's conversation, turning the
+    one-shot "ticket + single admin_reply" above into an ongoing
+    back-and-forth - closer to the "chat with us" support Myntra, Nykaa and
+    Ajio all offer than a single ticket reply. The ticket's original
+    `message` and first `admin_reply` stay where they are; this table only
+    holds the messages exchanged after that first reply, in either
+    direction."""
+    __tablename__ = "support_ticket_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(Integer, ForeignKey("support_tickets.id"), nullable=False, index=True)
+    sender_type = Column(String(10), nullable=False)  # "customer" or "admin"
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    ticket = relationship("SupportTicket", back_populates="messages")
 
 
 class Notification(Base):
