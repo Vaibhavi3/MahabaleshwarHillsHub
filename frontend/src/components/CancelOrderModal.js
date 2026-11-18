@@ -13,8 +13,12 @@ const CANCEL_REASONS = [
  * Confirmation modal for the self-service "Cancel Order" flow, styled
  * after Myntra/Nykaa/Ajio's cancel-before-shipped UX: pick a reason,
  * then confirm. Only rendered while an order is still pending/confirmed.
+ *
+ * Also doubles as the "cancel just this item" flow when an `item` is
+ * passed - same reasons, same confirmation, just scoped to one line and
+ * its own paid amount instead of the whole order.
  */
-const CancelOrderModal = ({ order, onClose, onConfirm }) => {
+const CancelOrderModal = ({ order, item, onClose, onConfirm }) => {
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -28,24 +32,37 @@ const CancelOrderModal = ({ order, onClose, onConfirm }) => {
     }
   };
 
+  const amount = item ? item.price * item.quantity : order.total_amount;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-extrabold text-lg text-ink">Cancel Order</h2>
+          <h2 className="font-extrabold text-lg text-ink">{item ? 'Cancel This Item' : 'Cancel Order'}</h2>
           <button onClick={onClose} aria-label="Close">
             <FiX size={20} className="text-muted" />
           </button>
         </div>
         <p className="text-sm text-muted mb-4">
-          Order <span className="font-semibold text-ink">{order.order_number}</span> hasn&rsquo;t shipped yet, so
-          it can be cancelled. Help us improve by telling us why.
+          {item ? (
+            <>
+              <span className="font-semibold text-ink">{item.product_name}</span> from order{' '}
+              <span className="font-semibold text-ink">{order.order_number}</span> hasn&rsquo;t shipped yet, so it
+              can be cancelled on its own - the rest of the order will still be on its way.
+            </>
+          ) : (
+            <>
+              Order <span className="font-semibold text-ink">{order.order_number}</span> hasn&rsquo;t shipped yet, so
+              it can be cancelled.
+            </>
+          )}{' '}
+          Help us improve by telling us why.
         </p>
         {order.payment_status === 'completed' && (
           <p className="text-sm text-muted mb-4 bg-brand-light/20 border border-brand-light rounded-lg px-3 py-2">
-            You&rsquo;ve already paid ₹{order.total_amount.toFixed(2)} for this order - cancelling refunds it to
-            your original payment method automatically.
+            You&rsquo;ve already paid ₹{amount.toFixed(2)} for {item ? 'this item' : 'this order'} - cancelling
+            refunds it to your original payment method automatically.
           </p>
         )}
         <div className="space-y-2 mb-6">
@@ -72,7 +89,7 @@ const CancelOrderModal = ({ order, onClose, onConfirm }) => {
             disabled={!reason || submitting}
             className="flex-1 py-2.5 text-sm rounded font-bold uppercase tracking-wide bg-red-600 text-white disabled:opacity-50"
           >
-            {submitting ? 'Cancelling…' : 'Cancel Order'}
+            {submitting ? 'Cancelling…' : item ? 'Cancel Item' : 'Cancel Order'}
           </button>
         </div>
       </div>

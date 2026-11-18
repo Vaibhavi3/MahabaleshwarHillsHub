@@ -167,13 +167,23 @@ class OrderStatusHistory(Base):
 
 class OrderItem(Base):
     __tablename__ = "order_items"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
-    
+    # Per-item self-service cancellation (before the order ships), matching
+    # Myntra/Nykaa/Ajio letting you cancel just one item out of a
+    # multi-item order instead of the whole thing. Mirrors the
+    # order-level cancellation_reason/refund fields already on Order, just
+    # scoped to one line.
+    cancelled = Column(Boolean, default=False, nullable=False, server_default="false")
+    cancellation_reason = Column(String(255))
+    cancelled_at = Column(DateTime(timezone=True))
+    refund_amount = Column(Float, default=0, nullable=False, server_default="0")
+    refund_status = Column(String(20), default="none", nullable=False, server_default="none")
+
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="order_items")
 

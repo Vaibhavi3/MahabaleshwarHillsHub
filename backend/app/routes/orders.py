@@ -228,10 +228,18 @@ def cancel_order(
     if not reason:
         raise HTTPException(status_code=400, detail="Please select a reason for cancelling")
 
+    now = datetime.now(timezone.utc)
     for item in order.items:
+        if item.cancelled:
+            # Already restocked/refunded individually via the per-item
+            # cancel endpoint below - don't do it twice.
+            continue
         product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
         if product:
             product.stock += item.quantity
+        item.cancelled = True
+        item.cancellation_reason = reason
+        item.cancelled_at = now
 
     if order.points_redeemed > 0:
         current_user.loyalty_points += order.points_redeemed
@@ -267,6 +275,84 @@ def cancel_order(
     # through the gateway it was paid through.
     if order.payment_status == "completed":
         issue_refund(db, order, order.total_amount, "order_cancelled")
+
+    db.refresh(order)
+    return order
+
+
+@router.post("/orders/{order_id}/items/{item_id}/cancel", response_model=schemas.OrderResponse)
+def cancel_order_item(
+    order_id: int,
+    item_id: int,
+    payload: schemas.OrderItemCancelRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Cancel a single line item out of a still-unshipped order, instead of
+    the whole order - matching Myntra/Nykaa/Ajio letting you drop just one
+    item from a multi-item order. If this was the last cancellable item,
+    it falls through to the same full-order cancellation as /cancel
+    (restoring points/gift card and recording the order as cancelled)
+    rather than leaving a "cancelled" order with no cancelled items."""
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    if order.status not in CANCELLABLE_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail="This order has already shipped and can no longer be cancelled here. Please contact support.",
+        )
+
+    item = db.query(models.OrderItem).filter(
+        models.OrderItem.id == item_id, models.OrderItem.order_id == order.id
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Order item not found")
+    if item.cancelled:
+        raise HTTPException(status_code=400, detail="This item has already been cancelled")
+
+    reason = payload.reason.strip()
+    if not reason:
+        raise HTTPException(status_code=400, detail="Please select a reason for cancelling")
+
+    remaining_active = [i for i in order.items if not i.cancelled and i.id != item.id]
+    if not remaining_active:
+        # Cancelling this item would cancel the whole order - just do that,
+        # so points/gift card/order status get the full treatment below.
+        return cancel_order(order_id, schemas.OrderCancelRequest(reason=reason), db, current_user)
+
+    product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
+    if product:
+        product.stock += item.quantity
+
+    item.cancelled = True
+    item.cancellation_reason = reason
+    item.cancelled_at = datetime.now(timezone.utc)
+
+    notify(
+        db,
+        order.user_id,
+        "order_status",
+        f"1 item from Order #{order.order_number} has been cancelled",
+        link="/orders",
+    )
+    db.commit()
+
+    # Refund just this item's own paid price - same "refund what was
+    # actually charged" rule as whole-order cancellation, just scoped to
+    # one line, and capped to whatever hasn't already been refunded.
+    if order.payment_status == "completed":
+        result = issue_refund(db, order, item.price * item.quantity, "item_cancelled")
+        item.refund_amount = result["amount_refunded"]
+        item.refund_status = (
+            "refunded" if result["amount_refunded"] > 0
+            else ("failed" if result["status"] == "failed" else "none")
+        )
+        db.commit()
 
     db.refresh(order)
     return order
