@@ -155,6 +155,9 @@ export const api = {
   cancelOrder: (id, reason) => {
     return client.post(`/orders/${id}/cancel`, { reason });
   },
+  cancelOrderItem: (orderId, itemId, reason) => {
+    return client.post(`/orders/${orderId}/items/${itemId}/cancel`, { reason });
+  },
   getAllOrders: (skip = 0, limit = 100) => {
     return client.get('/orders/admin/all', { params: { skip, limit } });
   },

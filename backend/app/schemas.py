@@ -179,9 +179,17 @@ class OrderItemResponse(OrderItemCreate):
     order_id: int
     product_name: Optional[str] = None
     product_image: Optional[str] = None
+    cancelled: bool = False
+    cancellation_reason: Optional[str] = None
+    refund_amount: float = 0
+    refund_status: str = "none"
 
     class Config:
         from_attributes = True
+
+
+class OrderItemCancelRequest(BaseModel):
+    reason: str
 
 
 class ProductPopularityResponse(BaseModel):

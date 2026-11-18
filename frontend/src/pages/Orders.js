@@ -160,13 +160,16 @@ const Orders = () => {
   };
 
   const handleCancelConfirm = async (reason) => {
+    const { order, item } = cancelTarget;
     try {
-      const response = await api.cancelOrder(cancelTarget.id, reason);
+      const response = item
+        ? await api.cancelOrderItem(order.id, item.id, reason)
+        : await api.cancelOrder(order.id, reason);
       setOrders((prev) => prev.map((o) => (o.id === response.data.id ? response.data : o)));
-      toast.success('Order cancelled');
+      toast.success(item ? 'Item cancelled' : 'Order cancelled');
       setCancelTarget(null);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Could not cancel this order');
+      toast.error(error.response?.data?.detail || `Could not cancel this ${item ? 'item' : 'order'}`);
     }
   };
 
@@ -256,35 +259,62 @@ const Orders = () => {
               {order.items.map((item) => {
                 const existingRequest = returnRequestForItem(item.id);
                 const eligible = order.status === 'delivered' && withinReturnWindow(order);
+                const itemCancellable =
+                  CANCELLABLE_STATUSES.has(order.status) && !item.cancelled && order.items.length > 1;
                 return (
                   <div key={item.id} className="text-sm">
                     <div className="flex items-center gap-3">
                       <img
                         src={getImageUrl(item.product_image) || 'https://via.placeholder.com/60'}
                         alt={item.product_name || 'Product'}
-                        className="w-12 h-12 object-cover rounded"
+                        className={`w-12 h-12 object-cover rounded ${item.cancelled ? 'opacity-40' : ''}`}
                       />
-                      <span className="flex-1 text-gray-700">
+                      <span className={`flex-1 text-gray-700 ${item.cancelled ? 'line-through text-gray-400' : ''}`}>
                         {item.product_name || `Product #${item.product_id}`} x {item.quantity}
                       </span>
-                      <span className="text-gray-700">₹{(item.price * item.quantity).toFixed(2)}</span>
+                      {item.cancelled && (
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-red-100 text-red-700">
+                          Cancelled
+                        </span>
+                      )}
+                      <span className={`text-gray-700 ${item.cancelled ? 'line-through text-gray-400' : ''}`}>
+                        ₹{(item.price * item.quantity).toFixed(2)}
+                      </span>
                     </div>
-                    {existingRequest ? (
+                    {item.cancelled ? (
+                      <p className="mt-1 ml-[60px] text-xs text-muted">
+                        Cancelled{item.cancellation_reason ? `: ${item.cancellation_reason}` : ''}
+                        {item.refund_status === 'refunded' && item.refund_amount > 0 && (
+                          <span className="text-emerald-700 font-semibold">
+                            {' '}
+                            · ₹{item.refund_amount.toFixed(0)} refunded
+                          </span>
+                        )}
+                      </p>
+                    ) : existingRequest ? (
                       <ReturnRequestStatus request={existingRequest} orderId={order.id} />
                     ) : (
-                      eligible && (
-                        <div className="mt-2 ml-[60px] flex items-center gap-2">
+                      <div className="mt-2 ml-[60px] flex items-center gap-3">
+                        {eligible && (
+                          <>
+                            <button
+                              onClick={() => setReturnTarget({ order, item })}
+                              className="text-xs font-semibold uppercase text-brand hover:underline"
+                            >
+                              Return / Exchange
+                            </button>
+                            <span className="text-xs text-muted">(by {returnDeadlineLabel(order)})</span>
+                          </>
+                        )}
+                        {itemCancellable && (
                           <button
-                            onClick={() => setReturnTarget({ order, item })}
-                            className="text-xs font-semibold uppercase text-brand hover:underline"
+                            onClick={() => setCancelTarget({ order, item })}
+                            className="text-xs font-semibold uppercase text-red-600 hover:underline"
                           >
-                            Return / Exchange
+                            Cancel This Item
                           </button>
-                          <span className="text-xs text-muted">
-                            (by {returnDeadlineLabel(order)})
-                          </span>
-                        </div>
-                      )
+                        )}
+                      </div>
                     )}
                   </div>
                 );
@@ -335,7 +365,7 @@ const Orders = () => {
             )}
             {CANCELLABLE_STATUSES.has(order.status) && (
               <button
-                onClick={() => setCancelTarget(order)}
+                onClick={() => setCancelTarget({ order })}
                 className="mt-4 text-sm font-semibold uppercase text-red-600 hover:underline"
               >
                 Cancel Order
@@ -347,7 +377,8 @@ const Orders = () => {
 
       {cancelTarget && (
         <CancelOrderModal
-          order={cancelTarget}
+          order={cancelTarget.order}
+          item={cancelTarget.item}
           onClose={() => setCancelTarget(null)}
           onConfirm={handleCancelConfirm}
         />
