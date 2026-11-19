@@ -10,6 +10,7 @@ import {
   FiRefreshCw,
   FiMessageSquare,
   FiTag,
+  FiStar,
 } from 'react-icons/fi';
 
 const UNREAD_POLL_MS = 60000;
@@ -22,6 +23,7 @@ const TYPE_ICON = {
   support_ticket: FiMessageSquare,
   back_in_stock: FiBell,
   price_drop: FiTag,
+  rate_purchase: FiStar,
 };
 
 const timeAgo = (iso) => {

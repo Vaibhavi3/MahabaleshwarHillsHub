@@ -462,6 +462,19 @@ def update_order(
                     link="/rewards",
                 )
 
+            # Rate & Review nudge, matching Myntra/Nykaa/Ajio's post-delivery
+            # prompt - sent once per order (guarded by the same
+            # points_credited flag), pointing back to My Orders where each
+            # delivered, not-yet-reviewed item now shows a quick-star prompt.
+            notify(
+                db,
+                order.user_id,
+                "rate_purchase",
+                "How was your order?",
+                body=f"Order #{order.order_number} has been delivered - rate the items to help other shoppers.",
+                link="/orders",
+            )
+
             # "Invite & Earn": the referrer's bonus is tied to the referred
             # friend's FIRST delivered order (like Ajio's "referrer earns
             # after the new user's qualifying order" rule), not every
