@@ -172,6 +172,9 @@ export const api = {
   getProductReviews: (productId) => {
     return client.get(`/products/${productId}/reviews`);
   },
+  getReviewedProductIds: () => {
+    return client.get('/reviews/my/reviewed-products');
+  },
   createReview: (reviewData) => {
     return client.post('/reviews', reviewData);
   },

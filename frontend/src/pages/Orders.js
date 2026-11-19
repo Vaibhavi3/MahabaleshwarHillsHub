@@ -8,7 +8,7 @@ import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink, FiStar, FiCheckCircle } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -49,9 +49,43 @@ const returnDeadlineLabel = (order) => {
   return deadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 };
 
+// "Rate & Review" quick-star nudge, matching Myntra/Nykaa/Ajio's My
+// Orders prompt: tap a star to submit a rating instantly (title/comment
+// stay optional, added later from the product page), no intermediate
+// confirmation step.
+const QuickRateStars = ({ submitting, onRate }) => {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex items-center gap-2 mt-2 ml-[60px]">
+      <span className="text-xs font-semibold uppercase text-ink">Rate this product:</span>
+      <div className="flex gap-0.5" onMouseLeave={() => setHovered(0)}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            disabled={submitting}
+            onMouseEnter={() => setHovered(n)}
+            onClick={() => onRate(n)}
+            aria-label={`Rate ${n} star${n > 1 ? 's' : ''}`}
+            className="disabled:opacity-50"
+          >
+            <FiStar
+              size={16}
+              className={n <= hovered ? 'text-brand fill-current' : 'text-gray-300'}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [returnRequests, setReturnRequests] = useState([]);
+  const [reviewedProductIds, setReviewedProductIds] = useState(new Set());
+  const [ratingItemId, setRatingItemId] = useState(null);
+  const [justRatedItemIds, setJustRatedItemIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [returnTarget, setReturnTarget] = useState(null);
@@ -85,9 +119,29 @@ const Orders = () => {
       } catch (error) {
         // non-critical - the page still works without return status badges
       }
+      try {
+        const reviewedResponse = await api.getReviewedProductIds();
+        setReviewedProductIds(new Set(reviewedResponse.data));
+      } catch (error) {
+        // non-critical - the page still works without the rate-this-product prompt
+      }
     };
     load();
   }, []);
+
+  const handleQuickRate = async (item, rating) => {
+    setRatingItemId(item.id);
+    try {
+      await api.createReview({ product_id: item.product_id, rating });
+      setReviewedProductIds((prev) => new Set(prev).add(item.product_id));
+      setJustRatedItemIds((prev) => new Set(prev).add(item.id));
+      toast.success('Thanks for rating!');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not submit your rating');
+    } finally {
+      setRatingItemId(null);
+    }
+  };
 
   const returnRequestForItem = (itemId) => returnRequests.find((r) => r.order_item_id === itemId);
 
@@ -286,6 +340,19 @@ const Orders = () => {
                         </div>
                       )
                     )}
+                    {order.status === 'delivered' &&
+                      (justRatedItemIds.has(item.id) ? (
+                        <p className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold mt-2 ml-[60px]">
+                          <FiCheckCircle /> Thanks for rating this product
+                        </p>
+                      ) : (
+                        !reviewedProductIds.has(item.product_id) && (
+                          <QuickRateStars
+                            submitting={ratingItemId === item.id}
+                            onRate={(rating) => handleQuickRate(item, rating)}
+                          />
+                        )
+                      ))}
                   </div>
                 );
               })}

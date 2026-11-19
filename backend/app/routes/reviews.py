@@ -55,6 +55,18 @@ def _to_response(review: models.Review, voted_review_ids: set) -> schemas.Review
     )
 
 
+@router.get("/reviews/my/reviewed-products", response_model=list[int])
+def get_my_reviewed_product_ids(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Product ids current_user has already reviewed. Lets My Orders show a
+    "Rate this product" quick-star prompt only for delivered items that
+    still need one, matching Myntra/Nykaa/Ajio's Rate & Review nudge."""
+    rows = db.query(models.Review.product_id).filter(models.Review.user_id == current_user.id).all()
+    return [row[0] for row in rows]
+
+
 @router.get("/products/{product_id}/reviews", response_model=list[schemas.ReviewResponse])
 def get_product_reviews(
     product_id: int,
