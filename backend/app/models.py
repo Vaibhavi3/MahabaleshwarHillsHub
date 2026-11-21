@@ -286,6 +286,29 @@ class Coupon(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class Sale(Base):
+    """Admin-scheduled, time-boxed sale campaign - matching Nykaa's Pink
+    Friday countdown banner, Myntra's "Grab or Gone" flash windows, and
+    Ajio's sitewide sale banners: a real discount with a real admin-set
+    end time (never a fabricated countdown), applied automatically with
+    no coupon code needed, scoped to one category, one subcategory, or
+    the whole catalogue. Distinct from Coupon, which always requires the
+    shopper to enter a code."""
+    __tablename__ = "sales"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    category = Column(String(50))  # null = every category (storewide)
+    subcategory = Column(String(50))  # null = every subcategory within `category`
+    discount_type = Column(String(10), default="percent")  # "percent" or "flat"
+    discount_value = Column(Float, nullable=False)
+    max_discount = Column(Float)  # cap for percent-type sales
+    starts_at = Column(DateTime(timezone=True), nullable=False)
+    ends_at = Column(DateTime(timezone=True), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class GiftCard(Base):
     """A prepaid e-gift card, matching Nykaa/Myntra/Ajio's "Gift Card"
     pattern: bought by one shopper (optionally for a friend), paid for

@@ -8,22 +8,38 @@ import RecommendedForYou from '../components/RecommendedForYou';
 import { FiTrash2, FiTag, FiX, FiTruck, FiShield, FiPackage } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { computeMultibuyDiscount } from '../utils/multibuy';
+import { bestSaleForProduct, salePrice } from '../utils/sales';
 
 const Cart = () => {
   const { items, couponCode, discountAmount } = useSelector((state) => state.cart);
+  const activeSales = useSelector((state) => state.sales.activeSales);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [codeInput, setCodeInput] = useState('');
   const [applying, setApplying] = useState(false);
   const [applyingCode, setApplyingCode] = useState(null);
 
+  // Any live admin Sale (no code needed) discounts the unit price before
+  // Mix & Match eligibility is computed, mirroring exactly how the backend
+  // layers the two at order creation (see backend/app/routes/orders.py).
+  const itemSales = items.map((item) => bestSaleForProduct(activeSales, item));
+  const itemsWithSalePrice = items.map((item, i) => ({
+    ...item,
+    price: itemSales[i] ? salePrice(item, itemSales[i]) : item.price,
+  }));
+
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const mrpSavings = items.reduce(
     (sum, item) => sum + (item.mrp > item.price ? (item.mrp - item.price) * item.quantity : 0),
     0
   );
-  const multibuy = computeMultibuyDiscount(items);
-  const subtotalAfterMultibuy = Math.max(0, subtotal - multibuy.amount);
+  const saleDiscountAmount = items.reduce(
+    (sum, item, i) => sum + (item.price - itemsWithSalePrice[i].price) * item.quantity,
+    0
+  );
+  const subtotalAfterSale = Math.max(0, subtotal - saleDiscountAmount);
+  const multibuy = computeMultibuyDiscount(itemsWithSalePrice);
+  const subtotalAfterMultibuy = Math.max(0, subtotalAfterSale - multibuy.amount);
   const total = Math.max(0, subtotalAfterMultibuy - discountAmount);
 
   // Re-validate the applied coupon whenever the cart total changes (e.g. a
@@ -88,51 +104,59 @@ const Cart = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
       <div className="space-y-4 mb-8">
-        {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-4 bg-white rounded-lg shadow p-4">
-            <img
-              src={getImageUrl(item.image_url) || 'https://via.placeholder.com/100'}
-              alt={item.name}
-              className="w-20 h-20 object-contain bg-surface rounded"
-            />
-            <div className="flex-1">
-              <h3 className="font-semibold">{item.name}</h3>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <p className="text-ink font-bold">₹{item.price}</p>
-                {item.mrp > item.price && (
-                  <>
-                    <span className="text-xs text-muted line-through">₹{item.mrp}</span>
-                    <span className="text-xs font-bold text-orange-500">
-                      ({Math.round((1 - item.price / item.mrp) * 100)}% OFF)
-                    </span>
-                  </>
+        {items.map((item, i) => {
+          const sale = itemSales[i];
+          const effectivePrice = itemsWithSalePrice[i].price;
+          const strikePrice = sale ? item.price : item.mrp > item.price ? item.mrp : null;
+          return (
+            <div key={item.id} className="flex items-center gap-4 bg-white rounded-lg shadow p-4">
+              <img
+                src={getImageUrl(item.image_url) || 'https://via.placeholder.com/100'}
+                alt={item.name}
+                className="w-20 h-20 object-contain bg-surface rounded"
+              />
+              <div className="flex-1">
+                <h3 className="font-semibold">{item.name}</h3>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <p className="text-ink font-bold">₹{effectivePrice}</p>
+                  {strikePrice && (
+                    <>
+                      <span className="text-xs text-muted line-through">₹{strikePrice}</span>
+                      <span className="text-xs font-bold text-orange-500">
+                        ({Math.round((1 - effectivePrice / strikePrice) * 100)}% OFF)
+                      </span>
+                    </>
+                  )}
+                  {sale && (
+                    <span className="text-[10px] font-bold uppercase bg-brand text-white px-1.5 py-0.5 rounded">Sale</span>
+                  )}
+                </div>
+                {item.stock > 0 && item.stock <= 5 && (
+                  <p className="text-xs font-semibold text-brand mt-1">Only {item.stock} left</p>
                 )}
               </div>
-              {item.stock > 0 && item.stock <= 5 && (
-                <p className="text-xs font-semibold text-brand mt-1">Only {item.stock} left</p>
-              )}
+              <input
+                type="number"
+                min="1"
+                max={item.stock || undefined}
+                value={item.quantity}
+                onChange={(e) => {
+                  const requested = Math.max(1, parseInt(e.target.value) || 1);
+                  const capped = item.stock ? Math.min(requested, item.stock) : requested;
+                  if (item.stock && requested > item.stock) {
+                    toast.error(`Only ${item.stock} left in stock`);
+                  }
+                  dispatch(updateCartItem({ id: item.id, quantity: capped }));
+                }}
+                className="border rounded px-3 py-1 w-16 text-center"
+              />
+              <span className="font-semibold w-24 text-right">₹{(effectivePrice * item.quantity).toFixed(2)}</span>
+              <button onClick={() => dispatch(removeFromCart(item.id))} className="text-red-600 hover:text-red-800">
+                <FiTrash2 />
+              </button>
             </div>
-            <input
-              type="number"
-              min="1"
-              max={item.stock || undefined}
-              value={item.quantity}
-              onChange={(e) => {
-                const requested = Math.max(1, parseInt(e.target.value) || 1);
-                const capped = item.stock ? Math.min(requested, item.stock) : requested;
-                if (item.stock && requested > item.stock) {
-                  toast.error(`Only ${item.stock} left in stock`);
-                }
-                dispatch(updateCartItem({ id: item.id, quantity: capped }));
-              }}
-              className="border rounded px-3 py-1 w-16 text-center"
-            />
-            <span className="font-semibold w-24 text-right">₹{(item.price * item.quantity).toFixed(2)}</span>
-            <button onClick={() => dispatch(removeFromCart(item.id))} className="text-red-600 hover:text-red-800">
-              <FiTrash2 />
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {(multibuy.eligibleQuantity > 0 || multibuy.amount > 0) && (
@@ -188,6 +212,12 @@ const Cart = () => {
             <div className="flex justify-between text-emerald-700 font-semibold">
               <span>You saved on MRP</span>
               <span>₹{mrpSavings.toFixed(2)}</span>
+            </div>
+          )}
+          {saleDiscountAmount > 0 && (
+            <div className="flex justify-between text-emerald-700 font-semibold">
+              <span>Sale discount</span>
+              <span>- ₹{saleDiscountAmount.toFixed(2)}</span>
             </div>
           )}
           {multibuy.amount > 0 && (

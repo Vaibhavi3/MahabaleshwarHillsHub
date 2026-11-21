@@ -5,6 +5,7 @@ import api from './api/axiosConfig';
 import { logout, setUser } from './features/authSlice';
 import { setWishlistItems, clearWishlist, mapWishlistResponse } from './features/wishlistSlice';
 import { setCartItems, clearCart, mapCartResponse } from './features/cartSlice';
+import { setActiveSales } from './features/salesSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
@@ -33,6 +34,15 @@ function App() {
   const { token, user } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
   const cartItems = useSelector((state) => state.cart.items);
+
+  useEffect(() => {
+    // Public and unrelated to login - fetched once here so every product
+    // card/detail page/checkout can read the same list from Redux instead
+    // of each one calling the API itself.
+    api.getActiveSales()
+      .then((response) => dispatch(setActiveSales(response.data)))
+      .catch(() => {});
+  }, [dispatch]);
 
   useEffect(() => {
     if (!token || user) return;

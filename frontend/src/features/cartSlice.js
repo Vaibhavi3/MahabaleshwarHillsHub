@@ -15,6 +15,7 @@ export const mapCartResponse = (data) =>
     image_url: entry.product.image_url,
     stock: entry.product.stock,
     category: entry.product.category,
+    subcategory: entry.product.subcategory,
     quantity: entry.quantity,
   }));
 

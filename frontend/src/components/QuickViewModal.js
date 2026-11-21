@@ -11,6 +11,7 @@ import { FiX, FiHeart, FiMaximize } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import SizeGuideModal from './SizeGuideModal';
 import { parseProductSize } from '../utils/sizeGuide';
+import { bestSaleForProduct, salePrice } from '../utils/sales';
 
 const BRAND = 'Ancles Home Socks';
 
@@ -38,7 +39,11 @@ const QuickViewModal = ({ product, onClose }) => {
   const location = useLocation();
   const { token } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
+  const activeSales = useSelector((state) => state.sales.activeSales);
   const wishlisted = wishlistItems.some((item) => item.id === product.id);
+  const sale = bestSaleForProduct(activeSales, product);
+  const effectivePrice = sale ? salePrice(product, sale) : product.price;
+  const strikePrice = sale ? product.price : product.mrp > product.price ? product.mrp : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -79,11 +84,12 @@ const QuickViewModal = ({ product, onClose }) => {
       addToCart({
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: effectivePrice,
         mrp: product.mrp,
         image_url: product.image_url,
         stock: product.stock,
         category: product.category,
+        subcategory: product.subcategory,
         quantity: parseInt(quantity, 10) || 1,
       })
     );
@@ -146,14 +152,17 @@ const QuickViewModal = ({ product, onClose }) => {
           )}
 
           <div className="flex items-baseline gap-2.5 flex-wrap">
-            <span className="text-2xl font-extrabold text-ink">₹{product.price}</span>
-            {product.mrp > product.price && (
+            <span className="text-2xl font-extrabold text-ink">₹{effectivePrice}</span>
+            {strikePrice && (
               <>
-                <span className="text-sm text-muted line-through">₹{product.mrp}</span>
+                <span className="text-sm text-muted line-through">₹{strikePrice}</span>
                 <span className="text-sm font-bold text-orange-500">
-                  ({Math.round(((product.mrp - product.price) / product.mrp) * 100)}% OFF)
+                  ({Math.round(((strikePrice - effectivePrice) / strikePrice) * 100)}% OFF)
                 </span>
               </>
+            )}
+            {sale && (
+              <span className="text-[10px] font-bold uppercase bg-brand text-white px-1.5 py-0.5 rounded">Sale</span>
             )}
           </div>
           <p className="text-xs text-muted mt-1 mb-3">inclusive of all taxes</p>

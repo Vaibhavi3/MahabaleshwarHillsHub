@@ -9,6 +9,7 @@ import { requireAuth } from '../utils/requireAuth';
 import { FiHeart, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import QuickViewModal from './QuickViewModal';
+import { bestSaleForProduct, salePrice } from '../utils/sales';
 
 const BRAND = 'Ancles Home Socks';
 
@@ -18,12 +19,18 @@ const ProductCard = ({ product, colourCount = 0 }) => {
   const location = useLocation();
   const { token } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
+  const activeSales = useSelector((state) => state.sales.activeSales);
   const wishlisted = wishlistItems.some((item) => item.id === product.id);
   const rating = product.rating || 0;
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
-  const discountPct =
-    product.mrp && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+  const sale = bestSaleForProduct(activeSales, product);
+  const effectivePrice = sale ? salePrice(product, sale) : product.price;
+  // A live Sale (admin-scheduled, no code needed) takes priority over the
+  // regular MRP strikethrough - showing both would double up on the same
+  // badge slot, so the deeper, time-boxed discount wins while it's live.
+  const strikePrice = sale ? product.price : product.mrp && product.mrp > product.price ? product.mrp : null;
+  const discountPct = strikePrice ? Math.round(((strikePrice - effectivePrice) / strikePrice) * 100) : 0;
   const [quickViewOpen, setQuickViewOpen] = useState(false);
 
   const handleQuickView = (e) => {
@@ -40,11 +47,12 @@ const ProductCard = ({ product, colourCount = 0 }) => {
       addToCart({
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: effectivePrice,
         mrp: product.mrp,
         image_url: product.image_url,
         stock: product.stock,
         category: product.category,
+        subcategory: product.subcategory,
         quantity: 1,
       })
     );
@@ -115,12 +123,15 @@ const ProductCard = ({ product, colourCount = 0 }) => {
         <h4 className="font-bold text-sm text-ink truncate">{BRAND}</h4>
         <p className="text-sm text-muted truncate mb-1.5">{product.name}</p>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-bold text-ink">₹{product.price}</span>
+          <span className="text-sm font-bold text-ink">₹{effectivePrice}</span>
           {discountPct > 0 && (
             <>
-              <span className="text-xs text-muted line-through">₹{product.mrp}</span>
+              <span className="text-xs text-muted line-through">₹{strikePrice}</span>
               <span className="text-xs font-bold text-orange-500">({discountPct}% OFF)</span>
             </>
+          )}
+          {sale && (
+            <span className="text-[10px] font-bold uppercase bg-brand text-white px-1.5 py-0.5 rounded">Sale</span>
           )}
           {rating > 0 && (
             <span className="flex items-center gap-1 bg-emerald-700 text-white text-[11px] font-bold px-1.5 py-0.5 rounded">

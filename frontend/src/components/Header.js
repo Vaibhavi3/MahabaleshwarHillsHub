@@ -9,6 +9,7 @@ import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 import SearchBox from './SearchBox';
 import MegaMenu from './MegaMenu';
 import NotificationBell from './NotificationBell';
+import SaleBanner from './SaleBanner';
 import api from '../api/axiosConfig';
 
 const NAV_LINKS = [
@@ -49,6 +50,7 @@ const Header = () => {
 
   return (
     <header className="bg-white sticky top-0 z-50 border-b border-gray-200">
+      <SaleBanner />
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-8 py-3">
           <Link to="/" className="flex flex-col items-start leading-none shrink-0">
