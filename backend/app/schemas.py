@@ -298,6 +298,54 @@ class OrderTrackingResponse(BaseModel):
         from_attributes = True
 
 
+class SaleBase(BaseModel):
+    name: str = Field(..., min_length=3, max_length=100)
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
+    discount_type: str = Field("percent", pattern="^(percent|flat)$")
+    discount_value: float = Field(..., gt=0)
+    max_discount: Optional[float] = Field(None, gt=0)
+    starts_at: datetime
+    ends_at: datetime
+    is_active: bool = True
+
+class SaleCreate(SaleBase):
+    pass
+
+class SaleUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=3, max_length=100)
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
+    discount_type: Optional[str] = Field(None, pattern="^(percent|flat)$")
+    discount_value: Optional[float] = Field(None, gt=0)
+    max_discount: Optional[float] = Field(None, gt=0)
+    starts_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+    is_active: Optional[bool] = None
+
+class SaleResponse(SaleBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class SalePublicResponse(BaseModel):
+    """Trimmed sale view for the storefront's sale banner and product
+    badges - just enough to show the discount and countdown honestly."""
+    id: int
+    name: str
+    category: Optional[str] = None
+    subcategory: Optional[str] = None
+    discount_type: str
+    discount_value: float
+    max_discount: Optional[float] = None
+    ends_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class CouponBase(BaseModel):
     code: str = Field(..., min_length=3, max_length=50)
     description: Optional[str] = None

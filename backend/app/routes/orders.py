@@ -5,6 +5,7 @@ from app import models, schemas
 from app.utils.auth import get_current_user, get_current_admin_user
 from app.routes.coupons import compute_discount
 from app.utils.multibuy import compute_multibuy_discount
+from app.utils.sales import get_active_sales, effective_unit_price
 from app.utils.invoice import generate_invoice_pdf
 from app.utils.refunds import issue_refund
 from app.utils.loyalty import (
@@ -44,6 +45,8 @@ def create_order(
 
     try:
         products_by_id = {}
+        active_sales = get_active_sales(db)
+        unit_prices_by_id = {}
         total_amount = 0
         for item in cart_items:
             product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
@@ -52,7 +55,12 @@ def create_order(
             if item.quantity > product.stock:
                 raise HTTPException(status_code=400, detail=f"'{product.name}' only has {product.stock} in stock")
             products_by_id[item.product_id] = product
-            total_amount += product.price * item.quantity
+            # Automatic "Sale" campaigns (see app/utils/sales.py) apply with
+            # no code needed - the authoritative per-unit price actually
+            # charged here always reflects any currently-live sale, the same
+            # way it's shown on the product page and in the cart.
+            unit_prices_by_id[item.product_id] = effective_unit_price(active_sales, product)
+            total_amount += unit_prices_by_id[item.product_id] * item.quantity
 
         subtotal_amount = total_amount
 
@@ -61,7 +69,7 @@ def create_order(
         # here from the authoritative server-side cart, never trusted from
         # the client, then layered under the coupon discount below.
         multibuy = compute_multibuy_discount(
-            (products_by_id[item.product_id].category, products_by_id[item.product_id].price, item.quantity)
+            (products_by_id[item.product_id].category, unit_prices_by_id[item.product_id], item.quantity)
             for item in cart_items
         )
         multibuy_discount_amount = multibuy.discount_amount
@@ -141,7 +149,7 @@ def create_order(
                 order_id=db_order.id,
                 product_id=item.product_id,
                 quantity=item.quantity,
-                price=product.price
+                price=unit_prices_by_id[item.product_id]
             )
             db.add(order_item)
             product.stock -= item.quantity

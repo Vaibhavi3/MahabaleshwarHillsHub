@@ -9,6 +9,7 @@ import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX, FiPackage } from 'rea
 import toast from 'react-hot-toast';
 import AddressBook from '../components/AddressBook';
 import { computeMultibuyDiscount } from '../utils/multibuy';
+import { bestSaleForProduct, salePrice } from '../utils/sales';
 
 const CHECKOUT_STEPS = [
   { key: 'address', label: 'Shipping' },
@@ -139,6 +140,7 @@ const RazorpayButton = ({ order, onSuccess }) => {
 
 const Checkout = () => {
   const { items, couponCode, discountAmount } = useSelector((state) => state.cart);
+  const activeSales = useSelector((state) => state.sales.activeSales);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -158,8 +160,20 @@ const Checkout = () => {
   const GIFT_MESSAGE_LIMIT = 300;
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const multibuy = computeMultibuyDiscount(items);
-  const subtotalAfterMultibuy = Math.max(0, subtotal - multibuy.amount);
+  // Any live admin Sale (no code needed, see SaleBanner/utils/sales.js)
+  // discounts the unit price before Mix & Match eligibility is computed,
+  // mirroring exactly how the backend layers the two at order creation.
+  const itemsWithSalePrice = items.map((item) => {
+    const sale = bestSaleForProduct(activeSales, item);
+    return { ...item, price: sale ? salePrice(item, sale) : item.price };
+  });
+  const saleDiscountAmount = items.reduce(
+    (sum, item, i) => sum + (item.price - itemsWithSalePrice[i].price) * item.quantity,
+    0
+  );
+  const subtotalAfterSale = Math.max(0, subtotal - saleDiscountAmount);
+  const multibuy = computeMultibuyDiscount(itemsWithSalePrice);
+  const subtotalAfterMultibuy = Math.max(0, subtotalAfterSale - multibuy.amount);
   const totalBeforeRewards = Math.max(0, subtotalAfterMultibuy - discountAmount);
   // Points can never take the payable total below Re 1 - a Rs 0 order isn't
   // something Stripe/Razorpay can actually charge.
@@ -412,12 +426,18 @@ const Checkout = () => {
               <FiPackage className="shrink-0" /> Mix &amp; Match Socks: {multibuy.percent}% off {multibuy.eligibleQuantity} Home Socks applied
             </p>
           )}
-          {(multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (
+          {(saleDiscountAmount > 0 || multibuy.amount > 0 || couponCode || pointsToRedeem > 0 || giftCardAmount > 0) && (
             <div className="space-y-1 mb-2 pb-2 border-b">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Subtotal</span>
                 <span>₹{subtotal.toFixed(2)}</span>
               </div>
+              {saleDiscountAmount > 0 && (
+                <div className="flex justify-between text-sm text-emerald-700 font-semibold">
+                  <span>Sale discount</span>
+                  <span>- ₹{saleDiscountAmount.toFixed(2)}</span>
+                </div>
+              )}
               {multibuy.amount > 0 && (
                 <div className="flex justify-between text-sm text-emerald-700 font-semibold">
                   <span>Mix &amp; Match Socks ({multibuy.percent}%)</span>

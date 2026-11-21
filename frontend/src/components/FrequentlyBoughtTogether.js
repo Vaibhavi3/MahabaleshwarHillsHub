@@ -5,6 +5,7 @@ import { getImageUrl } from '../api/axiosConfig';
 import { addToCart } from '../features/cartSlice';
 import { openCartDrawer } from '../features/uiSlice';
 import { requireAuth } from '../utils/requireAuth';
+import { bestSaleForProduct, salePrice } from '../utils/sales';
 
 /**
  * Myntra/Amazon-style "Frequently Bought Together" bundle picker: each item
@@ -23,6 +24,11 @@ const FrequentlyBoughtTogether = ({ baseProduct, items }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = useSelector((state) => state.auth);
+  const activeSales = useSelector((state) => state.sales.activeSales);
+  const priceFor = (p) => {
+    const sale = bestSaleForProduct(activeSales, p);
+    return sale ? salePrice(p, sale) : p.price;
+  };
 
   useEffect(() => {
     setSelectedIds(new Set(combinedItems.filter((p) => p.stock > 0).map((p) => p.id)));
@@ -40,7 +46,7 @@ const FrequentlyBoughtTogether = ({ baseProduct, items }) => {
   };
 
   const selectedItems = combinedItems.filter((p) => selectedIds.has(p.id));
-  const totalPrice = selectedItems.reduce((sum, p) => sum + p.price, 0);
+  const totalPrice = selectedItems.reduce((sum, p) => sum + priceFor(p), 0);
 
   const handleAddBundle = () => {
     if (selectedItems.length === 0) return;
@@ -50,10 +56,11 @@ const FrequentlyBoughtTogether = ({ baseProduct, items }) => {
         addToCart({
           id: p.id,
           name: p.name,
-          price: p.price,
+          price: priceFor(p),
           image_url: p.image_url,
           stock: p.stock,
           category: p.category,
+          subcategory: p.subcategory,
           quantity: 1,
         })
       );
@@ -83,7 +90,7 @@ const FrequentlyBoughtTogether = ({ baseProduct, items }) => {
                     className="max-w-full max-h-full object-contain"
                   />
                 </div>
-                <span className="text-[11px] text-muted truncate w-full text-center">₹{p.price}</span>
+                <span className="text-[11px] text-muted truncate w-full text-center">₹{priceFor(p)}</span>
               </Link>
             </React.Fragment>
           ))}
@@ -108,7 +115,7 @@ const FrequentlyBoughtTogether = ({ baseProduct, items }) => {
                   />
                   <span className={outOfStock ? 'text-muted' : 'text-ink'}>
                     {isBase && <span className="font-bold">This item: </span>}
-                    {p.name} &ndash; ₹{p.price}
+                    {p.name} &ndash; ₹{priceFor(p)}
                     {outOfStock && <span className="text-red-600 font-semibold"> (Out of stock)</span>}
                   </span>
                 </label>

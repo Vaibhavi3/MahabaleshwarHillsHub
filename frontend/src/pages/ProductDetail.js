@@ -17,6 +17,7 @@ import RecentlyViewed, { recordProductView } from '../components/RecentlyViewed'
 import SizeGuideModal from '../components/SizeGuideModal';
 import { FiHeart, FiTruck, FiShield, FiRefreshCw, FiBell, FiCheck, FiMaximize } from 'react-icons/fi';
 import { parseProductSize } from '../utils/sizeGuide';
+import { bestSaleForProduct, salePrice } from '../utils/sales';
 import toast from 'react-hot-toast';
 
 const BRAND = 'Ancles Home Socks';
@@ -46,6 +47,7 @@ const ProductDetail = () => {
   const location = useLocation();
   const { token } = useSelector((state) => state.auth);
   const wishlistItems = useSelector((state) => state.wishlist.items);
+  const activeSales = useSelector((state) => state.sales.activeSales);
   const wishlisted = product ? wishlistItems.some((item) => item.id === product.id) : false;
 
   useEffect(() => {
@@ -137,11 +139,12 @@ const ProductDetail = () => {
         addToCart({
           id: product.id,
           name: product.name,
-          price: product.price,
+          price: effectivePrice,
           mrp: product.mrp,
           image_url: product.image_url,
           stock: product.stock,
           category: product.category,
+          subcategory: product.subcategory,
           quantity: parseInt(quantity),
         })
       );
@@ -225,8 +228,10 @@ const ProductDetail = () => {
   const avgRating = product.rating || 0;
   const gallery = product.images && product.images.length > 0 ? product.images : [product.image_url];
   const shownImage = gallery[Math.min(activeImage, gallery.length - 1)];
-  const discountPct =
-    product.mrp && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+  const sale = bestSaleForProduct(activeSales, product);
+  const effectivePrice = sale ? salePrice(product, sale) : product.price;
+  const strikePrice = sale ? product.price : product.mrp && product.mrp > product.price ? product.mrp : null;
+  const discountPct = strikePrice ? Math.round(((strikePrice - effectivePrice) / strikePrice) * 100) : 0;
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
   const sizeInfo = parseProductSize(product);
@@ -310,12 +315,17 @@ const ProductDetail = () => {
           )}
 
           <div className="flex items-baseline gap-3 mb-1 flex-wrap">
-            <span className="text-3xl font-extrabold text-ink">₹{product.price}</span>
+            <span className="text-3xl font-extrabold text-ink">₹{effectivePrice}</span>
             {discountPct > 0 && (
               <>
-                <span className="text-lg text-muted line-through">MRP ₹{product.mrp}</span>
+                <span className="text-lg text-muted line-through">{sale ? '₹' : 'MRP ₹'}{strikePrice}</span>
                 <span className="text-lg font-bold text-orange-500">({discountPct}% OFF)</span>
               </>
+            )}
+            {sale && (
+              <span className="text-xs font-bold uppercase bg-brand text-white px-2 py-0.5 rounded">
+                {sale.name}
+              </span>
             )}
           </div>
           <p className="text-xs text-muted mb-1">inclusive of all taxes</p>

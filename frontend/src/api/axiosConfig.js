@@ -243,6 +243,23 @@ export const api = {
     return client.delete(`/coupons/${id}`);
   },
 
+  // Sales (admin-scheduled, no-code, time-boxed discount campaigns)
+  getActiveSales: () => {
+    return client.get('/sales/active');
+  },
+  getSales: () => {
+    return client.get('/sales');
+  },
+  createSale: (sale) => {
+    return client.post('/sales', sale);
+  },
+  updateSale: (id, sale) => {
+    return client.put(`/sales/${id}`, sale);
+  },
+  deleteSale: (id) => {
+    return client.delete(`/sales/${id}`);
+  },
+
   // Recommendations
   getRecommendationsForYou: (limit = 8) => {
     return client.get('/recommendations/for-you', { params: { limit } });

@@ -6,6 +6,7 @@ import { closeCartDrawer } from '../features/uiSlice';
 import { getImageUrl } from '../api/axiosConfig';
 import { FiX, FiTrash2, FiMinus, FiPlus, FiTruck, FiShoppingBag } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { bestSaleForProduct, salePrice } from '../utils/sales';
 
 /**
  * Myntra/Ajio/Nykaa-style "added to bag" slide-over: instead of a bare toast
@@ -16,10 +17,13 @@ import toast from 'react-hot-toast';
 const CartDrawer = () => {
   const open = useSelector((state) => state.ui.cartDrawerOpen);
   const { items, discountAmount } = useSelector((state) => state.cart);
+  const activeSales = useSelector((state) => state.sales.activeSales);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const itemSales = items.map((item) => bestSaleForProduct(activeSales, item));
+  const effectivePrices = items.map((item, i) => (itemSales[i] ? salePrice(item, itemSales[i]) : item.price));
+  const subtotal = effectivePrices.reduce((sum, price, i) => sum + price * items[i].quantity, 0);
   const total = Math.max(0, subtotal - discountAmount);
 
   useEffect(() => {
@@ -93,7 +97,7 @@ const CartDrawer = () => {
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-              {items.map((item) => (
+              {items.map((item, i) => (
                 <div key={item.id} className="flex gap-3">
                   <img
                     src={getImageUrl(item.image_url) || 'https://via.placeholder.com/80'}
@@ -103,9 +107,13 @@ const CartDrawer = () => {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-ink truncate">{item.name}</p>
                     <div className="flex items-baseline gap-1.5 flex-wrap mt-0.5">
-                      <p className="text-sm font-bold text-ink">₹{item.price}</p>
-                      {item.mrp > item.price && (
-                        <span className="text-xs text-muted line-through">₹{item.mrp}</span>
+                      <p className="text-sm font-bold text-ink">₹{effectivePrices[i]}</p>
+                      {itemSales[i] ? (
+                        <span className="text-xs text-muted line-through">₹{item.price}</span>
+                      ) : (
+                        item.mrp > item.price && (
+                          <span className="text-xs text-muted line-through">₹{item.mrp}</span>
+                        )
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-2">

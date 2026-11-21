@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import api, { getImageUrl } from '../api/axiosConfig';
 import toast from 'react-hot-toast';
+import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 
 const EMPTY_FORM = {
   id: null,
@@ -42,6 +43,26 @@ const EMPTY_COUPON_FORM = {
   expires_at: '',
 };
 
+const EMPTY_SALE_FORM = {
+  id: null,
+  name: '',
+  category: '',
+  subcategory: '',
+  discount_type: 'percent',
+  discount_value: '',
+  max_discount: '',
+  starts_at: '',
+  ends_at: '',
+  is_active: true,
+};
+
+const SALE_CATEGORIES = [
+  { value: '', label: 'Storewide (every category)' },
+  { value: 'socks', label: 'Home Socks' },
+  { value: 'slidders', label: 'Home Slidders' },
+  { value: 'bags', label: 'Handmade Bags' },
+];
+
 const EMPTY_COLLECTION_FORM = {
   id: null,
   title: '',
@@ -58,6 +79,8 @@ const AdminDashboard = () => {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [coupons, setCoupons] = useState([]);
+  const [sales, setSales] = useState([]);
+  const [saleForm, setSaleForm] = useState(EMPTY_SALE_FORM);
   const [returnRequests, setReturnRequests] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [replyDrafts, setReplyDrafts] = useState({});
@@ -103,6 +126,15 @@ const AdminDashboard = () => {
       setCoupons(response.data);
     } catch (error) {
       toast.error('Failed to load offers');
+    }
+  }, []);
+
+  const loadSales = useCallback(async () => {
+    try {
+      const response = await api.getSales();
+      setSales(response.data);
+    } catch (error) {
+      toast.error('Failed to load sales');
     }
   }, []);
 
@@ -164,9 +196,11 @@ const AdminDashboard = () => {
         ? loadTickets()
         : tab === 'collections'
         ? loadCollections()
+        : tab === 'sales'
+        ? loadSales()
         : loadCoupons();
     load.finally(() => setLoading(false));
-  }, [tab, loadProducts, loadOrders, loadCoupons, loadReturnRequests, loadTickets, loadCollections, user]);
+  }, [tab, loadProducts, loadOrders, loadCoupons, loadSales, loadReturnRequests, loadTickets, loadCollections, user]);
 
   if (!user?.is_admin) {
     return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Admin access only</div>;
@@ -339,6 +373,77 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleSaleFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setSaleForm({ ...saleForm, [name]: type === 'checkbox' ? checked : value });
+  };
+
+  const handleSubmitSale = async (e) => {
+    e.preventDefault();
+    if (!saleForm.starts_at || !saleForm.ends_at) {
+      toast.error('Please set a start and end time for this sale');
+      return;
+    }
+    const payload = {
+      name: saleForm.name.trim(),
+      category: saleForm.category || undefined,
+      subcategory: saleForm.subcategory || undefined,
+      discount_type: saleForm.discount_type,
+      discount_value: parseFloat(saleForm.discount_value),
+      max_discount: saleForm.max_discount ? parseFloat(saleForm.max_discount) : undefined,
+      starts_at: new Date(saleForm.starts_at).toISOString(),
+      ends_at: new Date(saleForm.ends_at).toISOString(),
+      is_active: saleForm.is_active,
+    };
+    try {
+      if (saleForm.id) {
+        await api.updateSale(saleForm.id, payload);
+        toast.success('Sale updated');
+      } else {
+        await api.createSale(payload);
+        toast.success('Sale created');
+      }
+      setSaleForm(EMPTY_SALE_FORM);
+      loadSales();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Save failed');
+    }
+  };
+
+  const toLocalDateTimeInput = (isoString) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
+  const handleEditSale = (sale) => {
+    setSaleForm({
+      id: sale.id,
+      name: sale.name,
+      category: sale.category || '',
+      subcategory: sale.subcategory || '',
+      discount_type: sale.discount_type,
+      discount_value: sale.discount_value,
+      max_discount: sale.max_discount || '',
+      starts_at: toLocalDateTimeInput(sale.starts_at),
+      ends_at: toLocalDateTimeInput(sale.ends_at),
+      is_active: sale.is_active,
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteSale = async (id) => {
+    if (!window.confirm('Delete this sale?')) return;
+    try {
+      await api.deleteSale(id);
+      toast.success('Sale deleted');
+      loadSales();
+    } catch (error) {
+      toast.error('Delete failed');
+    }
+  };
+
   const handleCollectionFormChange = (e) => {
     const { name, value, type, checked } = e.target;
     setCollectionForm({ ...collectionForm, [name]: type === 'checkbox' ? checked : value });
@@ -449,6 +554,12 @@ const AdminDashboard = () => {
           onClick={() => setTab('offers')}
         >
           Offers
+        </button>
+        <button
+          className={`pb-2 font-semibold ${tab === 'sales' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          onClick={() => setTab('sales')}
+        >
+          Sales
         </button>
         <button
           className={`pb-2 font-semibold ${tab === 'collections' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
@@ -886,6 +997,167 @@ const AdminDashboard = () => {
                     <tr>
                       <td colSpan={7} className="p-6 text-center text-gray-600">
                         No offers yet - add one above to show it in the shop's "Available Offers".
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === 'sales' && (
+        <>
+          <p className="text-sm text-gray-600 mb-4">
+            A Sale applies automatically to every matching product while it's live - no code needed, unlike an
+            Offer. Shoppers see it as a sitewide "Ends in..." banner (or category/subcategory badge) with a real
+            countdown to the end time you set below.
+          </p>
+          <form
+            onSubmit={handleSubmitSale}
+            className="bg-white rounded-lg shadow p-6 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
+            <input
+              name="name"
+              value={saleForm.name}
+              onChange={handleSaleFormChange}
+              placeholder="Sale name (e.g. Winter Cozy Sale)"
+              required
+              className="border rounded-lg px-4 py-2 md:col-span-3"
+            />
+            <select name="category" value={saleForm.category} onChange={handleSaleFormChange} className="border rounded-lg px-4 py-2">
+              {SALE_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+            <select
+              name="subcategory"
+              value={saleForm.subcategory}
+              onChange={handleSaleFormChange}
+              disabled={saleForm.category !== 'socks'}
+              className="border rounded-lg px-4 py-2 disabled:bg-gray-100"
+            >
+              <option value="">
+                {saleForm.category === 'socks' ? 'Every sock subcategory' : 'Not applicable'}
+              </option>
+              {saleForm.category === 'socks' &&
+                SOCK_SUBCATEGORIES.map((sub) => (
+                  <option key={sub.slug} value={sub.slug}>{sub.label}</option>
+                ))}
+            </select>
+            <select name="discount_type" value={saleForm.discount_type} onChange={handleSaleFormChange} className="border rounded-lg px-4 py-2">
+              <option value="percent">Percent off</option>
+              <option value="flat">Flat amount off</option>
+            </select>
+            <input
+              name="discount_value"
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={saleForm.discount_value}
+              onChange={handleSaleFormChange}
+              placeholder={saleForm.discount_type === 'percent' ? 'Discount %' : 'Discount ₹'}
+              required
+              className="border rounded-lg px-4 py-2"
+            />
+            <input
+              name="max_discount"
+              type="number"
+              step="0.01"
+              min="0"
+              value={saleForm.max_discount}
+              onChange={handleSaleFormChange}
+              placeholder="Max discount cap (₹, percent sales only)"
+              className="border rounded-lg px-4 py-2"
+            />
+            <label className="flex flex-col text-xs font-semibold text-gray-600 gap-1">
+              Starts at
+              <input
+                name="starts_at"
+                type="datetime-local"
+                value={saleForm.starts_at}
+                onChange={handleSaleFormChange}
+                required
+                className="border rounded-lg px-4 py-2 text-sm font-normal text-ink"
+              />
+            </label>
+            <label className="flex flex-col text-xs font-semibold text-gray-600 gap-1">
+              Ends at
+              <input
+                name="ends_at"
+                type="datetime-local"
+                value={saleForm.ends_at}
+                onChange={handleSaleFormChange}
+                required
+                className="border rounded-lg px-4 py-2 text-sm font-normal text-ink"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" name="is_active" checked={saleForm.is_active} onChange={handleSaleFormChange} />
+              Active (end early by unchecking this)
+            </label>
+            <div className="md:col-span-3 flex gap-3">
+              <button type="submit" className="btn-primary">
+                {saleForm.id ? 'Update Sale' : 'Add Sale'}
+              </button>
+              {saleForm.id && (
+                <button type="button" onClick={() => setSaleForm(EMPTY_SALE_FORM)} className="btn-secondary">
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+          </form>
+
+          {loading ? (
+            <div className="text-center text-gray-600">Loading...</div>
+          ) : (
+            <div className="bg-white rounded-lg shadow overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left">
+                  <tr>
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Scope</th>
+                    <th className="p-3">Discount</th>
+                    <th className="p-3">Window</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sales.map((s) => {
+                    const now = new Date();
+                    const isLive = s.is_active && new Date(s.starts_at) <= now && now <= new Date(s.ends_at);
+                    return (
+                      <tr key={s.id} className="border-t">
+                        <td className="p-3 font-semibold">{s.name}</td>
+                        <td className="p-3">
+                          {s.subcategory ? s.subcategory : s.category ? s.category : 'Storewide'}
+                        </td>
+                        <td className="p-3">{s.discount_type === 'percent' ? `${s.discount_value}%` : `₹${s.discount_value}`}</td>
+                        <td className="p-3 text-xs">
+                          {new Date(s.starts_at).toLocaleString()}<br />→ {new Date(s.ends_at).toLocaleString()}
+                        </td>
+                        <td className="p-3">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isLive ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                            {isLive ? 'Live' : s.is_active ? 'Scheduled/Ended' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="p-3 flex gap-3">
+                          <button onClick={() => handleEditSale(s)} className="text-purple-600 hover:underline">
+                            Edit
+                          </button>
+                          <button onClick={() => handleDeleteSale(s.id)} className="text-red-600 hover:underline">
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {sales.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-gray-600">
+                        No sales yet - add one above to show a live "Sale ends in..." banner to shoppers.
                       </td>
                     </tr>
                   )}
