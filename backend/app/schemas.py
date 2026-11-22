@@ -105,6 +105,16 @@ class ProductResponse(ProductBase):
     class Config:
         from_attributes = True
 
+
+class UsualSizeResponse(BaseModel):
+    """Whether this logged-in shopper has previously ordered some size/colour
+    variant of this product line, and if so, which one - used to power a
+    "you usually order..." nudge instead of guessing a size."""
+    has_preference: bool
+    variant: Optional[ProductResponse] = None
+    ordered_count: int = 0
+    last_ordered_at: Optional[datetime] = None
+
 class AddressBase(BaseModel):
     label: str = Field("Home", max_length=20)
     full_name: str = Field(..., min_length=1, max_length=100)

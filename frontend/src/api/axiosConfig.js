@@ -77,6 +77,9 @@ export const api = {
   getProductVariants: (id) => {
     return client.get(`/products/${id}/variants`);
   },
+  getMyUsualSize: (id) => {
+    return client.get(`/products/${id}/my-usual-size`);
+  },
   getSimilarProducts: (id, limit = 8) => {
     return client.get(`/products/${id}/similar`, { params: { limit } });
   },
