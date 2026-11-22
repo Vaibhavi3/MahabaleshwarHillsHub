@@ -21,6 +21,14 @@ import toast from 'react-hot-toast';
 
 const BRAND = 'Ancles Home Socks';
 
+const describeSize = (p) => {
+  const sizeInfo = parseProductSize(p);
+  if (sizeInfo.kind === 'footwear' && sizeInfo.tokens.length > 0) return `${sizeInfo.tokens.join(', ')} (EU)`;
+  if (sizeInfo.kind === 'kids' && sizeInfo.tokens.length > 0) return `${sizeInfo.tokens.join(', ')} yrs`;
+  if (sizeInfo.kind === 'sock' && sizeInfo.tokens.length > 0) return `One Size (~${sizeInfo.tokens.join('cm, ~')}cm)`;
+  return p.size || 'One Size';
+};
+
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -39,6 +47,7 @@ const ProductDetail = () => {
   const [notifyBusy, setNotifyBusy] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [purchasedRecently, setPurchasedRecently] = useState(0);
+  const [usualSize, setUsualSize] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
   const buyBoxObserverRef = useRef(null);
   const dispatch = useDispatch();
@@ -86,6 +95,17 @@ const ProductDetail = () => {
           setPurchasedRecently(popularityResponse.data.purchased_recently);
         } catch {
           setPurchasedRecently(0);
+        }
+
+        if (token) {
+          try {
+            const usualSizeResponse = await api.getMyUsualSize(id);
+            setUsualSize(usualSizeResponse.data.has_preference ? usualSizeResponse.data : null);
+          } catch {
+            setUsualSize(null);
+          }
+        } else {
+          setUsualSize(null);
         }
 
         if (productResponse.data.stock <= 0) {
@@ -229,15 +249,7 @@ const ProductDetail = () => {
     product.mrp && product.mrp > product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
   const outOfStock = product.stock <= 0;
   const lowStock = !outOfStock && product.stock <= 5;
-  const sizeInfo = parseProductSize(product);
-  const sizeDisplay =
-    sizeInfo.kind === 'footwear' && sizeInfo.tokens.length > 0
-      ? `${sizeInfo.tokens.join(', ')} (EU)`
-      : sizeInfo.kind === 'kids' && sizeInfo.tokens.length > 0
-      ? `${sizeInfo.tokens.join(', ')} yrs`
-      : sizeInfo.kind === 'sock' && sizeInfo.tokens.length > 0
-      ? `One Size (~${sizeInfo.tokens.join('cm, ~')}cm)`
-      : product.size || 'One Size';
+  const sizeDisplay = describeSize(product);
 
   return (
     <div className={`container mx-auto px-4 py-8 ${showStickyBar ? 'pb-24 md:pb-8' : ''}`}>
@@ -359,6 +371,39 @@ const ProductDetail = () => {
                   </Link>
                 ))}
               </div>
+            </div>
+          )}
+
+          {usualSize && usualSize.variant && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-sm bg-brand-light/15 border border-brand-light rounded-lg px-3 py-2">
+              <FiCheck className="text-brand shrink-0" />
+              {usualSize.variant.id === product.id ? (
+                <span className="text-ink">
+                  You've ordered this exact variant before -{' '}
+                  <span className="font-bold">
+                    {describeSize(usualSize.variant)}
+                    {usualSize.variant.color ? `, ${usualSize.variant.color}` : ''}
+                  </span>
+                  .
+                </span>
+              ) : (
+                <>
+                  <span className="text-ink">
+                    You usually order this in{' '}
+                    <span className="font-bold">
+                      {describeSize(usualSize.variant)}
+                      {usualSize.variant.color ? `, ${usualSize.variant.color}` : ''}
+                    </span>
+                    , based on your past orders.
+                  </span>
+                  <Link
+                    to={`/products/${usualSize.variant.id}`}
+                    className="ml-auto text-brand font-bold uppercase text-xs hover:underline shrink-0"
+                  >
+                    {usualSize.variant.stock > 0 ? 'Switch to it' : 'View (out of stock)'}
+                  </Link>
+                </>
+              )}
             </div>
           )}
 

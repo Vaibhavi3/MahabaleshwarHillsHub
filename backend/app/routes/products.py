@@ -1,8 +1,10 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
-from app.utils.auth import get_current_admin_user
+from app.utils.auth import get_current_admin_user, get_current_user_optional
 from app.utils.email import send_email
 from app.utils.notifications import notify
 from sqlalchemy import or_, func, cast, String
@@ -160,6 +162,54 @@ def get_product_variants(product_id: int, db: Session = Depends(get_db)):
         .order_by(models.Product.id)
         .all()
     )
+
+
+@router.get("/products/{product_id}/my-usual-size", response_model=schemas.UsualSizeResponse)
+def get_my_usual_size(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(get_current_user_optional),
+):
+    """Tells a logged-in shopper which size/colour variant of this product
+    line they've genuinely ordered before, inspired by Myntra/ASOS/Zalando's
+    purchase-history size recommendations ("you usually pick..."). Only ever
+    surfaces a variant from the shopper's own real order history (cancelled
+    orders don't count) - there is nothing here to fabricate or default."""
+    empty = {"has_preference": False, "variant": None, "ordered_count": 0, "last_ordered_at": None}
+
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if not current_user or not product.parent_sku:
+        return empty
+
+    row = (
+        db.query(
+            models.Product,
+            func.count(models.OrderItem.id).label("cnt"),
+            func.max(models.Order.created_at).label("last_at"),
+        )
+        .join(models.OrderItem, models.OrderItem.product_id == models.Product.id)
+        .join(models.Order, models.Order.id == models.OrderItem.order_id)
+        .filter(
+            models.Order.user_id == current_user.id,
+            models.Order.status != "cancelled",
+            models.Product.parent_sku == product.parent_sku,
+        )
+        .group_by(models.Product.id)
+        .order_by(func.max(models.Order.created_at).desc())
+        .first()
+    )
+    if not row:
+        return empty
+
+    variant_product, cnt, last_at = row
+    return {
+        "has_preference": True,
+        "variant": variant_product,
+        "ordered_count": cnt,
+        "last_ordered_at": last_at,
+    }
 
 
 @router.get("/products/{product_id}/similar", response_model=list[schemas.ProductResponse])
