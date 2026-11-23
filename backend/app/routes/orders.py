@@ -20,6 +20,33 @@ import uuid
 
 router = APIRouter()
 
+
+def _attach_already_reviewed(db: Session, orders: list) -> None:
+    """Mark each order item with whether its order's owner has already
+    reviewed that product, so "Rate & Review" on Your Orders only shows
+    where it still helps. A transient attribute computed fresh per
+    request - never persisted, and one review per user+product is the
+    same rule create_review already enforces."""
+    product_ids = {item.product_id for order in orders for item in order.items}
+    if not product_ids:
+        return
+
+    reviewed_by_user: dict = {}
+    for order in orders:
+        reviewed = reviewed_by_user.get(order.user_id)
+        if reviewed is None:
+            reviewed = {
+                row.product_id
+                for row in db.query(models.Review.product_id).filter(
+                    models.Review.user_id == order.user_id,
+                    models.Review.product_id.in_(product_ids),
+                )
+            }
+            reviewed_by_user[order.user_id] = reviewed
+        for item in order.items:
+            item.already_reviewed = item.product_id in reviewed
+
+
 # Statuses from which a customer may still self-cancel. Once an order has
 # shipped it's already in the courier's hands, so cancellation has to go
 # through support instead (matches Myntra/Nykaa/Ajio's "cancel before
@@ -340,7 +367,9 @@ def get_user_orders(
     current_user: models.User = Depends(get_current_user)
 ):
     """Get all orders of current user"""
-    return db.query(models.Order).filter(models.Order.user_id == current_user.id).all()
+    orders = db.query(models.Order).filter(models.Order.user_id == current_user.id).all()
+    _attach_already_reviewed(db, orders)
+    return orders
 
 
 @router.get("/orders/admin/all", response_model=list[schemas.OrderResponse])
@@ -373,7 +402,8 @@ def get_order(
     
     if order.user_id != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
+    _attach_already_reviewed(db, [order])
     return order
 
 
@@ -461,6 +491,19 @@ def update_order(
                     body=f"From order #{order.order_number}",
                     link="/rewards",
                 )
+
+            # Nudge toward "Rate & Review" the moment an order is actually
+            # delivered, inspired by Myntra/Nykaa/Ajio's post-delivery
+            # review prompt. Guarded by the same points_credited check, so
+            # it fires exactly once per order.
+            notify(
+                db,
+                order.user_id,
+                "review_request",
+                "How was your order?",
+                body=f"Rate the items from order #{order.order_number}",
+                link="/orders",
+            )
 
             # "Invite & Earn": the referrer's bonus is tied to the referred
             # friend's FIRST delivered order (like Ajio's "referrer earns
