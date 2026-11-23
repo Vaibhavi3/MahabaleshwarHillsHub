@@ -7,8 +7,9 @@ import OrderTimeline from '../components/OrderTimeline';
 import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
+import RateReviewModal from '../components/RateReviewModal';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink } from 'react-icons/fi';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink, FiStar, FiCheck } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -56,6 +57,7 @@ const Orders = () => {
   const [cancelTarget, setCancelTarget] = useState(null);
   const [returnTarget, setReturnTarget] = useState(null);
   const [reorderingId, setReorderingId] = useState(null);
+  const [reviewTarget, setReviewTarget] = useState(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
@@ -157,6 +159,16 @@ const Orders = () => {
     } finally {
       setReorderingId(null);
     }
+  };
+
+  const handleReviewSubmitted = (productId) => {
+    setOrders((prev) =>
+      prev.map((o) => ({
+        ...o,
+        items: o.items.map((it) => (it.product_id === productId ? { ...it, already_reviewed: true } : it)),
+      }))
+    );
+    setReviewTarget(null);
   };
 
   const handleCancelConfirm = async (reason) => {
@@ -269,6 +281,22 @@ const Orders = () => {
                       </span>
                       <span className="text-gray-700">₹{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
+                    {order.status === 'delivered' && (
+                      <div className="mt-2 ml-[60px]">
+                        {item.already_reviewed ? (
+                          <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                            <FiCheck size={13} /> Reviewed
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setReviewTarget(item)}
+                            className="flex items-center gap-1 text-xs font-semibold uppercase text-brand hover:underline"
+                          >
+                            <FiStar size={13} /> Rate &amp; Review
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {existingRequest ? (
                       <ReturnRequestStatus request={existingRequest} orderId={order.id} />
                     ) : (
@@ -359,6 +387,14 @@ const Orders = () => {
           item={returnTarget.item}
           onClose={() => setReturnTarget(null)}
           onSubmitted={handleReturnSubmit}
+        />
+      )}
+
+      {reviewTarget && (
+        <RateReviewModal
+          item={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSubmitted={handleReviewSubmitted}
         />
       )}
     </div>

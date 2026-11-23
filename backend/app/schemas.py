@@ -179,6 +179,7 @@ class OrderItemResponse(OrderItemCreate):
     order_id: int
     product_name: Optional[str] = None
     product_image: Optional[str] = None
+    already_reviewed: bool = False
 
     class Config:
         from_attributes = True
