@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
@@ -5,6 +7,13 @@ from app import models, schemas
 from app.utils.auth import get_current_user
 
 router = APIRouter()
+
+
+def _touch(cart: models.Cart) -> None:
+    """Mark the cart as just-touched, so the abandonment reminder script
+    (scripts/send_cart_reminder_emails.py) measures idle time from real
+    activity instead of from whenever the Cart row itself last changed."""
+    cart.last_activity_at = datetime.now(timezone.utc)
 
 
 def _get_or_create_cart(db: Session, user_id: int) -> models.Cart:
@@ -82,6 +91,7 @@ def sync_cart(
                         quantity=min(quantity, product.stock),
                     )
                 )
+        _touch(cart)
         db.commit()
 
     return _get_cart(db, current_user.id)
@@ -119,6 +129,7 @@ def add_to_cart(
         )
         db.add(cart_item)
 
+    _touch(cart)
     db.commit()
     return _get_cart(db, current_user.id)
 
@@ -151,6 +162,7 @@ def update_cart_item_by_product(
     else:
         db.add(models.CartItem(cart_id=cart.id, product_id=product_id, quantity=item_update.quantity))
 
+    _touch(cart)
     db.commit()
     return _get_cart(db, current_user.id)
 
@@ -168,6 +180,7 @@ def remove_from_cart_by_product(
         models.CartItem.cart_id == cart.id,
         models.CartItem.product_id == product_id
     ).delete()
+    _touch(cart)
     db.commit()
     return _get_cart(db, current_user.id)
 
@@ -181,6 +194,7 @@ def clear_cart(
     cart = db.query(models.Cart).filter(models.Cart.user_id == current_user.id).first()
     if cart:
         db.query(models.CartItem).filter(models.CartItem.cart_id == cart.id).delete()
+        _touch(cart)
         db.commit()
 
     return {"detail": "Cart cleared successfully"}
