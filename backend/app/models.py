@@ -87,12 +87,24 @@ class Address(Base):
 
 class Cart(Base):
     __tablename__ = "carts"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+    # Bumped by app/routes/cart.py on every add/update/remove/sync (not by
+    # the generic `updated_at` above, which SQLAlchemy only touches when a
+    # column on this Cart row itself changes - adding a CartItem row
+    # doesn't). Powers the "left items in your bag" reminder email/
+    # notification (see scripts/send_cart_reminder_emails.py), matching
+    # Myntra/Nykaa/Ajio's cart-abandonment nudge - real cart contents
+    # only, sent once per idle stretch.
+    last_activity_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Set once a reminder goes out for the CURRENT idle stretch, so the
+    # script never double-sends; re-arms automatically once
+    # last_activity_at moves forward again from new cart activity.
+    reminder_sent_at = Column(DateTime(timezone=True), nullable=True)
+
     user = relationship("User", back_populates="cart")
     items = relationship("CartItem", back_populates="cart", cascade="all, delete-orphan")
 
