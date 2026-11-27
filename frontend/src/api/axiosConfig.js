@@ -321,6 +321,16 @@ export const api = {
   getAdminTickets: (status) => client.get('/support/tickets/admin/all', { params: status ? { status } : {} }),
   updateSupportTicket: (id, payload) => client.put(`/support/tickets/${id}`, payload),
 
+  // Live chat ("Chat with us" - a faster, synchronous alternative to the
+  // support-ticket flow above, matching Myntra's 24x7 in-app chat and
+  // AJIO's chat support from the Order Details Page)
+  getMyChatMessages: () => client.get('/chat/messages'),
+  getMyChatUnreadCount: () => client.get('/chat/unread-count'),
+  sendChatMessage: (body) => client.post('/chat/messages', { body }),
+  getAdminChatThreads: () => client.get('/chat/admin/threads'),
+  getAdminChatThreadMessages: (userId) => client.get(`/chat/admin/${userId}/messages`),
+  sendAdminChatReply: (userId, body) => client.post(`/chat/admin/${userId}/messages`, { body }),
+
   // Loyalty ("Hills Rewards" points - earn on delivery, redeem at checkout)
   getLoyaltyBalance: () => client.get('/loyalty/balance'),
   getLoyaltyTransactions: () => client.get('/loyalty/transactions'),

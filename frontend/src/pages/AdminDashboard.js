@@ -72,6 +72,11 @@ const AdminDashboard = () => {
   const [expandedCollection, setExpandedCollection] = useState(null);
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [productSearchResults, setProductSearchResults] = useState([]);
+  const [chatThreads, setChatThreads] = useState([]);
+  const [expandedChatUserId, setExpandedChatUserId] = useState(null);
+  const [expandedChatMessages, setExpandedChatMessages] = useState([]);
+  const [chatReplyDrafts, setChatReplyDrafts] = useState({});
+  const [sendingChatReply, setSendingChatReply] = useState(false);
 
   const loadProducts = useCallback(async () => {
     try {
@@ -124,6 +129,27 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const loadChatThreads = useCallback(async () => {
+    try {
+      const response = await api.getAdminChatThreads();
+      setChatThreads(response.data);
+    } catch (error) {
+      toast.error('Failed to load live chat');
+    }
+  }, []);
+
+  const loadExpandedChatMessages = useCallback(async (userId) => {
+    try {
+      const response = await api.getAdminChatThreadMessages(userId);
+      setExpandedChatMessages(response.data);
+      // Opening a thread marks its messages read server-side - reflect
+      // that in the thread list's unread badge without a full reload.
+      setChatThreads((prev) => prev.map((t) => (t.user_id === userId ? { ...t, unread_count: 0 } : t)));
+    } catch (error) {
+      toast.error('Failed to load conversation');
+    }
+  }, []);
+
   const loadCollections = useCallback(async () => {
     try {
       const response = await api.getAdminCollections();
@@ -151,6 +177,14 @@ const AdminDashboard = () => {
   }, [expandedCollectionId, loadExpandedCollection]);
 
   useEffect(() => {
+    if (expandedChatUserId == null) {
+      setExpandedChatMessages([]);
+      return;
+    }
+    loadExpandedChatMessages(expandedChatUserId);
+  }, [expandedChatUserId, loadExpandedChatMessages]);
+
+  useEffect(() => {
     if (!user?.is_admin) return;
     setLoading(true);
     const load =
@@ -164,9 +198,11 @@ const AdminDashboard = () => {
         ? loadTickets()
         : tab === 'collections'
         ? loadCollections()
+        : tab === 'chat'
+        ? loadChatThreads()
         : loadCoupons();
     load.finally(() => setLoading(false));
-  }, [tab, loadProducts, loadOrders, loadCoupons, loadReturnRequests, loadTickets, loadCollections, user]);
+  }, [tab, loadProducts, loadOrders, loadCoupons, loadReturnRequests, loadTickets, loadCollections, loadChatThreads, user]);
 
   if (!user?.is_admin) {
     return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Admin access only</div>;
@@ -274,6 +310,25 @@ const AdminDashboard = () => {
       loadTickets();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Could not send reply');
+    }
+  };
+
+  const handleChatReply = async (userId) => {
+    const reply = (chatReplyDrafts[userId] || '').trim();
+    if (!reply) {
+      toast.error('Write a reply first');
+      return;
+    }
+    setSendingChatReply(true);
+    try {
+      await api.sendAdminChatReply(userId, reply);
+      setChatReplyDrafts((d) => ({ ...d, [userId]: '' }));
+      loadExpandedChatMessages(userId);
+      loadChatThreads();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not send reply');
+    } finally {
+      setSendingChatReply(false);
     }
   };
 
@@ -467,6 +522,15 @@ const AdminDashboard = () => {
           onClick={() => setTab('support')}
         >
           Support
+        </button>
+        <button
+          className={`pb-2 font-semibold ${tab === 'chat' ? 'text-purple-600 border-b-2 border-purple-600' : 'text-gray-500'}`}
+          onClick={() => setTab('chat')}
+        >
+          Live Chat
+          {chatThreads.some((t) => t.unread_count > 0) && (
+            <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-red-500 align-middle" />
+          )}
         </button>
       </div>
 
@@ -747,6 +811,85 @@ const AdminDashboard = () => {
               </div>
             ))}
             {tickets.length === 0 && <div className="text-center text-gray-600">No support tickets yet</div>}
+          </div>
+        ))}
+
+      {tab === 'chat' &&
+        (loading ? (
+          <div className="text-center text-gray-600">Loading...</div>
+        ) : (
+          <div className="space-y-4">
+            {chatThreads.map((t) => {
+              const isOpen = expandedChatUserId === t.user_id;
+              return (
+                <div key={t.user_id} className="bg-white rounded-lg shadow p-6">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedChatUserId(isOpen ? null : t.user_id)}
+                    className="w-full flex flex-wrap justify-between items-start gap-2 text-left"
+                  >
+                    <div>
+                      <p className="font-semibold flex items-center gap-2">
+                        {t.user_name || t.user_email}
+                        {t.unread_count > 0 && (
+                          <span className="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                            {t.unread_count}
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-500">{t.user_email}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {t.last_sender === 'admin' ? 'You: ' : ''}
+                        {t.last_message.length > 100 ? `${t.last_message.slice(0, 100)}...` : t.last_message}
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-500">{new Date(t.last_message_at).toLocaleString()}</p>
+                  </button>
+
+                  {isOpen && (
+                    <div className="mt-4 border-t pt-4">
+                      <div className="space-y-2 max-h-80 overflow-y-auto mb-3">
+                        {expandedChatMessages.map((m) => (
+                          <div key={m.id} className={`flex ${m.sender === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                            <div
+                              className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+                                m.sender === 'admin' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                              <p className={`text-[10px] mt-1 ${m.sender === 'admin' ? 'text-white/70' : 'text-gray-500'}`}>
+                                {new Date(m.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <textarea
+                          value={chatReplyDrafts[t.user_id] || ''}
+                          onChange={(e) =>
+                            setChatReplyDrafts((d) => ({ ...d, [t.user_id]: e.target.value }))
+                          }
+                          placeholder="Write a reply..."
+                          rows={2}
+                          className="border rounded-lg px-3 py-2 flex-1 min-w-[200px]"
+                        />
+                        <button
+                          onClick={() => handleChatReply(t.user_id)}
+                          disabled={sendingChatReply}
+                          className="btn-primary self-start disabled:opacity-50"
+                        >
+                          Send Reply
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {chatThreads.length === 0 && (
+              <div className="text-center text-gray-600">No chat messages yet</div>
+            )}
           </div>
         ))}
 
