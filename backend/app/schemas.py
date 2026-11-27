@@ -758,6 +758,35 @@ class SupportTicketResponse(BaseModel):
         from_attributes = True
 
 
+class ChatMessageCreate(BaseModel):
+    body: str = Field(..., min_length=1, max_length=2000)
+
+
+class ChatMessageResponse(BaseModel):
+    id: int
+    user_id: int
+    sender: str
+    body: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ChatThreadSummary(BaseModel):
+    user_id: int
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
+    last_message: str
+    last_message_at: datetime
+    last_sender: str
+    unread_count: int
+
+
+class ChatUnreadCountResponse(BaseModel):
+    unread_count: int
+
+
 class SearchQueryLogCreate(BaseModel):
     term: str = Field(..., min_length=1, max_length=100)
 

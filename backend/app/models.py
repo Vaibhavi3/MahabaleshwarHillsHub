@@ -566,6 +566,39 @@ class SupportTicket(Base):
         return name or self.user.username
 
 
+class ChatMessage(Base):
+    """One message in a shopper's live-chat thread with the store, matching
+    Myntra's 24x7 in-app "Chat with us" and AJIO's chat support launched
+    from the Order Details Page - both faster, synchronous alternatives to
+    the existing (slower, async) SupportTicket flow above. There is one
+    running thread per customer, not one per order: a customer who opens
+    chat from an order just gets that order's number pre-filled into their
+    first message, the same thread either way, matching how a real human
+    support inbox works."""
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    sender = Column(String(10), nullable=False)  # "customer" or "admin"
+    body = Column(Text, nullable=False)
+    is_read_by_admin = Column(Boolean, default=False, nullable=False, server_default="false")
+    is_read_by_customer = Column(Boolean, default=False, nullable=False, server_default="false")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+    @property
+    def user_email(self):
+        return self.user.email if self.user else None
+
+    @property
+    def user_name(self):
+        if not self.user:
+            return None
+        name = " ".join(part for part in [self.user.first_name, self.user.last_name] if part).strip()
+        return name or self.user.username
+
+
 class Notification(Base):
     """An in-app notification, matching the notification/updates inbox
     (bell icon in the header) that Myntra, Nykaa and Ajio all show -

@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { FiChevronDown, FiLifeBuoy, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiChevronDown, FiLifeBuoy, FiClock, FiCheckCircle, FiMessageCircle } from 'react-icons/fi';
 import api from '../api/axiosConfig';
 import { requireAuth } from '../utils/requireAuth';
+import { openChatWidget } from '../utils/chatWidget';
 
 // Real store policy only - never a fabricated delivery date, discount, or
 // threshold. Mirrors the facts already shown on the homepage trust strip,
@@ -151,6 +152,14 @@ const Help = () => {
       .finally(() => setLoadingTickets(false));
   }, [token]);
 
+  // Lets the "New message from Mahabaleshwar Hills Hub" notification bell
+  // entry (link="/help?chat=open") drop a shopper straight into the chat
+  // panel instead of just the Help Center.
+  useEffect(() => {
+    if (searchParams.get('chat') === 'open') openChatWidget();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const eligibleOrders = useMemo(() => orders, [orders]);
 
   const handleChange = (e) => {
@@ -194,13 +203,30 @@ const Help = () => {
         Answers to common questions, and a way to reach us directly if you need more help.
       </p>
 
+      <button
+        type="button"
+        onClick={() => openChatWidget()}
+        className="w-full flex items-center justify-between gap-3 bg-ink text-white rounded-lg px-5 py-4 mb-8 hover:bg-black transition-colors"
+      >
+        <span className="flex items-center gap-3 text-left">
+          <FiMessageCircle size={22} className="shrink-0" />
+          <span>
+            <span className="block text-sm font-bold">Chat with us</span>
+            <span className="block text-xs text-gray-300">
+              Quick questions get a quicker answer here than a ticket
+            </span>
+          </span>
+        </span>
+        <span className="text-xs font-bold uppercase tracking-wide shrink-0">Open Chat</span>
+      </button>
+
       <FAQAccordion />
 
       <div className="mt-12 border-t border-gray-200 pt-8">
         <h2 className="text-lg font-extrabold text-ink mb-1">Still need help?</h2>
         <p className="text-sm text-muted mb-5">
           {user
-            ? "Tell us what's going on and we'll get back to you by email."
+            ? "For anything that needs a longer look - returns, payment issues, order problems - raise a ticket below and we'll get back to you by email."
             : 'Login to raise a ticket - this way we can tie it to your account and orders.'}
         </p>
         <form onSubmit={handleSubmit} className="border border-gray-200 rounded p-4 space-y-3 max-w-xl">

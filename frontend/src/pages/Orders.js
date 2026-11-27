@@ -8,7 +8,8 @@ import CancelOrderModal from '../components/CancelOrderModal';
 import ReturnRequestModal from '../components/ReturnRequestModal';
 import ReturnRequestStatus from '../components/ReturnRequestStatus';
 import { addToCart } from '../features/cartSlice';
-import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink } from 'react-icons/fi';
+import { openChatWidget } from '../utils/chatWidget';
+import { FiAward, FiDownload, FiRefreshCw, FiLifeBuoy, FiGift, FiLink, FiMessageCircle } from 'react-icons/fi';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -222,6 +223,12 @@ const Orders = () => {
                 >
                   <FiRefreshCw className={reorderingId === order.id ? 'animate-spin' : ''} />
                   {reorderingId === order.id ? 'Adding...' : 'Buy Again'}
+                </button>
+                <button
+                  onClick={() => openChatWidget(`Regarding Order ${order.order_number}: `)}
+                  className="flex items-center gap-1 text-xs font-semibold uppercase text-brand hover:underline"
+                >
+                  <FiMessageCircle /> Chat
                 </button>
                 <Link
                   to={`/help?order=${order.id}`}

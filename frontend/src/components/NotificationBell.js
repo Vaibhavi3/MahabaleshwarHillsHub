@@ -20,6 +20,7 @@ const TYPE_ICON = {
   referral: FiGift,
   return_request: FiRefreshCw,
   support_ticket: FiMessageSquare,
+  chat_reply: FiMessageSquare,
   back_in_stock: FiBell,
   price_drop: FiTag,
 };

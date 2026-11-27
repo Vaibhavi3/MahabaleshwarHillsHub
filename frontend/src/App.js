@@ -8,6 +8,7 @@ import { setCartItems, clearCart, mapCartResponse } from './features/cartSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
+import ChatWidget from './components/ChatWidget';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
@@ -147,6 +148,7 @@ function App() {
       </main>
       <Footer />
       <CartDrawer />
+      <ChatWidget />
     </div>
   );
 }
