@@ -5,7 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../api/axiosConfig';
 import { clearCart } from '../features/cartSlice';
-import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX, FiPackage } from 'react-icons/fi';
+import { FiTruck, FiShield, FiCheck, FiAward, FiGift, FiX, FiPackage, FiCreditCard } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import AddressBook from '../components/AddressBook';
 import { computeMultibuyDiscount } from '../utils/multibuy';
@@ -52,19 +52,54 @@ const CheckoutProgress = ({ step }) => {
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY || '');
 
-const StripeCheckoutForm = ({ order, onSuccess }) => {
+const CARD_BRAND_LABELS = {
+  visa: 'Visa',
+  mastercard: 'Mastercard',
+  amex: 'American Express',
+  discover: 'Discover',
+  diners: 'Diners Club',
+  jcb: 'JCB',
+  unionpay: 'UnionPay',
+};
+
+const StripeCheckoutForm = ({ order, onSuccess, savedCards, onCardRemoved }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState(savedCards.length > 0 ? savedCards[0].id : 'new');
+  const [saveNewCard, setSaveNewCard] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
+
+  const usingSavedCard = selectedCardId !== 'new';
+
+  const handleRemoveCard = async (cardId) => {
+    setRemovingId(cardId);
+    try {
+      await api.deleteSavedCard(cardId);
+      toast.success('Card removed');
+      if (selectedCardId === cardId) setSelectedCardId('new');
+      onCardRemoved(cardId);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Could not remove card');
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   const handlePay = async () => {
     if (!stripe || !elements) return;
     setProcessing(true);
     try {
-      const { data } = await api.createPaymentIntent(order.id);
-      const result = await stripe.confirmCardPayment(data.client_secret, {
-        payment_method: { card: elements.getElement(CardElement) },
-      });
+      let result;
+      if (usingSavedCard) {
+        const { data } = await api.createPaymentIntent(order.id, { paymentMethodId: selectedCardId });
+        result = await stripe.confirmCardPayment(data.client_secret);
+      } else {
+        const { data } = await api.createPaymentIntent(order.id, { saveCard: saveNewCard });
+        result = await stripe.confirmCardPayment(data.client_secret, {
+          payment_method: { card: elements.getElement(CardElement) },
+        });
+      }
       if (result.error) {
         throw new Error(result.error.message);
       }
@@ -79,9 +114,77 @@ const StripeCheckoutForm = ({ order, onSuccess }) => {
 
   return (
     <div className="space-y-4">
-      <div className="border rounded-lg px-4 py-3">
-        <CardElement options={{ style: { base: { fontSize: '16px' } } }} />
-      </div>
+      {savedCards.length > 0 && (
+        <div className="space-y-2">
+          {savedCards.map((card) => (
+            <div
+              key={card.id}
+              className={`flex items-center justify-between gap-2 border rounded-lg px-4 py-3 cursor-pointer ${
+                selectedCardId === card.id ? 'border-brand ring-1 ring-brand' : 'border-gray-200'
+              }`}
+              onClick={() => setSelectedCardId(card.id)}
+            >
+              <label className="flex items-center gap-3 cursor-pointer flex-1">
+                <input
+                  type="radio"
+                  name="savedCard"
+                  checked={selectedCardId === card.id}
+                  onChange={() => setSelectedCardId(card.id)}
+                  className="accent-brand w-4 h-4"
+                />
+                <FiCreditCard className="text-muted shrink-0" />
+                <span className="text-sm text-ink">
+                  {CARD_BRAND_LABELS[card.brand] || card.brand} •••• {card.last4}
+                  <span className="text-muted"> · expires {String(card.exp_month).padStart(2, '0')}/{card.exp_year}</span>
+                </span>
+              </label>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveCard(card.id);
+                }}
+                disabled={removingId === card.id}
+                className="text-xs text-muted hover:text-red-600 shrink-0"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          <label
+            className={`flex items-center gap-3 border rounded-lg px-4 py-3 cursor-pointer ${
+              selectedCardId === 'new' ? 'border-brand ring-1 ring-brand' : 'border-gray-200'
+            }`}
+          >
+            <input
+              type="radio"
+              name="savedCard"
+              checked={selectedCardId === 'new'}
+              onChange={() => setSelectedCardId('new')}
+              className="accent-brand w-4 h-4"
+            />
+            <span className="text-sm font-semibold text-ink">Use a new card</span>
+          </label>
+        </div>
+      )}
+
+      {!usingSavedCard && (
+        <>
+          <div className="border rounded-lg px-4 py-3">
+            <CardElement options={{ style: { base: { fontSize: '16px' } } }} />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+            <input
+              type="checkbox"
+              checked={saveNewCard}
+              onChange={(e) => setSaveNewCard(e.target.checked)}
+              className="accent-brand w-4 h-4"
+            />
+            Save this card for faster checkout next time
+          </label>
+        </>
+      )}
+
       <button onClick={handlePay} disabled={!stripe || processing} className="btn-primary w-full disabled:opacity-50">
         {processing ? 'Processing...' : `Pay ₹${order.total_amount.toFixed(2)}`}
       </button>
@@ -156,6 +259,7 @@ const Checkout = () => {
   const [isGift, setIsGift] = useState(false);
   const [giftMessage, setGiftMessage] = useState('');
   const GIFT_MESSAGE_LIMIT = 300;
+  const [savedCards, setSavedCards] = useState([]);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const multibuy = computeMultibuyDiscount(items);
@@ -176,6 +280,9 @@ const Checkout = () => {
   useEffect(() => {
     api.getLoyaltyBalance()
       .then((response) => setRewardsBalance(response.data.points_balance))
+      .catch(() => {});
+    api.getSavedCards()
+      .then((response) => setSavedCards(response.data))
       .catch(() => {});
   }, []);
 
@@ -387,7 +494,12 @@ const Checkout = () => {
                 <RazorpayButton order={order} onSuccess={handlePaymentSuccess} />
               ) : (
                 <Elements stripe={stripePromise}>
-                  <StripeCheckoutForm order={order} onSuccess={handlePaymentSuccess} />
+                  <StripeCheckoutForm
+                    order={order}
+                    onSuccess={handlePaymentSuccess}
+                    savedCards={savedCards}
+                    onCardRemoved={(id) => setSavedCards((cards) => cards.filter((c) => c.id !== id))}
+                  />
                 </Elements>
               )}
               <button onClick={() => setStep('address')} className="btn-secondary w-full mt-3">

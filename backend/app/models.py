@@ -24,6 +24,7 @@ class User(Base):
     loyalty_points = Column(Integer, default=0, nullable=False, server_default="0")
     lifetime_spend = Column(Float, default=0, nullable=False, server_default="0")
     referral_code = Column(String(20), unique=True, index=True)
+    stripe_customer_id = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
