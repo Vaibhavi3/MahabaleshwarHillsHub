@@ -285,6 +285,18 @@ export const api = {
   syncWishlist: (productIds) => {
     return client.post('/wishlist/sync', { product_ids: productIds });
   },
+  getWishlistShareStatus: () => {
+    return client.get('/wishlist/share');
+  },
+  enableWishlistShare: () => {
+    return client.post('/wishlist/share');
+  },
+  disableWishlistShare: () => {
+    return client.delete('/wishlist/share');
+  },
+  getSharedWishlist: (token) => {
+    return client.get(`/wishlist/shared/${token}`);
+  },
 
   // Saved for Later (account-backed, syncs across devices once logged in)
   getSavedForLater: () => {

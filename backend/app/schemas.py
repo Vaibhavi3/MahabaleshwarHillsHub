@@ -455,6 +455,16 @@ class WishlistSyncRequest(BaseModel):
     product_ids: List[int] = Field(default_factory=list, max_length=200)
 
 
+class WishlistShareStatusResponse(BaseModel):
+    enabled: bool
+    token: Optional[str] = None
+
+
+class SharedWishlistResponse(BaseModel):
+    owner_first_name: Optional[str] = None
+    items: List[WishlistItemResponse]
+
+
 class SavedForLaterItemResponse(BaseModel):
     id: int
     quantity: int
