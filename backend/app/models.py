@@ -25,6 +25,7 @@ class User(Base):
     lifetime_spend = Column(Float, default=0, nullable=False, server_default="0")
     referral_code = Column(String(20), unique=True, index=True)
     wishlist_share_token = Column(String(64), unique=True, index=True, nullable=True)
+    stripe_customer_id = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -391,6 +392,27 @@ class WishlistItem(Base):
     product = relationship("Product")
 
     __table_args__ = (UniqueConstraint("user_id", "product_id", name="uq_wishlist_user_product"),)
+
+
+class SavedForLaterItem(Base):
+    """A bag item a signed-in user set aside for later instead of buying it
+    now, inspired by Myntra/Amazon's "Save for later" section on the bag
+    page. Tied to the account the same way WishlistItem is, so it follows
+    the shopper across devices instead of only this browser's cart. Keeps
+    the quantity that was set aside so "Move to Bag" can restore it
+    exactly (capped again against live stock at that point)."""
+    __tablename__ = "saved_for_later_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    quantity = Column(Integer, default=1, nullable=False, server_default="1")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    product = relationship("Product")
+
+    __table_args__ = (UniqueConstraint("user_id", "product_id", name="uq_saved_for_later_user_product"),)
 
 
 class RecentlyViewed(Base):

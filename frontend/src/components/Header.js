@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { FiShoppingBag, FiMenu, FiX, FiLogOut, FiHeart, FiUser, FiPackage, FiMapPin, FiAward } from 'react-icons/fi';
 import { logout } from '../features/authSlice';
 import { clearWishlist } from '../features/wishlistSlice';
+import { clearSavedForLater } from '../features/savedForLaterSlice';
 import { clearCart } from '../features/cartSlice';
 import { SOCK_SUBCATEGORIES } from '../constants/sockSubcategories';
 import SearchBox from './SearchBox';
@@ -41,6 +42,7 @@ const Header = () => {
   const handleLogout = () => {
     dispatch(logout());
     dispatch(clearWishlist());
+    dispatch(clearSavedForLater());
     // So the next person to sign in on this browser/device doesn't see
     // this account's bag - it gets pulled fresh from their own account
     // (merged with anything local) right after they log in.
