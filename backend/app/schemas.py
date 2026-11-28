@@ -182,6 +182,10 @@ class OrderItemResponse(OrderItemCreate):
     order_id: int
     product_name: Optional[str] = None
     product_image: Optional[str] = None
+    # Whether the current user has already reviewed this item's product -
+    # computed per-request from the reviews table, never stored. Drives the
+    # "Rate & Review" CTA on the order history page.
+    reviewed: bool = False
 
     class Config:
         from_attributes = True
@@ -452,6 +456,20 @@ class WishlistItemResponse(BaseModel):
 
 class WishlistSyncRequest(BaseModel):
     product_ids: List[int] = Field(default_factory=list, max_length=200)
+
+
+class SavedForLaterItemResponse(BaseModel):
+    id: int
+    quantity: int
+    created_at: datetime
+    product: ProductResponse
+
+    class Config:
+        from_attributes = True
+
+
+class SaveForLaterCreate(BaseModel):
+    quantity: int = Field(1, ge=1)
 
 
 class RecentlyViewedResponse(BaseModel):

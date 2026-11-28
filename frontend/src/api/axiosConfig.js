@@ -2,6 +2,7 @@ import axios from 'axios';
 import store from '../store';
 import { logout } from '../features/authSlice';
 import { clearWishlist } from '../features/wishlistSlice';
+import { clearSavedForLater } from '../features/savedForLaterSlice';
 import { clearCart } from '../features/cartSlice';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
@@ -36,6 +37,7 @@ client.interceptors.response.use(
     if (error.response?.status === 401) {
       store.dispatch(logout());
       store.dispatch(clearWishlist());
+      store.dispatch(clearSavedForLater());
       store.dispatch(clearCart());
     }
     return Promise.reject(error);
@@ -205,13 +207,21 @@ export const api = {
   },
 
   // Payments - Stripe
-  createPaymentIntent: (orderId) => {
-    return client.post('/payments/create-payment-intent', null, { params: { order_id: orderId } });
+  createPaymentIntent: (orderId, { saveCard, paymentMethodId } = {}) => {
+    return client.post('/payments/create-payment-intent', null, {
+      params: { order_id: orderId, save_card: saveCard || undefined, payment_method_id: paymentMethodId || undefined },
+    });
   },
   confirmPayment: (orderId, paymentIntentId) => {
     return client.post('/payments/confirm', null, {
       params: { order_id: orderId, payment_intent_id: paymentIntentId },
     });
+  },
+  getSavedCards: () => {
+    return client.get('/payments/saved-cards');
+  },
+  deleteSavedCard: (paymentMethodId) => {
+    return client.delete(`/payments/saved-cards/${paymentMethodId}`);
   },
 
   // Payments - Razorpay
@@ -277,6 +287,17 @@ export const api = {
   },
   syncWishlist: (productIds) => {
     return client.post('/wishlist/sync', { product_ids: productIds });
+  },
+
+  // Saved for Later (account-backed, syncs across devices once logged in)
+  getSavedForLater: () => {
+    return client.get('/saved-for-later');
+  },
+  saveForLater: (productId, quantity = 1) => {
+    return client.post(`/saved-for-later/${productId}`, { quantity });
+  },
+  removeSavedForLater: (productId) => {
+    return client.delete(`/saved-for-later/${productId}`);
   },
 
   // Recently viewed (account-backed when logged in, browser-local for guests)

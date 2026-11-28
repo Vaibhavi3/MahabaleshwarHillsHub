@@ -28,6 +28,21 @@ razorpay_client = (
 )
 
 
+def _get_or_create_stripe_customer(db: Session, user: models.User) -> str:
+    """Return the user's Stripe Customer id, creating one on first use."""
+    if user.stripe_customer_id:
+        return user.stripe_customer_id
+
+    customer = stripe.Customer.create(
+        email=user.email,
+        name=f"{user.first_name or ''} {user.last_name or ''}".strip() or user.username,
+        metadata={"user_id": user.id},
+    )
+    user.stripe_customer_id = customer.id
+    db.commit()
+    return customer.id
+
+
 def _mark_order_paid(db: Session, order: models.Order, payment_method: str, transaction_id: str, response_data: str):
     """Shared completion logic for both Stripe and Razorpay"""
     order.payment_status = "completed"
@@ -52,30 +67,97 @@ def _mark_order_paid(db: Session, order: models.Order, payment_method: str, tran
 @router.post("/payments/create-payment-intent")
 def create_payment_intent(
     order_id: int,
+    save_card: bool = False,
+    payment_method_id: str = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    """Create Stripe payment intent"""
+    """Create Stripe payment intent.
+
+    - Plain call (no save_card/payment_method_id): unchanged, anonymous intent.
+    - save_card=True: attaches a Stripe Customer and asks Stripe to keep the
+      card on file for next time (setup_future_usage="off_session").
+    - payment_method_id set: pay with a previously-saved card instead of
+      collecting card details again.
+    """
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     if order.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-    
+
+    intent_kwargs = {
+        "amount": int(order.total_amount * 100),
+        "currency": "inr",
+        "metadata": {"order_id": order_id},
+    }
+
+    if payment_method_id:
+        if not current_user.stripe_customer_id:
+            raise HTTPException(status_code=400, detail="No saved cards found")
+        intent_kwargs["customer"] = current_user.stripe_customer_id
+        intent_kwargs["payment_method"] = payment_method_id
+    elif save_card:
+        intent_kwargs["customer"] = _get_or_create_stripe_customer(db, current_user)
+        intent_kwargs["setup_future_usage"] = "off_session"
+
     try:
-        intent = stripe.PaymentIntent.create(
-            amount=int(order.total_amount * 100),
-            currency="inr",
-            metadata={"order_id": order_id}
-        )
-        
+        intent = stripe.PaymentIntent.create(**intent_kwargs)
+
         return {
             "client_secret": intent.client_secret,
             "publishable_key": os.getenv("STRIPE_PUBLISHABLE_KEY")
         }
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/payments/saved-cards")
+def list_saved_cards(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """List the current user's saved Stripe cards, for faster checkout next time."""
+    if not current_user.stripe_customer_id:
+        return []
+
+    try:
+        methods = stripe.PaymentMethod.list(customer=current_user.stripe_customer_id, type="card")
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return [
+        {
+            "id": pm.id,
+            "brand": pm.card.brand,
+            "last4": pm.card.last4,
+            "exp_month": pm.card.exp_month,
+            "exp_year": pm.card.exp_year,
+        }
+        for pm in methods.data
+    ]
+
+
+@router.delete("/payments/saved-cards/{payment_method_id}")
+def delete_saved_card(
+    payment_method_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Remove a saved card. Only the card's own owner can remove it."""
+    if not current_user.stripe_customer_id:
+        raise HTTPException(status_code=404, detail="No saved cards found")
+
+    try:
+        pm = stripe.PaymentMethod.retrieve(payment_method_id)
+        if pm.customer != current_user.stripe_customer_id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        stripe.PaymentMethod.detach(payment_method_id)
+    except stripe.error.StripeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {"detail": "Card removed"}
 
 
 @router.post("/payments/confirm")

@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { FiUser, FiLock, FiPackage, FiMapPin, FiHeart, FiAward, FiGift, FiLifeBuoy } from 'react-icons/fi';
+import { FiUser, FiLock, FiPackage, FiMapPin, FiHeart, FiAward, FiGift, FiLifeBuoy, FiCreditCard } from 'react-icons/fi';
 import api from '../api/axiosConfig';
 import { updateUserInfo } from '../features/authSlice';
+
+const CARD_BRAND_LABELS = {
+  visa: 'Visa',
+  mastercard: 'Mastercard',
+  amex: 'American Express',
+  discover: 'Discover',
+  diners: 'Diners Club',
+  jcb: 'JCB',
+  unionpay: 'UnionPay',
+};
 
 const QUICK_LINKS = [
   { to: '/orders', label: 'Orders', icon: FiPackage },
@@ -33,6 +43,30 @@ const Account = () => {
     confirm_password: '',
   });
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const [savedCards, setSavedCards] = useState([]);
+  const [cardsLoading, setCardsLoading] = useState(true);
+  const [removingCardId, setRemovingCardId] = useState(null);
+
+  useEffect(() => {
+    api.getSavedCards()
+      .then((response) => setSavedCards(response.data))
+      .catch(() => {})
+      .finally(() => setCardsLoading(false));
+  }, []);
+
+  const handleRemoveCard = async (cardId) => {
+    setRemovingCardId(cardId);
+    try {
+      await api.deleteSavedCard(cardId);
+      setSavedCards((cards) => cards.filter((c) => c.id !== cardId));
+      toast.success('Card removed');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not remove card');
+    } finally {
+      setRemovingCardId(null);
+    }
+  };
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -169,6 +203,35 @@ const Account = () => {
           </button>
         </form>
       </div>
+
+      {!cardsLoading && savedCards.length > 0 && (
+        <div className="border border-gray-200 rounded-lg p-6 mb-8">
+          <div className="flex items-center gap-2 mb-5">
+            <FiCreditCard className="text-brand" size={18} />
+            <h2 className="text-lg font-bold text-ink">Saved Cards</h2>
+          </div>
+          <p className="text-xs text-muted mb-4">
+            Cards you chose to save at Stripe checkout for faster payment next time.
+          </p>
+          <div className="space-y-2">
+            {savedCards.map((card) => (
+              <div key={card.id} className="flex items-center justify-between gap-3 border border-gray-200 rounded-lg px-4 py-3">
+                <span className="text-sm text-ink">
+                  {CARD_BRAND_LABELS[card.brand] || card.brand} •••• {card.last4}
+                  <span className="text-muted"> · expires {String(card.exp_month).padStart(2, '0')}/{card.exp_year}</span>
+                </span>
+                <button
+                  onClick={() => handleRemoveCard(card.id)}
+                  disabled={removingCardId === card.id}
+                  className="text-xs font-semibold text-muted hover:text-red-600 disabled:opacity-50"
+                >
+                  {removingCardId === card.id ? 'Removing...' : 'Remove'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="border border-gray-200 rounded-lg p-6">
         <div className="flex items-center gap-2 mb-5">
